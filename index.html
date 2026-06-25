@@ -16460,6 +16460,12 @@ function mtContent(l,type){
   if(type==="core")    return {label:"本課核心",      emoji:"💡", main:mtStripCore(l.bigidea), sub:"— "+(l.verse_ref||""), quote:false, reminder:""};
   if(type==="focus")   return {label:"本課・對焦一問", emoji:"🎯", main:l.focus||"",            sub:"",                    quote:false, reminder:""};
   if(type==="declare") return {label:"宣告・回應的禱告",emoji:"🙏", main:l.declare||"",          sub:"",                    quote:false, reminder:""};
+  if(type==="note"){
+    var nt=((state.notes&&state.notes[l.n])||"").trim();
+    if(nt.length>280) nt=nt.slice(0,280)+"…";
+    if(!nt) nt="（先到「✍️ 筆記」頁寫下你今天的領受，就能把它做成美圖分享）";
+    return {label:"我的筆記・今日領受", emoji:"✍️", main:nt, sub:"", quote:false, reminder:""};
+  }
   return {label:"", emoji:"", main:"「"+(l.verse||"")+"」", sub:"— "+(l.verse_ref||""), quote:true, reminder:mtFirstSentence(mtStripCore(l.bigidea))};
 }
 function mtDraw(l, ti, type, shape){
@@ -16543,7 +16549,7 @@ function renderMeitu(){
       return '<button class="mt-style '+(cur===it[1]?"active":"")+'" onclick="'+fn+'(\''+it[1]+'\')">'+it[0]+'</button>';
     }).join("")+'</div>';
   }
-  var contentRow=row("內容",[["經文","verse"],["核心","core"],["對焦","focus"],["宣告","declare"]],mtState.content,"setMeituContent");
+  var contentRow=row("內容",[["經文","verse"],["核心","core"],["對焦","focus"],["宣告","declare"],["筆記","note"]],mtState.content,"setMeituContent");
   var themeRow=row("風格",[["清晨","0"],["暮光","1"],["羊皮","2"]],String(mtState.theme),"setMeituTheme");
   var shapeRow=row("版型",[["直式","port"],["方形","sq"]],mtState.shape,"setMeituShape");
   var html='<div class="mt-overlay" onclick="if(event.target===this)closeMeitu()"><div class="mt-sheet">'
@@ -16632,6 +16638,7 @@ function recShow(kind,n,blob){
   s.innerHTML='<div class="rec-card"><div class="rec-title">'+title+'</div>'
     +'<div class="rec-saved">✓ 已儲存於此裝置</div>'
     +'<audio class="rec-audio" controls preload="metadata" src="'+recState.url+'"></audio>'
+    +'<div style="font-size:12px;color:var(--inkFaint);line-height:1.55;margin:-4px 2px 10px;">🔊 聽不到聲音？請把手機側邊的靜音鍵關閉、或調高音量（iPhone 靜音時，網頁錄音不會出聲）。</div>'
     +'<div class="rec-actions"><button class="rec-mini" onclick="recStart(\''+kind+'\','+n+')">↻ 重錄</button>'
     +'<button class="rec-mini del" onclick="recDelete(\''+kind+'\','+n+')">🗑 刪除</button></div></div>';
 }
