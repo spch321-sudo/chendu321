@@ -558,6 +558,24 @@
   .sys-lbl{font-size:12.5px;font-weight:800;color:var(--mintDark);margin:12px 0 6px;}
   .sys-lbl-pray{color:var(--clay);}
   .sys-pray{background:var(--claySoft);}
+  .tnk{margin:16px 0 6px;padding:15px 15px 16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,var(--mintSoft),var(--goldWash));}
+  .tnk-h{font-size:13.5px;font-weight:800;color:var(--mintDark);margin-bottom:9px;}
+  .tnk-hint{font-size:12px;line-height:1.7;color:var(--inkSoft);background:var(--card);border:1px dashed var(--mint);border-radius:11px;padding:9px 11px;margin-bottom:11px;}
+  .tnk-hint b{color:var(--mintDark);}
+  .tnk-truths{display:flex;flex-direction:column;gap:7px;}
+  .tnk-line{position:relative;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13.5px;line-height:1.7;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
+  .tnk-line.on{background:#FBF3D6;border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold);}
+  .tnk-flag{margin-left:5px;font-size:12px;}
+  .tnk-note{font-size:12.5px;line-height:1.7;color:var(--ink);background:var(--goldWash);border-left:3px solid var(--gold);border-radius:8px;padding:8px 11px;margin:3px 0;}
+  .tnk-note b{color:var(--mintDark);}
+  .tnk-free-h{font-size:12.5px;font-weight:800;color:var(--clay);margin:13px 0 6px;}
+  .tnk-ta{width:100%;box-sizing:border-box;min-height:70px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75;color:var(--ink);background:var(--card);resize:vertical;font-family:inherit;}
+  .tnk-ta:focus{outline:none;border-color:var(--mint);}
+  .trv-num{background:var(--gold)!important;color:#fff;}
+  .trv-tool{margin:4px 0 14px;}
+  .trv-tool-h{font-size:13.5px;font-weight:800;color:var(--mintDark);margin:6px 0 8px;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;}
+  .trv-go{color:var(--inkFaint);font-weight:800;}
+  .rv-tnote .rv-note{background:var(--claySoft);border-left-color:var(--clay);}
   .s235-team{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:14px 0 6px;background:var(--card);}
   .s235-team-h{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--mintWash);border:none;padding:14px 15px;font-size:14.5px;font-weight:800;color:var(--mintDark);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
   .s235-team-body{padding:6px 15px 15px;}
@@ -16267,7 +16285,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:1,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[]};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:1,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{}};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16293,6 +16311,8 @@ function loadState(){
     if(d.s920cf&&typeof d.s920cf==="object") state.s920cf=d.s920cf;
     if(d.s235&&typeof d.s235==="object") state.s235=d.s235;
     if(Array.isArray(d.sys)) state.sys=d.sys;
+    if(d.tmk&&typeof d.tmk==="object") state.tmk=d.tmk;
+    if(d.tnote&&typeof d.tnote==="object") state.tnote=d.tnote;
   }catch(e){}
 }
 function saveState(){
@@ -16300,7 +16320,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote
     }));
   }catch(e){}
 }
@@ -16351,7 +16371,7 @@ function homeHTML(){
   const continueHTML=lastL?`<div class="continue-card" onclick="openLesson(${lastL.n})"><div class="cc-label">繼續閱讀</div><div class="cc-title">第 ${lastL.n} 課 · ${esc(lastL.title).split("\n").join(" ")}</div><div class="cc-go">繼續 →</div></div>`:"";
   const progHTML=`<div class="overall"><div class="overall-top"><span>晨讀進度</span><span>${readCount} / ${total} 課</span></div><div class="overall-bar"><div class="overall-fill" style="width:${pct}%"></div></div>${streakHTML}</div>`;
   const _mc=mkCounts();
-  const reviewCard=_mc.marks?`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks} 處畫線 · ${_mc.lessons} 課</div></div><div class="rc-go">回顧 ›</div></div>`:"";
+  const reviewCard=(_mc.marks||tmkAny())?`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks?(_mc.marks+' 處畫線 · '+_mc.lessons+' 課'):'建國四方略的領受與筆記'}</div></div><div class="rc-go">回顧 ›</div></div>`:"";
   const fontHTML=`<div class="fontbar"><span class="fontbar-lbl">閱讀字級</span>`+[["標準",0],["大",1],["特大",2]].map(o=>`<button class="fontbtn ${(state.font||0)===o[1]?'active':''}" onclick="setFont(${o[1]})">${o[0]}</button>`).join("")+`</div>`;
   const cards=UNITS.map(u=>{
     const open=state.openUnit===u.n;
@@ -16688,12 +16708,118 @@ function mkSortedKeys(m){
   return keys;
 }
 function unitOfLesson(n){ for(var i=0;i<UNITS.length;i++){ if(n>=UNITS[i].start&&n<=UNITS[i].end) return UNITS[i].n; } return null; }
+/* ===== 建國四方略 · 畫線與筆記（接入「我的畫線與領受」彙整） ===== */
+var TOOL_META={ "321":{ic:"🌱",name:"落實321",sub:"生命"}, "920":{ic:"🍇",name:"操練920",sub:"關係"}, "235":{ic:"🤝",name:"發展235",sub:"團隊"}, "sys":{ic:"👑",name:"建立體系",sub:"領域"} };
+var TOOL_TRUTHS={
+  "321":[
+    "耶穌是我的榜樣，聖經是我的準則，聖靈是我的引導。",
+    "讓耶穌作王，讓耶穌得著一切的榮耀。",
+    "改變觀念就改變生命，改變生命就改變生活。",
+    "舊人有己，以自己為中心；新人無己，讓基督在裡面活。",
+    "用心靠聖靈，不要用腦靠自己；用心就開心，用腦就煩惱。",
+    "焦點對準耶穌——不在自己、不在別人、不在環境。"
+  ],
+  "920":[
+    "每個與我有關係的人，都是我的「2」。",
+    "活出無己（0）的生命，結出聖靈九種的果子（9）。",
+    "人比事重要，關係比東西重要。",
+    "不要為了事而傷害人，不要為了東西而破壞關係。",
+    "為耶穌、為別人，不為自己。"
+  ],
+  "235":[
+    "與沒有問題、無己的人，發展屬靈的團隊。",
+    "成為 2 屬靈同伴，建立 3 屬靈父母兒女，發展 5 五重職分的團隊。",
+    "先有生命，再有關係，後有事工。",
+    "各盡其職、彼此配搭，同心建立基督的身體。"
+  ],
+  "sys":[
+    "一個目的：建立屬神的體系。",
+    "在每個領域讓耶穌作王，為祂得著神國的領土。",
+    "願祢的國降臨，願祢的旨意行在地上，如同行在天上。",
+    "無己才能建立屬神的體系，無己才能建立神的國度。"
+  ]
+};
+function tmkOf(id){ if(!state.tmk)state.tmk={}; if(!state.tmk[id])state.tmk[id]={}; return state.tmk[id]; }
+function toolNoteBlockHTML(id){
+  var truths=TOOL_TRUTHS[id]||[]; var mk=(state.tmk&&state.tmk[id])||{};
+  var anyHL=Object.keys(mk).length>0;
+  var h='<div class="tnk">';
+  h+='<div class="tnk-h">✍️ 我的領受與筆記</div>';
+  if(!anyHL) h+='<div class="tnk-hint">💡 下面是這個方略的核心真理——讀到聖靈光照你的，<b>點一下</b>畫線；畫線後<b>再點一下</b>寫下領受。畫線與筆記都會收進首頁「我的畫線與領受」。</div>';
+  h+='<div class="tnk-truths">';
+  truths.forEach(function(t,i){
+    var key="t"+i; var has=Object.prototype.hasOwnProperty.call(mk,key); var note=has?String((mk[key]&&mk[key].n)||""):"";
+    h+='<div class="tnk-line'+(has?" on":"")+'" onclick="tmkTap(&#39;'+id+'&#39;,&#39;'+key+'&#39;)">'+esc(t)+(has&&note?'<span class="tnk-flag">📝</span>':'')+'</div>';
+    if(has&&note) h+='<div class="tnk-note"><b>領受：</b>'+esc(note)+'</div>';
+  });
+  h+='</div>';
+  var nv=(state.tnote&&state.tnote[id])||"";
+  h+='<div class="tnk-free-h">📝 筆記</div>';
+  h+='<textarea class="tnk-ta" placeholder="寫下你在這個方略中的領受、計畫、禱告……（會一起收進彙整）" oninput="tnoteSet(&#39;'+id+'&#39;,this.value)">'+esc(nv)+'</textarea>';
+  h+='</div>';
+  return h;
+}
+window.tmkTap=function(id,key){
+  var m=tmkOf(id);
+  if(Object.prototype.hasOwnProperty.call(m,key)){ tmkNote(id,key); }
+  else{ var arr=(TOOL_TRUTHS[id]||[]); var idx=parseInt(key.slice(1),10); m[key]={t:(arr[idx]||""),n:""}; saveState(); rerenderKeepScroll(); }
+};
+window.tmkNote=function(id,key){
+  var m=tmkOf(id); var rec=m[key]||{t:"",n:""}; var cur=String(rec.n||"");
+  var w=document.getElementById("mark-sheet"); if(!w) return;
+  w.innerHTML='<div class="sheet-mask" onclick="mkSheetClose()"></div>'
+    +'<div class="sheet-card">'
+    +'<div class="sheet-head">✍️ 寫下你的領受</div>'
+    +'<div class="sheet-quote-wrap"><span class="sheet-quote">'+esc(rec.t||"")+'</span></div>'
+    +'<textarea id="mk-ta" class="sheet-ta" placeholder="這句真理帶給你什麼領受、感動，或聖靈的提醒？把焦點對準耶穌……">'+esc(cur)+'</textarea>'
+    +'<div class="sheet-acts"><button class="sheet-save" onclick="tmkSave(&#39;'+id+'&#39;,&#39;'+key+'&#39;)">儲存領受</button></div>'
+    +'<div class="sheet-acts2">'
+    +'<button class="sheet-clear" onclick="tmkClear(&#39;'+id+'&#39;,&#39;'+key+'&#39;)">刪除領受</button>'
+    +'<button class="sheet-del" onclick="tmkRemove(&#39;'+id+'&#39;,&#39;'+key+'&#39;)">移除畫線</button>'
+    +'<button class="sheet-cancel" onclick="mkSheetClose()">取消</button>'
+    +'</div></div>';
+  w.style.display="block";
+  setTimeout(function(){ var t=document.getElementById("mk-ta"); if(t){ t.focus(); try{t.setSelectionRange(t.value.length,t.value.length);}catch(e){} } },60);
+};
+window.tmkSave=function(id,key){ var t=document.getElementById("mk-ta"); var v=t?t.value.trim():""; var m=tmkOf(id); if(!m[key])m[key]={t:(TOOL_TRUTHS[id]||[])[parseInt(key.slice(1),10)]||"",n:""}; m[key].n=v; saveState(); mkSheetClose(); rerenderKeepScroll(); };
+window.tmkRemove=function(id,key){ var m=tmkOf(id); delete m[key]; if(state.tmk&&state.tmk[id]&&!Object.keys(state.tmk[id]).length) delete state.tmk[id]; saveState(); mkSheetClose(); rerenderKeepScroll(); };
+window.tmkClear=function(id,key){ var m=tmkOf(id); if(m[key]) m[key].n=""; saveState(); mkSheetClose(); rerenderKeepScroll(); };
+window.tnoteSet=function(id,v){ if(!state.tnote)state.tnote={}; state.tnote[id]=v; saveState(); };
+function tmkAny(){
+  var any=false;
+  if(state.tmk){ Object.keys(state.tmk).forEach(function(k){ if(state.tmk[k]&&Object.keys(state.tmk[k]).length) any=true; }); }
+  if(!any&&state.tnote){ Object.keys(state.tnote).forEach(function(k){ if(String(state.tnote[k]||"").trim()) any=true; }); }
+  return any;
+}
+function tmkCounts(){ var marks=0; if(state.tmk){ Object.keys(state.tmk).forEach(function(k){ marks+=Object.keys(state.tmk[k]||{}).length; }); } return marks; }
+function toolReviewHTML(){
+  if(!tmkAny()) return "";
+  var html='<div class="ru-unit open trv-unit"><div class="ru-row" style="cursor:default">'
+    +'<div class="ru-num trv-num">🏛️</div>'
+    +'<div class="ru-meta"><div class="ru-eyebrow">建國四方略</div><div class="ru-title">我的領受與筆記</div><div class="ru-sub">生命 · 關係 · 團隊 · 領域</div></div></div>'
+    +'<div class="ru-body">';
+  ["321","920","235","sys"].forEach(function(id){
+    var mk=(state.tmk&&state.tmk[id])||{}; var note=String((state.tnote&&state.tnote[id])||"").trim();
+    var keys=Object.keys(mk); if(!keys.length&&!note) return;
+    var meta=TOOL_META[id]; var sid=(id==="sys")?"system":id;
+    html+='<div class="trv-tool"><div class="trv-tool-h" onclick="openStrategy(&#39;'+sid+'&#39;)">'+meta.ic+' '+esc(meta.name)+' <span class="trv-go">›</span></div>';
+    keys.forEach(function(k){
+      var rec=mk[k]||{};
+      html+='<div class="rv-item" onclick="openStrategy(&#39;'+sid+'&#39;)"><div class="rv-quote">'+esc(rec.t||"")+'</div>'+(rec.n?'<div class="rv-note"><b>領受：</b>'+esc(rec.n)+'</div>':'')+'</div>';
+    });
+    if(note) html+='<div class="rv-item rv-tnote"><div class="rv-note"><b>📝 筆記：</b>'+esc(note).split("\n").join("<br>")+'</div></div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+  return html;
+}
 function reviewHTML(){
   if(state.reviewN) return lessonReviewHTML(state.reviewN);
   var c=mkCounts();
+  var tools=toolReviewHTML();
   var unitsWithMarks=UNITS.filter(function(u){ return LESSONS.some(function(l){ return l.n>=u.start&&l.n<=u.end&&mkLessonMarkCount(l.n).marks>0; }); });
-  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">我的畫線與領受</div><div class="rv-h-sub">'+(c.marks?('共 '+c.marks+' 處 · '+c.lessons+' 課 · '+unitsWithMarks.length+' 單元'):'還沒有畫線')+'</div></div></div>';
-  if(!c.marks){
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">我的畫線與領受</div><div class="rv-h-sub">'+(c.marks?('共 '+c.marks+' 處 · '+c.lessons+' 課 · '+unitsWithMarks.length+' 單元'):(tools?'建國四方略的領受與筆記':'還沒有畫線'))+'</div></div></div>';
+  if(!c.marks&&!tools){
     return head+'<div class="rv-empty"><div class="rv-empty-ic">🖍️</div><div class="rv-empty-t">開始畫下感動你的話</div><div class="rv-empty-d">讀經、對焦、盼望、安靜、操練、宣告、分享——任何一句聖靈光照你的話，點一下就能畫線，再點一下寫下領受。它們會依單元、課別收藏在這裡，成為你長期與神同行的記號。</div></div>';
   }
   var html='';
@@ -16723,7 +16849,7 @@ function reviewHTML(){
     }
     html+='</div>';
   });
-  return head+'<div class="rv-wrap">'+html+'</div>';
+  return head+'<div class="rv-wrap">'+tools+html+'</div>';
 }
 function lessonReviewHTML(n){
   var l=LESSONS.find(function(x){return x.n===n;});
@@ -16835,6 +16961,7 @@ function sysHTML(s){
     });
   }
   body+='<div class="s235-verse">「我們爭戰的兵器本不是屬血氣的，乃是在神面前有能力，可以攻破堅固的營壘。」（哥林多後書 10:4）　願祢的國降臨！（馬太福音 6:10）</div>';
+  body+=toolNoteBlockHTML('sys');
   body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
   body+='</div>';
   return head+body;
@@ -16889,6 +17016,7 @@ function s321HTML(s){
   });
   body+='<textarea class="s321-note" id="s321-note" placeholder="今天聖靈對我說的話、我要落實321的一個具體行動……" oninput="s321Note(this.value)">'+esc(rec.note||"")+'</textarea>';
   body+='<div class="s321-foot">已落實 <b>'+days+'</b> 天 · 自動儲存於此裝置</div>';
+  body+=toolNoteBlockHTML('321');
   body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀（321 的完整訓練）</button>';
   body+='</div>';
   return head+body;
@@ -16986,6 +17114,7 @@ function s920HTML(s){
       body+='</div>';
     });
   }
+  body+=toolNoteBlockHTML('920');
   body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
   body+='</div>';
   return head+body;
@@ -17130,6 +17259,7 @@ function s235HTML(s){
     });
   }
   body+='<div class="s235-verse">「我父作事直到如今，我也作事。」（約翰福音 5:17）　「各人要照所得的恩賜彼此服事。」（彼得前書 4:10）</div>';
+  body+=toolNoteBlockHTML('235');
   body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
   body+='</div>';
   return head+body;
