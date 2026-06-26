@@ -16371,7 +16371,7 @@ function homeHTML(){
   const continueHTML=lastL?`<div class="continue-card" onclick="openLesson(${lastL.n})"><div class="cc-label">繼續閱讀</div><div class="cc-title">第 ${lastL.n} 課 · ${esc(lastL.title).split("\n").join(" ")}</div><div class="cc-go">繼續 →</div></div>`:"";
   const progHTML=`<div class="overall"><div class="overall-top"><span>晨讀進度</span><span>${readCount} / ${total} 課</span></div><div class="overall-bar"><div class="overall-fill" style="width:${pct}%"></div></div>${streakHTML}</div>`;
   const _mc=mkCounts();
-  const reviewCard=(_mc.marks||tmkAny())?`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks?(_mc.marks+' 處畫線 · '+_mc.lessons+' 課'):'建國四方略的領受與筆記'}</div></div><div class="rc-go">回顧 ›</div></div>`:"";
+  const reviewCard=`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks?(_mc.marks+' 處畫線 · '+_mc.lessons+' 課'):(tmkAny()?'建國四方略的領受與筆記':'畫線與筆記都收藏在這裡 · 點一下開始')}</div></div><div class="rc-go">回顧 ›</div></div>`;
   const fontHTML=`<div class="fontbar"><span class="fontbar-lbl">閱讀字級</span>`+[["標準",0],["大",1],["特大",2]].map(o=>`<button class="fontbtn ${(state.font||0)===o[1]?'active':''}" onclick="setFont(${o[1]})">${o[0]}</button>`).join("")+`</div>`;
   const cards=UNITS.map(u=>{
     const open=state.openUnit===u.n;
