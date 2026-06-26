@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#3E7766">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -39,6 +38,7 @@
   .home-title{font-size:26px;font-weight:800;line-height:1.3;}
   .home-sub{font-size:13.5px;opacity:.85;margin-top:6px;line-height:1.6;}
   .home-box{margin-top:18px;background:rgba(255,255,255,.12);border-radius:12px;padding:12px 16px;font-size:13.5px;line-height:1.7;}
+  .home-box-sep{height:1px;background:rgba(255,255,255,.22);margin:10px 0;}
   .home-box b{font-weight:700;display:block;margin-bottom:4px;}
 
   .list-wrap{padding:16px;}
@@ -65,9 +65,12 @@
   .rd-barbg{height:3px;background:var(--line);border-radius:2px;}
   .rd-barfill{height:100%;background:var(--mint);border-radius:2px;}
 
-  .tabbar{display:flex;overflow-x:auto;gap:4px;padding:0;margin-bottom:16px;border-bottom:1px solid var(--line);}
-  .tab{flex-shrink:0;padding:10px 14px;border:none;background:none;border-bottom:2.5px solid transparent;color:var(--inkFaint);font-size:13.5px;cursor:pointer;white-space:nowrap;}
+  .tabbar{display:flex;gap:2px;padding:0;margin-bottom:14px;border-bottom:1px solid var(--line);}
+  .tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 1px;border:none;background:none;border-bottom:2.5px solid transparent;color:var(--inkFaint);cursor:pointer;}
+  .tab-ic{font-size:17px;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--mintWash);border-radius:11px;transition:background .15s;}
+  .tab-tx{font-size:11.5px;line-height:1;position:relative;}
   .tab.active{border-bottom-color:var(--mint);color:var(--mintDark);font-weight:700;}
+  .tab.active .tab-ic{background:rgba(127,185,166,.34);}
 
   .rd-body{padding:0 16px;}
   .greet{font-size:13px;color:var(--mintDeep);font-style:italic;text-align:center;margin:12px 0 18px;}
@@ -83,6 +86,8 @@
   .pq{background:var(--goldWash);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;margin:14px 0;font-size:18px;color:var(--ink);font-style:italic;line-height:1.8;}
   .deep-btn{background:none;border:1px solid var(--mint);border-radius:20px;padding:6px 14px;font-size:16px;color:var(--mintDeep);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:12px;}
   .deep-body{margin-top:10px;padding:14px 16px;background:var(--mintSoft);border-radius:10px;font-size:18px;color:var(--inkSoft);line-height:1.9;}
+  .deep-p{margin:0 0 .7em;} .deep-body .mk-p:last-child{margin-bottom:0;}
+  .deep-body .mk-note{font-size:13.5px;background:#fff;}
 
   .pane-icon{text-align:center;margin-bottom:20px;}
   .pane-icon .em{font-size:32px;}
@@ -116,11 +121,17 @@
   .note-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:6px;vertical-align:middle;}
   body.fs-lg .note-area{font-size:20px;} body.fs-xl .note-area{font-size:23px;}
 
-  .rd-foot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);border-top:1px solid var(--line);padding:12px 14px 14px;display:flex;gap:8px;align-items:center;}
-  .foot-tab{flex:1;padding:11px 4px;border-radius:10px;border:1.5px solid var(--line);background:var(--mintSoft);color:var(--inkSoft);font-size:14.5px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  .foot-tab.active{background:linear-gradient(135deg,var(--gold),#A9863A);border-color:transparent;color:#fff;}
-  .btn-back{flex:1;padding:12px 4px;border-radius:10px;border:1.5px solid var(--line);background:none;color:var(--inkSoft);font-size:14.5px;cursor:pointer;white-space:nowrap;}
-  .btn-next{flex:1.4;padding:12px 4px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--mint),var(--mintDark));color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .rd-foot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px));display:flex;gap:2px;align-items:stretch;}
+  .foot-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 1px;border-radius:12px;border:none;background:none;color:var(--inkSoft);cursor:pointer;transition:all .15s;}
+  .foot-btn .fb-ic{font-size:18px;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--mintWash);border-radius:11px;transition:background .15s;}
+  .foot-btn .fb-tx{font-size:10.5px;font-weight:600;white-space:nowrap;line-height:1;position:relative;}
+  .foot-btn.active{color:var(--gold);font-weight:700;}
+  .foot-btn.active .fb-ic{background:rgba(194,162,75,.20);}
+  .foot-btn.nav{color:var(--mintDark);font-weight:700;}
+  .foot-btn.nav .fb-ic{font-size:20px;font-weight:800;color:var(--mintDeep);}
+  .foot-btn.xz .fb-ic{filter:saturate(1.1);}
+  .foot-btn.disabled{opacity:.3;pointer-events:none;}
+  .foot-btn:active{transform:scale(.95);}
 
   .pad-btm{padding-bottom:90px;}
 
@@ -182,6 +193,7 @@
   body.fs-lg .hope-p{font-size:24px;} body.fs-lg .still-card{font-size:24px;}
   body.fs-lg .still-hint{font-size:18px;} body.fs-lg .step-act{font-size:22px;}
   body.fs-lg .declare-card{font-size:24px;} body.fs-lg .share-q{font-size:22px;}
+  body.fs-lg .rv-quote{font-size:19px;} body.fs-lg .rv-note{font-size:17px;} body.fs-lg .rvl-title{font-size:17px;} body.fs-lg .ru-title{font-size:17px;} body.fs-lg .rv-h-title{font-size:21px;} body.fs-lg .rvl-meta{font-size:14px;}
   /* ===== 閱讀字級：特大（約 +38%）===== */
   body.fs-xl .greet{font-size:20px;} body.fs-xl .verse-txt{font-size:29px;}
   body.fs-xl .verse-ref{font-size:20px;} body.fs-xl .bigidea{font-size:24px;}
@@ -192,9 +204,10 @@
   body.fs-xl .hope-p{font-size:27px;} body.fs-xl .still-card{font-size:27px;}
   body.fs-xl .still-hint{font-size:20px;} body.fs-xl .step-act{font-size:26px;}
   body.fs-xl .declare-card{font-size:27px;} body.fs-xl .share-q{font-size:26px;}
+  body.fs-xl .rv-quote{font-size:22px;} body.fs-xl .rv-note{font-size:19px;} body.fs-xl .rvl-title{font-size:19px;} body.fs-xl .ru-title{font-size:19px;} body.fs-xl .rv-h-title{font-size:24px;} body.fs-xl .rvl-meta{font-size:15px;}
 
   /* ===== 小智 AI 屬靈同伴 ===== */
-  .xz-fab{position:fixed;right:16px;z-index:50;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#A9863A);color:#fff;border-radius:26px;padding:11px 16px 11px 13px;box-shadow:0 6px 20px rgba(194,162,75,.45);font-family:inherit;}
+  .xz-fab{position:fixed;right:16px;z-index:50;touch-action:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#A9863A);color:#fff;border-radius:26px;padding:11px 16px 11px 13px;box-shadow:0 6px 20px rgba(194,162,75,.45);font-family:inherit;}
   .xz-fab:active{transform:scale(.96);}
   .xz-fab-ic{font-size:20px;line-height:1;}
   .xz-fab-tx{font-size:15px;font-weight:700;letter-spacing:1px;}
@@ -287,6 +300,89 @@
   @keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.75);}}
   .rec-audio{width:100%;margin:4px 0 12px;}
   .rec-saved{font-size:12.5px;color:var(--mintDeep);margin-bottom:10px;}
+  /* ---- 畫線與領受 ---- */
+  .mk-hint{font-size:13px;color:var(--mintDeep);background:var(--mintWash);border:1px dashed var(--mintBd,#cfe3da);border-radius:12px;padding:9px 13px;line-height:1.6;margin:2px 0 14px;}
+  .mk-s{cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:3px;transition:background .12s;}
+  .mk-s:active{background:rgba(0,0,0,.05);}
+  .mk-hl{background:linear-gradient(transparent 58%, rgba(212,175,55,.42) 58%);padding-bottom:1px;}
+  .declare-card .mk-hl{background:linear-gradient(transparent 56%, rgba(232,196,90,.62) 56%);}
+  .still-card .mk-hl,.still-hint .mk-hl,.focus-card .mk-hl{background:linear-gradient(transparent 60%, rgba(212,175,55,.5) 60%);}
+  .mk-hl:active{background:linear-gradient(transparent 58%, rgba(212,175,55,.62) 58%);}
+  .mk-flag{font-size:12px;margin:0 2px;vertical-align:.12em;opacity:.9;}
+  .mk-notes{margin:7px 0 4px;}
+  .mk-note{font-size:13.5px;color:var(--inkSoft,#3a4a44);background:var(--mintWash);border-left:3px solid var(--gold,#C9A227);padding:8px 12px;border-radius:9px;margin:6px 0;line-height:1.7;}
+  .mk-note b{color:var(--mintDeep);font-weight:700;}
+  .sheet-mask{position:fixed;inset:0;background:rgba(20,32,28,.42);z-index:60;}
+  .sheet-card{position:fixed;left:0;right:0;bottom:0;z-index:61;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 36px rgba(0,0,0,.18);max-width:620px;margin:0 auto;animation:sheetUp .22s ease;}
+  @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .sheet-head{font-size:13px;color:var(--mintDeep);font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+  .sheet-quote{font-size:15px;line-height:1.8;color:var(--ink,#243b34);background:linear-gradient(transparent 58%, rgba(212,175,55,.30) 58%);display:inline;border-radius:4px;}
+  .sheet-quote-wrap{max-height:30vh;overflow:auto;margin-bottom:13px;padding:2px 0;}
+  .sheet-ta{width:100%;min-height:108px;border:1.5px solid #e2ece8;border-radius:14px;padding:13px 14px;font-size:16px;line-height:1.75;font-family:inherit;color:var(--ink,#243b34);resize:none;outline:none;box-sizing:border-box;background:#fbfdfc;}
+  .sheet-ta:focus{border-color:var(--mintDeep);}
+  .sheet-acts{display:flex;gap:9px;margin-top:13px;}
+  .sheet-acts2{display:flex;gap:9px;margin-top:9px;}
+  .sheet-acts2 button{flex:1;}
+  .sheet-clear{border:1.5px solid #e3d6b0;border-radius:13px;padding:13px 8px;font-size:14.5px;color:#9a7d2e;background:#fffdf6;cursor:pointer;}
+  /* ---- 我的畫線與領受 ---- */
+  .review-card{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,#fbf6e9,#f1f7f3);border:1px solid #ece3cc;border-radius:16px;padding:14px 16px;margin-bottom:14px;cursor:pointer;box-shadow:0 2px 8px rgba(120,100,40,.06);}
+  .review-card:active{transform:scale(.99);}
+  .rc-ic{font-size:24px;}
+  .rc-tx{flex:1;}
+  .rc-t{font-size:15.5px;font-weight:800;color:var(--mintDeep,#3E7766);}
+  .rc-d{font-size:12.5px;color:#9a7d2e;margin-top:2px;}
+  .rc-go{font-size:13px;color:var(--mintDeep,#3E7766);font-weight:700;white-space:nowrap;}
+  .rv-head{display:flex;align-items:center;gap:12px;padding:16px 16px 12px;}
+  .rv-h-title{font-size:19px;font-weight:800;color:var(--mintDeep,#3E7766);}
+  .rv-h-sub{font-size:12.5px;color:var(--inkFaint,#8a978f);margin-top:2px;}
+  .rv-wrap{padding:2px 16px 96px;}
+  .rv-empty{text-align:center;padding:40px 30px;}
+  .rv-empty-ic{font-size:44px;margin-bottom:12px;}
+  .rv-empty-t{font-size:17px;font-weight:800;color:var(--mintDeep,#3E7766);margin-bottom:10px;}
+  .rv-empty-d{font-size:14px;line-height:1.85;color:var(--inkSoft,#5a6a64);}
+  .rv-lesson{margin-bottom:22px;}
+  .rv-lhead{display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer;border-bottom:2px solid #e7f0ec;margin-bottom:10px;}
+  .rv-lno{font-size:13px;font-weight:800;color:var(--mintDeep,#3E7766);white-space:nowrap;}
+  .rv-ltitle{flex:1;font-size:15px;font-weight:700;color:var(--ink,#243b34);line-height:1.4;}
+  .rv-lgo{font-size:12.5px;color:var(--mintDeep,#3E7766);font-weight:600;white-space:nowrap;}
+  .rv-item{background:#fff;border:1px solid #eef3f1;border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.035);}
+  .rv-item:active{background:#fbfdfc;}
+  .rv-badge{display:inline-block;font-size:11px;font-weight:800;border-radius:7px;padding:2px 9px;margin-bottom:8px;color:#5a4a2a;background:#f1ead6;}
+  .rv-b-read{background:#e3efe9;color:#2f6a55;}
+  .rv-b-focus{background:#f6e6df;color:#a4593f;}
+  .rv-b-hope{background:#f4ecd6;color:#9a7d2e;}
+  .rv-b-still{background:#eceaf3;color:#6b6293;}
+  .rv-b-steps{background:#e4f0e4;color:#477a47;}
+  .rv-b-declare{background:#dfeae4;color:#356a55;}
+  .rv-b-share{background:#dfeef0;color:#3a7e88;}
+  .rv-quote{font-size:16.5px;line-height:1.8;color:var(--ink,#243b34);background:linear-gradient(transparent 60%, rgba(212,175,55,.30) 60%);display:inline;}
+  .rv-note{margin-top:9px;font-size:14.5px;line-height:1.75;color:var(--inkSoft,#4a5a54);background:var(--mintWash,#eef5f1);border-left:3px solid var(--gold,#C9A227);padding:9px 13px;border-radius:9px;}
+  .rv-note b{color:var(--mintDeep,#3E7766);}
+  .rvl-row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #eef3f1;border-radius:14px;padding:13px 15px;margin-bottom:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.035);}
+  .rvl-row:active{background:#fbfdfc;}
+  .rvl-no{font-size:12.5px;font-weight:800;color:#fff;background:var(--mintDeep,#3E7766);border-radius:20px;padding:4px 11px;white-space:nowrap;}
+  .rvl-mid{flex:1;min-width:0;}
+  .rvl-title{font-size:15px;font-weight:700;color:var(--ink,#243b34);line-height:1.4;}
+  .rvl-meta{font-size:12.5px;color:#9a7d2e;margin-top:3px;}
+  .rvl-go{font-size:20px;color:#b9c8c1;white-space:nowrap;}
+  .ru-unit{margin-bottom:11px;border:1px solid #e7efe9;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+  .ru-unit.open{box-shadow:0 3px 12px rgba(60,119,102,.10);}
+  .ru-row{display:flex;align-items:center;gap:12px;padding:14px 15px;cursor:pointer;}
+  .ru-num{font-size:15px;font-weight:800;color:#fff;background:var(--mintDeep,#3E7766);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ru-meta{flex:1;min-width:0;}
+  .ru-eyebrow{font-size:11.5px;color:#9a7d2e;font-weight:700;}
+  .ru-title{font-size:15px;font-weight:800;color:var(--ink,#243b34);line-height:1.35;margin-top:1px;}
+  .ru-sub{font-size:12px;color:var(--inkFaint,#8a978f);margin-top:3px;}
+  .ru-chev{font-size:13px;color:#9bb0a7;}
+  .ru-body{padding:4px 12px 12px;border-top:1px solid #eef4f1;background:#fbfdfc;}
+  .ru-body .rvl-row{margin-top:10px;margin-bottom:0;}
+  .rvl-open{display:block;width:100%;margin:14px 0 4px;border:1.5px solid #d9e6df;border-radius:14px;padding:13px;font-size:15px;font-weight:700;color:var(--mintDeep,#3E7766);background:#fff;cursor:pointer;}
+  .rvl-open:active{background:#f3f8f5;}
+  .note-review-btn{display:block;width:100%;margin-top:16px;border:1.5px solid #ece3cc;border-radius:14px;padding:13px;font-size:14.5px;font-weight:700;color:#9a7d2e;background:linear-gradient(135deg,#fbf6e9,#f1f7f3);cursor:pointer;}
+  .note-review-btn:active{background:#f3ecd9;}
+  .sheet-save{flex:1;border:none;border-radius:13px;padding:13px;font-size:15.5px;font-weight:700;color:#fff;background:var(--mintDeep,#3E7766);cursor:pointer;}
+  .sheet-del{border:1.5px solid #e7c9c9;border-radius:13px;padding:13px 16px;font-size:14.5px;color:#b5524e;background:#fff;cursor:pointer;}
+  .sheet-cancel{border:1.5px solid #e2ece8;border-radius:13px;padding:13px 16px;font-size:14.5px;color:var(--mintDeep);background:#fff;cursor:pointer;}
   .rec-actions{display:flex;gap:10px;justify-content:center;}
   .rec-mini{border:1.5px solid var(--line);background:var(--card);border-radius:24px;padding:9px 18px;font-size:13.5px;font-weight:600;color:var(--inkSoft);cursor:pointer;}
   .rec-mini.del{color:#A23F3F;border-color:#E6C9C9;}
@@ -296,13 +392,200 @@
   .bless-lbl{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px;}
   .bless-sub{font-size:12.5px;color:var(--inkFaint);line-height:1.65;margin-bottom:13px;}
   .bless-video{width:100%;border-radius:14px;margin:6px 0 10px;background:#000;display:block;}
+  /* ===== 建國四方略 ===== */
+  .strat-wrap{margin:2px 0 16px;}
+  .strat-h{font-size:13px;font-weight:700;color:var(--mintDark);margin:0 2px 9px;letter-spacing:.3px;}
+  .strat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .strat-cell{display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 4px 11px;background:var(--card);border:1px solid var(--line);border-radius:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,box-shadow .12s;}
+  .strat-cell:active{transform:scale(.95);}
+  .strat-ic{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--mintWash);border-radius:13px;}
+  .strat-name{font-size:12.5px;font-weight:800;color:var(--ink);letter-spacing:.2px;}
+  .strat-sub{font-size:10.5px;color:var(--inkFaint);letter-spacing:1px;}
+  .strat-page{padding:4px 2px 28px;}
+  body.fs-lg .strat-page{zoom:1.10;}
+  body.fs-xl .strat-page{zoom:1.20;}
+  .strat-soon{text-align:center;padding:30px 22px 34px;background:var(--mintSoft);border:1px solid var(--line);border-radius:20px;margin-top:8px;}
+  .strat-soon-ic{font-size:46px;margin-bottom:8px;}
+  .strat-soon-t{font-size:17px;font-weight:800;color:var(--mintDark);margin-bottom:12px;}
+  .strat-soon-d{font-size:14.5px;color:var(--inkSoft);line-height:1.85;text-align:left;margin-bottom:16px;}
+  .strat-soon-tag{font-size:12.5px;color:var(--gold);font-weight:700;}
+  .s321-vision{background:var(--mintSoft);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin:8px 0 4px;}
+  .s321-vrow{font-size:13.5px;color:var(--inkSoft);line-height:1.7;margin:4px 0;}
+  .s321-vrow b{display:inline-block;min-width:64px;color:var(--mintDark);font-weight:800;margin-right:6px;}
+  .s321-sec-h{font-size:14px;font-weight:800;color:var(--ink);margin:22px 2px 11px;}
+  .s321-grp{font-size:12.5px;font-weight:800;color:var(--mintDark);letter-spacing:1px;margin:14px 2px 8px;}
+  .s321-tally{float:right;font-size:12.5px;font-weight:800;color:var(--gold);}
+  .s321-pairs{display:flex;flex-direction:column;gap:8px;}
+  .s321-pair{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 14px;}
+  .s321-old{flex:1;text-align:center;font-size:14px;color:var(--clay);font-weight:600;}
+  .s321-arrow{color:var(--mint);font-weight:800;font-size:15px;}
+  .s321-new{flex:1;text-align:center;font-size:14px;color:var(--mintDark);font-weight:800;}
+  .s321-checks{display:flex;flex-direction:column;gap:9px;}
+  .s321-check{display:flex;align-items:flex-start;gap:11px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
+  .s321-check.on{background:var(--mintWash);border-color:var(--mint);}
+  .s321-box{flex:none;width:24px;height:24px;border:2px solid var(--inkFaint);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;margin-top:1px;transition:background .12s,border-color .12s;}
+  .s321-check.on .s321-box{background:var(--mintDeep);border-color:var(--mintDeep);}
+  .s321-ctx{display:flex;flex-direction:column;gap:3px;}
+  .s321-ct{font-size:14.5px;font-weight:800;color:var(--ink);}
+  .s321-cd{font-size:13px;color:var(--inkSoft);line-height:1.6;}
+  .s321-note{width:100%;box-sizing:border-box;margin-top:14px;min-height:96px;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px;font-size:14.5px;line-height:1.8;color:var(--ink);background:var(--card);resize:vertical;font-family:inherit;}
+  .s321-note:focus{outline:none;border-color:var(--mint);}
+  .s321-foot{text-align:center;font-size:12.5px;color:var(--inkFaint);margin:12px 0 6px;}
+  .s321-foot b{color:var(--gold);font-size:14px;}
+  /* ===== 操練920 ===== */
+  .s920-intro{background:var(--mintSoft);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:8px 0 4px;display:flex;flex-direction:column;gap:9px;}
+  .s920-i-row{display:flex;align-items:center;gap:11px;font-size:13.5px;color:var(--inkSoft);line-height:1.5;}
+  .s920-i-num{flex:none;width:28px;height:28px;border-radius:9px;background:var(--mintDeep);color:#fff;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .s920-add{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px;}
+  .s920-in{flex:1 1 100%;box-sizing:border-box;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14.5px;color:var(--ink);background:var(--card);font-family:inherit;}
+  .s920-in:focus{outline:none;border-color:var(--mint);}
+  .s920-rel{flex:1 1 60%;}
+  .s920-addbtn{flex:1 1 30%;border:none;background:var(--mintDeep);color:#fff;font-weight:800;font-size:14.5px;border-radius:12px;padding:11px 10px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-addbtn:active{transform:scale(.97);}
+  .s920-empty{background:var(--mintSoft);border:1px dashed var(--mint);border-radius:16px;padding:20px 18px;font-size:14px;color:var(--inkSoft);line-height:1.85;text-align:center;}
+  .s920-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px 15px;margin-bottom:12px;box-shadow:0 2px 10px rgba(62,119,102,.05);}
+  .s920-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .s920-name-in{flex:1;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-size:16px;font-weight:800;color:var(--ink);padding:4px 2px;font-family:inherit;}
+  .s920-name-in:focus{outline:none;border-color:var(--mint);}
+  .s920-del{flex:none;border:none;background:var(--claySoft);color:var(--clay);font-size:12.5px;font-weight:700;border-radius:9px;padding:6px 11px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-rel-in{width:100%;box-sizing:border-box;border:none;background:transparent;font-size:13px;color:var(--inkFaint);padding:2px 2px 8px;font-family:inherit;}
+  .s920-rel-in:focus{outline:none;}
+  .s920-flabel{font-size:12.5px;font-weight:700;color:var(--mintDark);margin:6px 0 8px;}
+  .s920-fcount{color:var(--gold);float:right;}
+  .s920-fruits{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px;}
+  .s920-fruit{border:1.5px solid var(--line);background:var(--card);color:var(--inkSoft);font-size:13px;font-weight:600;border-radius:20px;padding:6px 13px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s,color .12s;}
+  .s920-fruit.on{background:var(--mintWash);border-color:var(--mint);color:var(--mintDark);font-weight:800;}
+  .s920-fruit:active{transform:scale(.95);}
+  .s920-acts{display:flex;flex-direction:column;gap:8px;margin:2px 0 12px;}
+  .s920-actlabel{font-size:12.5px;font-weight:700;color:var(--mintDark);margin:8px 0 8px;}
+  .s920-actlabel .s920-fcount{color:var(--gold);float:right;}
+  .s920-act{display:flex;gap:10px;align-items:flex-start;background:var(--goldWash);border-left:3px solid var(--gold);border-radius:11px;padding:10px 12px;}
+  .s920-act-chk{flex:none;width:24px;height:24px;border:2px solid var(--inkFaint);border-radius:7px;background:#fff;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-act-body{display:flex;gap:10px;align-items:flex-start;flex:1;}
+  .s920-act.done{background:var(--mintWash);border-left-color:var(--mintDeep);}
+  .s920-act.done .s920-act-chk{background:var(--mintDeep);border-color:var(--mintDeep);}
+  .s920-act.done .s920-act-t{color:var(--inkSoft);}
+  .s920-act-f{flex:none;font-size:12.5px;font-weight:800;color:var(--mintDark);background:#fff;border-radius:8px;padding:3px 10px;margin-top:1px;}
+  .s920-act-t{font-size:13.5px;color:var(--ink);line-height:1.75;}
+  .s920-acthint{font-size:12.5px;color:var(--inkFaint);background:var(--mintSoft);border-radius:11px;padding:10px 12px;margin:2px 0 12px;line-height:1.65;}
+  .s920-conflict{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0 2px;background:var(--mintSoft);}
+  .s920-cf-h{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--claySoft);border:none;padding:13px 15px;font-size:14.5px;font-weight:800;color:var(--clay);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-cf-chev{font-size:12.5px;color:var(--clay);font-weight:700;}
+  .s920-cf-body{padding:6px 15px 14px;}
+  .s920-cf-evt-label{font-size:12.5px;font-weight:800;color:var(--mintDark);margin:8px 0 7px;}
+  .s920-cf-evt{width:100%;box-sizing:border-box;min-height:60px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:13.5px;line-height:1.7;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;margin-bottom:12px;}
+  .s920-cf-evt:focus{outline:none;border-color:var(--mint);}
+  .s920-cf-prog{font-size:12.5px;font-weight:700;color:var(--inkSoft);margin:2px 0 4px;}
+  .s920-cf-pc{color:var(--gold);font-weight:800;float:right;}
+  .s920-cf-step{width:100%;text-align:left;background:transparent;border:none;border-top:1px solid var(--line);display:flex;gap:11px;align-items:flex-start;padding:12px 0;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-cf-step:first-of-type{border-top:none;}
+  .s920-cf-n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--mintDeep);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .s920-cf-step.done .s920-cf-n{background:var(--mint);}
+  .s920-cf-step.done .s920-cf-k{color:var(--inkFaint);}
+  .s920-cf-step.done .s920-cf-d{color:var(--inkFaint);}
+  .s920-cf-tx{flex:1;}
+  .s920-cf-k{font-size:14px;font-weight:800;color:var(--mintDark);display:block;margin-bottom:3px;}
+  .s920-cf-d{font-size:13.5px;color:var(--inkSoft);line-height:1.78;}
+  .s920-cf-verse{margin-top:14px;background:var(--mintSoft);border-radius:11px;padding:11px 13px;font-size:13px;color:var(--ink);line-height:1.8;}
+  .s920-cf-clear{width:100%;margin-top:12px;border:none;background:var(--claySoft);color:var(--clay);font-weight:800;font-size:13.5px;border-radius:11px;padding:11px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-cf-empty{font-size:13px;color:var(--inkSoft);line-height:1.7;padding:8px 2px 4px;}
+  .s920-cf-rec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px 13px;margin-bottom:10px;}
+  .s920-cf-rec-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+  .s920-cf-del{flex:none;border:none;background:var(--claySoft);color:var(--clay);font-size:12px;font-weight:700;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-cf-add{width:100%;border:1.5px dashed var(--mint);background:var(--card);color:var(--mintDark);font-weight:800;font-size:14px;border-radius:11px;padding:11px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-cf-add:active{transform:scale(.98);}
+  /* ===== 發展235 ===== */
+  .s235-tier-h{display:flex;gap:12px;align-items:flex-start;margin:22px 0 10px;}
+  .s235-tier-n{flex:none;width:36px;height:36px;border-radius:11px;background:var(--mintDeep);color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;}
+  .s235-tier-task{background:var(--gold);}
+  .s235-stat{display:inline-block;border:none;font-size:12.5px;font-weight:800;border-radius:20px;padding:6px 15px;margin:2px 0 9px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s235-stat-0{background:var(--claySoft);color:var(--clay);}
+  .s235-stat-1{background:var(--goldWash);color:var(--gold);}
+  .s235-stat-2{background:var(--mintWash);color:var(--mintDark);}
+  .ui-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(12px);background:rgba(44,74,64,.96);color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:14px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;max-width:82%;text-align:center;line-height:1.55;box-shadow:0 8px 28px rgba(0,0,0,.22);}
+  .ui-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .ui-cf-ov{position:fixed;inset:0;background:rgba(20,30,26,.45);z-index:9998;display:none;align-items:center;justify-content:center;padding:28px;}
+  .ui-cf-ov.show{display:flex;}
+  .ui-cf-box{background:#fff;border-radius:20px;padding:22px 20px 16px;max-width:340px;width:100%;box-shadow:0 14px 44px rgba(0,0,0,.28);}
+  .ui-cf-msg{font-size:15.5px;color:var(--ink);line-height:1.7;text-align:center;margin-bottom:18px;}
+  .ui-cf-btns{display:flex;gap:10px;}
+  .ui-cf-no{flex:1;border:1.5px solid var(--line);background:#fff;color:var(--inkSoft);font-weight:700;font-size:15px;border-radius:13px;padding:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .ui-cf-yes{flex:1;border:none;background:var(--clay);color:#fff;font-weight:800;font-size:15px;border-radius:13px;padding:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s235-tier-tx{flex:1;}
+  .s235-tier-t{font-size:16px;font-weight:800;color:var(--ink);display:block;margin-bottom:2px;}
+  .s235-tier-c{display:inline-block;min-width:18px;text-align:center;font-size:12px;font-weight:800;color:var(--gold);background:var(--goldWash);border-radius:9px;padding:1px 7px;margin-left:7px;}
+  .s235-tier-d{font-size:12.5px;color:var(--inkSoft);line-height:1.6;}
+  .s235-cover{background:var(--mintSoft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;font-weight:700;color:var(--mintDark);}
+  .s235-cover-c{color:var(--gold);font-weight:800;}
+  .s235-cover-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .s235-cover-chip{font-size:12px;font-weight:600;color:var(--inkFaint);background:#fff;border:1px solid var(--line);border-radius:14px;padding:3px 10px;}
+  .s235-cover-chip.on{color:var(--mintDark);border-color:var(--mint);background:var(--mintWash);font-weight:800;}
+  .s235-add{display:flex;gap:8px;margin:2px 0 12px;}
+  .s235-add .s920-in{flex:1 1 auto;}
+  .s235-add .s920-addbtn{flex:none;padding:11px 18px;}
+  .s235-empty{background:var(--mintSoft);border:1px dashed var(--mint);border-radius:14px;padding:16px 16px;font-size:13.5px;color:var(--inkSoft);line-height:1.8;text-align:center;margin-bottom:10px;}
+  .s235-roles{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 10px;}
+  .s235-role{border:1.5px solid var(--line);background:var(--card);color:var(--inkSoft);font-size:13px;font-weight:600;border-radius:20px;padding:6px 14px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s,color .12s;}
+  .s235-role.on{background:var(--mintDeep);border-color:var(--mintDeep);color:#fff;font-weight:800;}
+  .s235-role:active{transform:scale(.95);}
+  .s235-verse{background:var(--goldWash);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--ink);line-height:1.75;margin:2px 0 6px;}
+  .s235-mcard{border-left:3px solid var(--gold);}
+  .s235-sub-h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--mintDark);margin:11px 0 7px;}
+  .s235-fl-c{font-size:11.5px;font-weight:800;color:#fff;background:var(--mint);border-radius:20px;padding:1px 9px;}
+  .s235-item{display:flex;align-items:flex-start;gap:8px;background:var(--mintSoft);border:1px solid var(--line);border-radius:11px;padding:8px 9px;margin-bottom:7px;}
+  .s235-item.done{background:var(--mintWash);border-color:var(--mint);}
+  .s235-item-chk{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid var(--mint);background:#fff;color:#fff;font-size:14px;font-weight:900;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .s235-item.done .s235-item-chk{background:var(--mint);}
+  .s235-item-fields{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .s235-item-task,.s235-item-owner{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#fff;}
+  .s235-item-owner{font-size:12.5px;color:var(--mintDark);background:var(--mintSoft);}
+  .s235-item.done .s235-item-task{text-decoration:line-through;color:var(--inkFaint);}
+  .s235-item-del{flex:0 0 auto;width:26px;height:26px;border:none;background:transparent;color:var(--inkFaint);font-size:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-top:2px;}
+  .s235-item-add{width:100%;border:1.5px dashed var(--mint);background:var(--mintSoft);color:var(--mintDark);border-radius:10px;padding:9px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-top:1px;}
+  .sys-vision{background:linear-gradient(135deg,var(--mintWash),var(--goldWash));border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:12px;}
+  .sys-v-t{font-size:13.5px;font-weight:800;color:var(--mintDark);margin-bottom:7px;letter-spacing:.5px;}
+  .sys-v-d{font-size:13.5px;line-height:1.85;color:var(--ink);}
+  .sys-v-d b{color:var(--mintDark);}
+  .sys-v-verse{margin-top:9px;font-size:12px;line-height:1.7;color:var(--inkSoft);border-top:1px dashed var(--line);padding-top:8px;}
+  .sys-flow{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin:0 0 13px;}
+  .sys-flow-i{font-size:12px;font-weight:800;color:var(--inkSoft);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;}
+  .sys-flow-i.on{color:#fff;background:var(--gold);border-color:var(--gold);}
+  .sys-flow-a{color:var(--inkFaint);font-weight:800;}
+  .sys-presets{font-size:12px;font-weight:700;color:var(--inkSoft);margin:2px 0 9px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+  .sys-preset{border:1px solid var(--mint);background:var(--mintSoft);color:var(--mintDark);border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .sys-card{border-left:3px solid var(--gold);}
+  .sys-ic{flex:none;font-size:20px;margin-right:5px;line-height:1;}
+  .sys-lbl{font-size:12.5px;font-weight:800;color:var(--mintDark);margin:12px 0 6px;}
+  .sys-lbl-pray{color:var(--clay);}
+  .sys-pray{background:var(--claySoft);}
+  .s235-team{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:14px 0 6px;background:var(--card);}
+  .s235-team-h{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--mintWash);border:none;padding:14px 15px;font-size:14.5px;font-weight:800;color:var(--mintDark);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s235-team-body{padding:6px 15px 15px;}
+  .s235-team-sub{font-size:13px;color:var(--inkSoft);line-height:1.7;margin:8px 0 6px;}
+  .s235-fl{font-size:12.5px;font-weight:800;color:var(--mintDark);margin:14px 0 7px;}
+  .s235-fl-c{color:var(--gold);float:right;}
+  .s235-ta{width:100%;box-sizing:border-box;min-height:58px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;}
+  .s235-ta:focus{outline:none;border-color:var(--mint);}
+  .s235-checks{display:flex;flex-direction:column;gap:8px;}
+  .s235-chk{display:flex;align-items:center;gap:11px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
+  .s235-chk.on{background:var(--mintWash);border-color:var(--mint);}
+  .s235-chk-box{flex:none;width:22px;height:22px;border:2px solid var(--inkFaint);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;}
+  .s235-chk.on .s235-chk-box{background:var(--mintDeep);border-color:var(--mintDeep);}
+  .s235-chk-t{font-size:14px;color:var(--ink);line-height:1.5;}
+  .s235-team-btns{display:flex;gap:8px;margin-top:14px;}
+  .s235-share-btn{flex:1;border:none;background:var(--mintDeep);color:#fff;font-weight:800;font-size:14px;border-radius:11px;padding:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s235-reset-btn{flex:none;border:none;background:var(--claySoft);color:var(--clay);font-weight:800;font-size:13.5px;border-radius:11px;padding:12px 14px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s235-sharebox{width:100%;box-sizing:border-box;min-height:160px;margin-top:11px;padding:12px 13px;border:1.5px dashed var(--mint);border-radius:12px;font-size:13px;line-height:1.7;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;}
+  .s235-copy-btn{width:100%;margin-top:9px;border:none;background:var(--gold);color:#fff;font-weight:800;font-size:14px;border-radius:11px;padding:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+  .s920-note{width:100%;box-sizing:border-box;min-height:62px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;}
+  .s920-note:focus{outline:none;border-color:var(--mint);}
 </style>
 </head>
 <body>
 <div id="app"><div id="boot-fallback" style="max-width:520px;margin:0 auto;padding:48px 26px;text-align:center;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;color:#2C4A40;">
   <div style="font-size:14px;letter-spacing:3px;color:#5A9B85;">國度321空中團契</div>
   <div style="font-size:30px;font-weight:800;margin:8px 0 4px;">晨讀 3-2-1</div>
-  <div style="font-size:14px;color:#8A9C93;margin-bottom:26px;">邁進末後大復興 · 落實321理念</div>
+  <div style="font-size:14px;color:#8A9C93;margin-bottom:26px;">邁進末後大復興 · 迎接主再來</div>
   <div style="background:#F4F9F6;border:1px solid #E2EAE6;border-radius:16px;padding:22px 20px;line-height:1.85;font-size:15px;text-align:left;">
     <div style="font-weight:700;color:#3E7766;margin-bottom:10px;">📖 正在載入晨讀內容…</div>
     若此畫面停在這裡沒有變化，表示目前的瀏覽器沒有啟用 JavaScript（常見於 LINE、Facebook 由聊天室直接開啟檔案時）。<br><br>
@@ -315,6 +598,7 @@
 <div id="xiaozhi"></div>
 <div id="search"></div>
 <div id="meitu"></div>
+<div id="mark-sheet" style="display:none"></div>
 
 <script>
 const C = {
@@ -15948,6 +16232,25 @@ const UNITS=[
 
 /* ============ HELPERS ============ */
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escA(s){return esc(String(s==null?"":s)).replace(/"/g,"&quot;");}
+/* ===== App 內建提示與確認（取代被獨立 PWA 停用的 alert/confirm） ===== */
+window.uiToast=function(msg){
+  var t=document.getElementById("ui-toast");
+  if(!t){ t=document.createElement("div"); t.id="ui-toast"; (document.body||document.documentElement).appendChild(t); }
+  t.textContent=msg; t.className="ui-toast show";
+  if(window.__toastT) clearTimeout(window.__toastT);
+  window.__toastT=setTimeout(function(){ var e=document.getElementById("ui-toast"); if(e) e.className="ui-toast"; }, 2400);
+};
+window.uiConfirm=function(msg,onYes){
+  var ov=document.getElementById("ui-confirm");
+  if(!ov){ ov=document.createElement("div"); ov.id="ui-confirm"; (document.body||document.documentElement).appendChild(ov); }
+  ov.className="ui-cf-ov show";
+  ov.innerHTML='<div class="ui-cf-box"><div class="ui-cf-msg" id="ui-cf-msg"></div><div class="ui-cf-btns"><button class="ui-cf-no" id="ui-cf-no">取消</button><button class="ui-cf-yes" id="ui-cf-yes">確定</button></div></div>';
+  var m=document.getElementById("ui-cf-msg"); if(m) m.textContent=msg;
+  var close=function(){ var o=document.getElementById("ui-confirm"); if(o){ o.className="ui-cf-ov"; o.innerHTML=""; } };
+  var no=document.getElementById("ui-cf-no"); if(no) no.onclick=close;
+  var yes=document.getElementById("ui-cf-yes"); if(yes) yes.onclick=function(){ close(); if(onYes) onYes(); };
+};
 function inline(text){
   let out="", last=0, re=/⟦([bsg]):([^⟧]*)⟧/g, m;
   while((m=re.exec(text))!==null){
@@ -15964,7 +16267,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:1,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{}};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:1,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[]};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -15982,6 +16285,14 @@ function loadState(){
     if(d.lastDate) state.lastDate=d.lastDate;
     if(typeof d.best==="number") state.best=d.best;
     if(d.notes&&typeof d.notes==="object") state.notes=d.notes;
+    if(d.marks&&typeof d.marks==="object") state.marks=d.marks;
+    if(d.s321&&typeof d.s321==="object") state.s321=d.s321;
+    if(d.xzPos&&typeof d.xzPos==="object") state.xzPos=d.xzPos;
+    if(Array.isArray(d.s920)) state.s920=d.s920;
+    if(typeof d.s920Help==="boolean") state.s920Help=d.s920Help;
+    if(d.s920cf&&typeof d.s920cf==="object") state.s920cf=d.s920cf;
+    if(d.s235&&typeof d.s235==="object") state.s235=d.s235;
+    if(Array.isArray(d.sys)) state.sys=d.sys;
   }catch(e){}
 }
 function saveState(){
@@ -15989,7 +16300,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys
     }));
   }catch(e){}
 }
@@ -16021,7 +16332,7 @@ function go(view,lesson){
   recCleanup();
   state.view=view;
   if(lesson!==undefined) state.lesson=lesson;
-  state.tab="read"; state.deep={};
+  state.tab="read"; state.deep={}; state.reviewN=null; state.strategyId=null;
   render();
   window.scrollTo(0,0);
 }
@@ -16039,6 +16350,8 @@ function homeHTML(){
   const streakHTML=streak>0?`<div class="streak"><span class="streak-fire">🔥</span><span class="streak-txt">連續晨讀 <b>${streak}</b> 天</span>${(state.best&&state.best>streak)?`<span class="streak-best">最佳 ${state.best} 天</span>`:''}</div>`:'';
   const continueHTML=lastL?`<div class="continue-card" onclick="openLesson(${lastL.n})"><div class="cc-label">繼續閱讀</div><div class="cc-title">第 ${lastL.n} 課 · ${esc(lastL.title).split("\n").join(" ")}</div><div class="cc-go">繼續 →</div></div>`:"";
   const progHTML=`<div class="overall"><div class="overall-top"><span>晨讀進度</span><span>${readCount} / ${total} 課</span></div><div class="overall-bar"><div class="overall-fill" style="width:${pct}%"></div></div>${streakHTML}</div>`;
+  const _mc=mkCounts();
+  const reviewCard=_mc.marks?`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks} 處畫線 · ${_mc.lessons} 課</div></div><div class="rc-go">回顧 ›</div></div>`:"";
   const fontHTML=`<div class="fontbar"><span class="fontbar-lbl">閱讀字級</span>`+[["標準",0],["大",1],["特大",2]].map(o=>`<button class="fontbtn ${(state.font||0)===o[1]?'active':''}" onclick="setFont(${o[1]})">${o[0]}</button>`).join("")+`</div>`;
   const cards=UNITS.map(u=>{
     const open=state.openUnit===u.n;
@@ -16074,32 +16387,138 @@ function homeHTML(){
   return `<div class="home-head">
     <div class="home-eyebrow">國度321空中團契</div>
     <div class="home-title">晨讀 3-2-1</div>
-    <div class="home-sub">邁進末後大復興 · 落實321理念</div>
+    <div class="home-sub">邁進末後大復興 · 迎接主再來</div>
     <div class="home-box">
-      <b>三個基礎 · 兩個核心 · 一個目的</b>
+      <b>3 個基礎 · 2 個核心 · 1 個目的</b>
       耶穌是我的榜樣 · 聖經是我的準則 · 聖靈是我的引導<br>
       讓耶穌作王 · 讓耶穌得著一切的榮耀<br>
       建立屬神的體系
+      <div class="home-box-sep"></div>
+      <b>操練 920 · 發展 235</b>
+      每個與你有關係的人都是你的 2：活出無己（0）、結出 9 種聖靈的果子<br>
+      成為 2 屬靈同伴 · 建立 3 屬靈父母兒女 · 發展 5 五重職分的團隊
     </div>
   </div>
   <div class="list-wrap">
     <div class="s-bar" onclick="searchOpenOverlay()"><span class="s-bar-ico">🔍</span><span class="s-bar-tx">搜尋課程、經文、主題…</span></div>
+    ${strategyRowHTML()}
     ${continueHTML}
+    ${reviewCard}
     ${progHTML}
     ${fontHTML}
     <div class="list-label">十個單元 · 共 ${total} 課</div>
     ${cards}
-    <div class="list-end">邁進末後大復興 ✦ 迎接主再來</div>
+    <div class="list-end">活出基督 ✦ 成為得勝者</div>
   </div>`;
 }
 
 function tabbarHTML(){
   const hasNote=!!(state.lesson&&state.notes&&(state.notes[state.lesson.n]||"").trim());
-  const tabs=[["read","📖 讀"],["focus","🎯 對焦"],["hope","✦ 盼望"],["still","🤫 靜"],["steps","👣 操練"],["note","✍️ 筆記"+(hasNote?'<span class="note-dot"></span>':'')]];
+  const tabs=[["read","📖","閱讀"],["focus","🎯","對焦"],["hope","✦","盼望"],["still","🤫","靜默"],["steps","👣","操練"],["note","✍️","筆記"]];
   return '<div class="tabbar">'+tabs.map(t=>
-    `<button class="tab ${state.tab===t[0]?'active':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`
+    `<button class="tab ${state.tab===t[0]?'active':''}" onclick="setTab('${t[0]}')"><span class="tab-ic">${t[1]}</span><span class="tab-tx">${t[2]}${(t[0]==="note"&&hasNote)?'<span class="note-dot"></span>':''}</span></button>`
   ).join("")+'</div>';
 }
+
+/* ===== 畫線與領受（句子級重點標記＋個人領受） ===== */
+function mkLessonByN(n){ for(var i=0;i<LESSONS.length;i++){ if(LESSONS[i].n===n) return LESSONS[i]; } return null; }
+function mkSplit(raw){
+  raw=String(raw||""); var out=[], cur="", depth=0;
+  for(var i=0;i<raw.length;i++){
+    var ch=raw[i]; cur+=ch;
+    if(ch==="⟦"){ depth++; }
+    else if(ch==="⟧"){ if(depth>0) depth--; }
+    else if(depth===0 && (ch==="。"||ch==="！"||ch==="？")){
+      while(i+1<raw.length && "」』）".indexOf(raw[i+1])>=0){ i++; cur+=raw[i]; }
+      out.push(cur); cur="";
+    }
+  }
+  if(cur.replace(/\s/g,"").length) out.push(cur);
+  return out;
+}
+function mkParaList(t){
+  t=String(t||""); var arr=t.split("\n"), out=[];
+  for(var i=0;i<arr.length;i++){ if(arr[i].replace(/\s/g,"").length) out.push(arr[i]); }
+  return out;
+}
+function mkSentence(l,key){
+  var h=key.indexOf("#"); var pid=key.slice(0,h); var si=parseInt(key.slice(h+1),10);
+  var m=pid.match(/^[A-Za-z]+/); var pre=m?m[0]:""; var rest=pid.slice(pre.length);
+  var raw="";
+  if(pre==="L"){ raw=l.lead||""; }
+  else if(pre==="D"){ var ab=rest.split("-"); var dsec=(l.sections||[])[parseInt(ab[0],10)]; var list=dsec?mkParaList((dsec.deeper&&dsec.deeper.a)||""):[]; raw=list[parseInt(ab[1],10)]||""; }
+  else if(pre==="F"){ raw=l.focus||""; }
+  else if(pre==="H"){ raw=(l.hope&&l.hope.paras&&l.hope.paras[parseInt(rest,10)])||""; }
+  else if(pre==="SH"){ raw=l.still_hint||""; }
+  else if(pre==="S"){ raw=l.still||""; }
+  else if(pre==="T"){ var st=(l.steps&&l.steps[parseInt(rest,10)]); raw=st?(st.act||""):""; }
+  else if(pre==="Q"){ raw=l.declare||""; }
+  else if(pre==="R"){ var sh=(l.share&&l.share[parseInt(rest,10)]); raw=sh?(sh.q||""):""; }
+  else{ var ab2=pid.split("-"); var sec=(l.sections||[])[parseInt(ab2[0],10)]; raw=sec?((sec.paras||[])[parseInt(ab2[1],10)]||""):""; }
+  var arr=mkSplit(raw); return (arr[si]||"").replace(/^\s+/,"");
+}
+function mkInline(l,paraId,raw){
+  var sents=mkSplit(raw);
+  var marks=(state.marks&&state.marks[l.n])||{};
+  var body="", notes="";
+  for(var i=0;i<sents.length;i++){
+    var key=paraId+"#"+i;
+    var has=Object.prototype.hasOwnProperty.call(marks,key);
+    var note=has?String(marks[key]||""):"";
+    var disp=inline(sents[i].replace(/^\s+/,"")).split("\n").join("<br>");
+    body+='<span class="mk-s'+(has?" mk-hl":"")+'" onclick="mkTap('+l.n+',&#39;'+key+'&#39;)">'+disp+'</span>';
+    if(has&&note){ body+='<span class="mk-flag">📝</span>'; notes+='<div class="mk-note"><b>領受：</b>'+esc(note)+'</div>'; }
+  }
+  return {body:body, notes:notes};
+}
+function mkNotesBlock(r){ return r.notes?'<div class="mk-notes">'+r.notes+'</div>':''; }
+function mkParaHTML(l,paraId,raw,cls){
+  var r=mkInline(l,paraId,raw);
+  return '<p class="'+(cls||"sec-p")+' mk-p">'+r.body+'</p>'+mkNotesBlock(r);
+}
+window.mkTap=function(n,key){
+  if(!state.marks) state.marks={};
+  if(!state.marks[n]) state.marks[n]={};
+  if(Object.prototype.hasOwnProperty.call(state.marks[n],key)){ window.mkNote(n,key); }
+  else{ state.marks[n][key]=""; saveState(); rerenderKeepScroll(); }
+};
+window.mkNote=function(n,key){
+  var l=mkLessonByN(n); if(!l) return;
+  var marks=(state.marks&&state.marks[n])||{};
+  var cur=String(marks[key]||"");
+  var w=document.getElementById("mark-sheet"); if(!w) return;
+  w.innerHTML='<div class="sheet-mask" onclick="mkSheetClose()"></div>'
+    +'<div class="sheet-card">'
+    +'<div class="sheet-head">✍️ 寫下你的領受</div>'
+    +'<div class="sheet-quote-wrap"><span class="sheet-quote">'+inline(mkSentence(l,key)).split("\n").join("<br>")+'</span></div>'
+    +'<textarea id="mk-ta" class="sheet-ta" placeholder="這句話帶給你什麼領受、感動，或聖靈的提醒？寫下來，把焦點對準耶穌……">'+esc(cur)+'</textarea>'
+    +'<div class="sheet-acts">'
+    +'<button class="sheet-save" onclick="mkSave('+n+',&#39;'+key+'&#39;)">儲存領受</button>'
+    +'</div>'
+    +'<div class="sheet-acts2">'
+    +'<button class="sheet-clear" onclick="mkClearNote('+n+',&#39;'+key+'&#39;)">刪除領受</button>'
+    +'<button class="sheet-del" onclick="mkRemove('+n+',&#39;'+key+'&#39;)">移除畫線</button>'
+    +'<button class="sheet-cancel" onclick="mkSheetClose()">取消</button>'
+    +'</div></div>';
+  w.style.display="block";
+  setTimeout(function(){ var t=document.getElementById("mk-ta"); if(t){ t.focus(); try{t.setSelectionRange(t.value.length,t.value.length);}catch(e){} } },60);
+};
+window.mkSave=function(n,key){
+  var t=document.getElementById("mk-ta"); var v=t?t.value.trim():"";
+  if(!state.marks) state.marks={}; if(!state.marks[n]) state.marks[n]={};
+  state.marks[n][key]=v; saveState(); mkSheetClose(); rerenderKeepScroll();
+};
+window.mkRemove=function(n,key){
+  if(state.marks&&state.marks[n]){ delete state.marks[n][key]; if(!Object.keys(state.marks[n]).length) delete state.marks[n]; }
+  saveState(); mkSheetClose(); rerenderKeepScroll();
+};
+window.mkClearNote=function(n,key){
+  if(state.marks&&state.marks[n]&&Object.prototype.hasOwnProperty.call(state.marks[n],key)){ state.marks[n][key]=""; }
+  saveState(); mkSheetClose(); rerenderKeepScroll();
+};
+window.mkSheetClose=function(){
+  var w=document.getElementById("mark-sheet"); if(w){ w.style.display="none"; w.innerHTML=""; }
+};
 
 function paneHTML(l){
   if(state.tab==="read"){
@@ -16107,59 +16526,72 @@ function paneHTML(l){
     s+=`<div class="greet">${esc(l.greet)}</div>`;
     s+=`<div class="verse-card"><div class="verse-txt">「${esc(l.verse)}」</div><div class="verse-ref">— ${esc(l.verse_ref)}</div></div>`;
     if(l.bigidea) s+=`<div class="bigidea">${inline(l.bigidea)}</div>`;
-    if(l.lead) s+=`<p class="lead">${inline(l.lead)}</p>`;
+    if(!(state.marks&&state.marks[l.n]&&Object.keys(state.marks[l.n]).length))
+      s+=`<div class="mk-hint">💡 讀到聖靈光照、有感動的句子，<b>點一下</b>就能畫線；畫線後<b>再點一下</b>可以寫下你的領受。</div>`;
+    if(l.lead) s+=mkParaHTML(l,"L",l.lead,"lead");
     (l.sections||[]).forEach((sec,i)=>{
       var head=sec.h.replace(/^([一二三四五六七八九十]+)/,"$1、");
       s+=`<div class="section"><div class="sec-h">${esc(head)}</div>`;
-      (sec.paras||[]).forEach(p=>{s+=`<p class="sec-p">${inline(p)}</p>`;});
+      (sec.paras||[]).forEach((p,pi)=>{s+=mkParaHTML(l,i+"-"+pi,p);});
       if(sec.pq) s+=`<div class="pq">${inline(sec.pq)}</div>`;
       if(sec.deeper){
         const k="d"+i, open=state.deep[k];
         s+=`<button class="deep-btn" onclick="toggleDeep('${k}')"><span>${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
-        if(open) s+=`<div class="deep-body">${inline(sec.deeper.a)}</div>`;
+        if(open){
+          var dps=mkParaList(sec.deeper.a), db="";
+          dps.forEach(function(para,pi){ db+=mkParaHTML(l,"D"+i+"-"+pi,para,"deep-p"); });
+          s+=`<div class="deep-body">${db}</div>`;
+        }
       }
       s+=`</div>`;
     });
     return s;
   }
   if(state.tab==="focus"){
+    var fr=mkInline(l,"F",l.focus||"");
     return `<div style="padding-top:16px">
       <div class="pane-icon"><div class="em">🎯</div><div class="lbl">本課對焦一問</div></div>
-      <div class="focus-card">${nl(l.focus)}</div></div>`;
+      <div class="focus-card">${fr.body}</div>${mkNotesBlock(fr)}</div>`;
   }
   if(state.tab==="hope"&&l.hope){
     let s=`<div style="padding-top:16px"><div class="hope-t">${esc(l.hope.t)}</div>`;
-    l.hope.paras.forEach(p=>{s+=`<p class="hope-p">${inline(p)}</p>`;});
+    (l.hope.paras||[]).forEach((p,pi)=>{s+=mkParaHTML(l,"H"+pi,p,"hope-p");});
     return s+`</div>`;
   }
   if(state.tab==="still"){
     let s=`<div style="padding-top:16px"><div class="pane-icon"><div class="em">🤫</div><div class="lbl">安靜默想</div></div>`;
-    s+=`<div class="still-card">${nl(l.still)}</div>`;
-    if(l.still_hint) s+=`<div class="still-hint">${nl(l.still_hint)}</div>`;
+    var sr=mkInline(l,"S",l.still||"");
+    s+=`<div class="still-card">${sr.body}</div>`;
+    if(l.still_hint){ var shr=mkInline(l,"SH",l.still_hint); s+=`<div class="still-hint">${shr.body}</div>`+mkNotesBlock(shr); }
+    s+=mkNotesBlock(sr);
     return s+`</div>`;
   }
   if(state.tab==="steps"&&l.steps){
     let s=`<div style="padding-top:16px"><div class="pane-h">本週操練步驟</div>`;
     l.steps.forEach((st,i)=>{
       const key=l.n+"-"+i, done=!!state.checked[key];
+      const tr=mkInline(l,"T"+i,st.act||"");
       s+=`<div class="step">
         <div class="step-num${done?' done':''}" onclick="toggleStep('${key}')">${done?'✓':(i+1)}</div>
         <div style="flex:1">
-        <div class="step-act${done?' done':''}" onclick="toggleStep('${key}')">${inline(st.act)}</div>
+        <div class="step-act${done?' done':''}">${tr.body}</div>
         ${st.meta?`<div class="step-meta">${esc(st.meta)}</div>`:''}
+        ${mkNotesBlock(tr)}
       </div></div>`;
     });
     return s+`</div>`;
   }
   if(state.tab==="declare"&&l.declare){
-    return `<div style="padding-top:16px"><div class="declare-card">${nl(l.declare)}</div>
+    var dr=mkInline(l,"Q",l.declare||"");
+    return `<div style="padding-top:16px"><div class="declare-card">${dr.body}</div>${mkNotesBlock(dr)}
       <div class="rec-wrap" id="rec-slot" data-n="${l.n}">${recSkeleton('declare',l.n)}</div></div>`;
   }
   if(state.tab==="share"&&l.share){
     let s=`<div style="padding-top:16px"><div class="pane-h">小家分享問題</div>`;
     const colors=[C.mintWash,C.claySoft,C.goldWash];
     l.share.forEach((sh,i)=>{
-      s+=`<div class="share-card"><span class="pill" style="background:${colors[i%3]}">${esc(sh.tag)}</span><p class="share-q">${esc(sh.q)}</p></div>`;
+      const rr=mkInline(l,"R"+i,sh.q||"");
+      s+=`<div class="share-card"><span class="pill" style="background:${colors[i%3]}">${esc(sh.tag)}</span><p class="share-q mk-p">${rr.body}</p>${mkNotesBlock(rr)}</div>`;
     });
     return s+`</div>`;
   }
@@ -16171,12 +16603,15 @@ function paneHTML(l){
       <textarea class="note-area" id="note-input" placeholder="在這裡寫下你的領受與禱告……" oninput="saveNote(${l.n}, this.value)">${esc(val)}</textarea>
       <div class="note-foot">${saved}${val.trim()?`<button class="note-clear" onclick="clearNote(${l.n})">清除</button>`:''}</div>
       <div class="rec-wrap" id="note-rec-slot" data-n="${l.n}">${recSkeleton('note',l.n)}</div>
+      ${mkLessonMarkCount(l.n).marks?`<button class="note-review-btn" onclick="openLessonReview(${l.n})">📑 這一課的畫線與領受（${mkLessonMarkCount(l.n).marks} 處）</button>`:''}
     </div>`;
   }
   return "";
 }
 
 function readerHTML(l){
+  var prevL=LESSONS.find(function(x){return x.n===l.n-1;});
+  var nextL=LESSONS.find(function(x){return x.n===l.n+1;});
   return `<div class="pad-btm">
     <div class="rd-head">
       <div class="rd-top">
@@ -16193,10 +16628,12 @@ function readerHTML(l){
     </div>
     <div class="rd-body">${paneHTML(l)}</div>
     <div class="rd-foot">
-      <button class="foot-tab ${state.tab==='declare'?'active':''}" onclick="setTab('declare')">🙏 宣告</button>
-      <button class="foot-tab ${state.tab==='share'?'active':''}" onclick="setTab('share')">💬 分享</button>
-      <button class="foot-tab" onclick="openMeitu()">🎨 美圖</button>
-      ${l.next?`<button class="btn-next" onclick="nextLesson()">下一課 →</button>`:''}
+      <button class="foot-btn nav${prevL?'':' disabled'}" ${prevL?'onclick="prevLesson()"':''}><span class="fb-ic">←</span><span class="fb-tx">上一課</span></button>
+      <button class="foot-btn ${state.tab==='declare'?'active':''}" onclick="setTab('declare')"><span class="fb-ic">🙏</span><span class="fb-tx">宣告</span></button>
+      <button class="foot-btn ${state.tab==='share'?'active':''}" onclick="setTab('share')"><span class="fb-ic">💬</span><span class="fb-tx">分享</span></button>
+      <button class="foot-btn" onclick="openMeitu()"><span class="fb-ic">🎨</span><span class="fb-tx">美圖</span></button>
+      <button class="foot-btn xz" onclick="xzOpen()"><span class="fb-ic">✨</span><span class="fb-tx">小智</span></button>
+      <button class="foot-btn nav${nextL?'':' disabled'}" ${nextL?'onclick="nextLesson()"':''}><span class="fb-ic">→</span><span class="fb-tx">下一課</span></button>
     </div>
   </div>`;
 }
@@ -16205,6 +16642,7 @@ function readerHTML(l){
 window.openLesson=function(n){state.lesson=LESSONS.find(l=>l.n===n);if(n){state.read[n]=1;state.last=n;markReadDay();}saveState();go("reader");};
 window.goHome=function(){go("home");};
 window.nextLesson=function(){const nx=LESSONS.find(l=>l.n===state.lesson.n+1);if(nx){state.lesson=nx;state.read[nx.n]=1;state.last=nx.n;markReadDay();saveState();go("reader");}else{go("home");}};
+window.prevLesson=function(){const pv=LESSONS.find(l=>l.n===state.lesson.n-1);if(pv){state.lesson=pv;state.read[pv.n]=1;state.last=pv.n;markReadDay();saveState();go("reader");}};
 window.setTab=setTab;
 window.toggleDeep=toggleDeep;
 window.toggleStep=function(key){state.checked[key]=!state.checked[key];saveState();rerenderKeepScroll();};
@@ -16214,9 +16652,588 @@ window.setFont=function(n){state.font=n;applyFont();saveState();render();};
 window.saveNote=function(n,v){ if(!state.notes)state.notes={}; state.notes[n]=v; saveState(); };
 window.clearNote=function(n){ if(state.notes&&state.notes[n]!==undefined){delete state.notes[n];saveState();rerenderKeepScroll();} };
 
+function mkTabOf(pid){
+  var m=pid.match(/^[A-Za-z]+/); var pre=m?m[0]:"";
+  if(pre==="L") return {tab:"read",label:"讀",rank:1};
+  if(pre==="D"){ var ab=pid.slice(1).split("-"); return {tab:"read",label:"想更深",rank:1,deep:"d"+ab[0]}; }
+  if(pre==="F") return {tab:"focus",label:"對焦",rank:2};
+  if(pre==="H") return {tab:"hope",label:"盼望",rank:3};
+  if(pre==="SH") return {tab:"still",label:"靜",rank:4};
+  if(pre==="S") return {tab:"still",label:"靜",rank:4};
+  if(pre==="T") return {tab:"steps",label:"操練",rank:5};
+  if(pre==="Q") return {tab:"declare",label:"宣告",rank:6};
+  if(pre==="R") return {tab:"share",label:"分享",rank:7};
+  return {tab:"read",label:"讀",rank:1};
+}
+function mkKeyOrder(key){
+  var pid=key.slice(0,key.indexOf("#"));
+  var nums=(pid.match(/\d+/g)||[]).map(Number);
+  var sidx=parseInt(key.slice(key.indexOf("#")+1),10)||0;
+  return [mkTabOf(pid).rank, nums[0]||0, nums[1]||0, sidx];
+}
+function mkCounts(){
+  var marks=0, lessons=0;
+  if(state.marks){ Object.keys(state.marks).forEach(function(k){ var o=state.marks[k]; var c=o?Object.keys(o).length:0; if(c){ marks+=c; lessons++; } }); }
+  return {marks:marks, lessons:lessons};
+}
+function mkLessonMarkCount(n){
+  var m=state.marks&&state.marks[n]; if(!m) return {marks:0,notes:0};
+  var keys=Object.keys(m), notes=0;
+  keys.forEach(function(k){ if(String(m[k]||"").trim()) notes++; });
+  return {marks:keys.length, notes:notes};
+}
+function mkSortedKeys(m){
+  var keys=Object.keys(m);
+  keys.sort(function(a,b){var A=mkKeyOrder(a),B=mkKeyOrder(b);for(var i=0;i<4;i++){if(A[i]!==B[i])return A[i]-B[i];}return 0;});
+  return keys;
+}
+function unitOfLesson(n){ for(var i=0;i<UNITS.length;i++){ if(n>=UNITS[i].start&&n<=UNITS[i].end) return UNITS[i].n; } return null; }
+function reviewHTML(){
+  if(state.reviewN) return lessonReviewHTML(state.reviewN);
+  var c=mkCounts();
+  var unitsWithMarks=UNITS.filter(function(u){ return LESSONS.some(function(l){ return l.n>=u.start&&l.n<=u.end&&mkLessonMarkCount(l.n).marks>0; }); });
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">我的畫線與領受</div><div class="rv-h-sub">'+(c.marks?('共 '+c.marks+' 處 · '+c.lessons+' 課 · '+unitsWithMarks.length+' 單元'):'還沒有畫線')+'</div></div></div>';
+  if(!c.marks){
+    return head+'<div class="rv-empty"><div class="rv-empty-ic">🖍️</div><div class="rv-empty-t">開始畫下感動你的話</div><div class="rv-empty-d">讀經、對焦、盼望、安靜、操練、宣告、分享——任何一句聖靈光照你的話，點一下就能畫線，再點一下寫下領受。它們會依單元、課別收藏在這裡，成為你長期與神同行的記號。</div></div>';
+  }
+  var html='';
+  UNITS.forEach(function(u){
+    var lessons=LESSONS.filter(function(l){return l.n>=u.start&&l.n<=u.end&&mkLessonMarkCount(l.n).marks>0;}).sort(function(a,b){return a.n-b.n;});
+    if(!lessons.length) return;
+    var uMarks=0; lessons.forEach(function(l){uMarks+=mkLessonMarkCount(l.n).marks;});
+    var open=state.reviewUnit===u.n;
+    html+='<div class="ru-unit'+(open?' open':'')+'">'
+      +'<div class="ru-row" onclick="toggleReviewUnit('+u.n+')">'
+        +'<div class="ru-num">'+u.n+'</div>'
+        +'<div class="ru-meta"><div class="ru-eyebrow">'+esc(u.eyebrow)+'</div><div class="ru-title">'+esc(u.title)+'</div>'
+        +'<div class="ru-sub">'+lessons.length+' 課有畫線 · 共 '+uMarks+' 處</div></div>'
+        +'<div class="ru-chev">'+(open?'▴':'▾')+'</div>'
+      +'</div>';
+    if(open){
+      html+='<div class="ru-body">';
+      lessons.forEach(function(l){
+        var cc=mkLessonMarkCount(l.n);
+        html+='<div class="rvl-row" onclick="openLessonReview('+l.n+')">'
+          +'<div class="rvl-no">'+esc(l.no)+'</div>'
+          +'<div class="rvl-mid"><div class="rvl-title">'+esc(l.title).split("\n").join(" ")+'</div>'
+          +'<div class="rvl-meta">🖍️ '+cc.marks+' 處畫線'+(cc.notes?(' · ✍️ '+cc.notes+' 則領受'):'')+'</div></div>'
+          +'<span class="rvl-go">›</span></div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  return head+'<div class="rv-wrap">'+html+'</div>';
+}
+function lessonReviewHTML(n){
+  var l=LESSONS.find(function(x){return x.n===n;});
+  var m=l&&state.marks&&state.marks[n];
+  var head='<div class="rv-head"><button class="rd-back" onclick="openReview()">←</button><div class="rv-h-tx"><div class="rv-h-title">'+(l?('第 '+esc(l.no)+'　'+esc(l.title).split("\n").join(" ")):'這一課')+'</div><div class="rv-h-sub">我的畫線與領受</div></div></div>';
+  if(!m||!Object.keys(m).length){
+    return head+'<div class="rv-empty"><div class="rv-empty-ic">🖍️</div><div class="rv-empty-t">這一課還沒有畫線</div><div class="rv-empty-d">回到課程，讀到感動你的句子點一下就能畫線。</div>'+(l?'<button class="rvl-open" onclick="openLesson('+n+')">📖 開啟這一課研讀</button>':'')+'</div>';
+  }
+  var keys=mkSortedKeys(m), body='';
+  keys.forEach(function(k){
+    var t=mkTabOf(k); var sent=mkSentence(l,k); var note=String(m[k]||"");
+    body+='<div class="rv-item" onclick="openMarkAt('+n+',&#39;'+k+'&#39;)">'
+      +'<div class="rv-badge rv-b-'+t.tab+'">'+t.label+'</div>'
+      +'<div class="rv-quote">'+inline(sent).split("\n").join(" ")+'</div>'
+      +(note?'<div class="rv-note"><b>領受：</b>'+esc(note)+'</div>':'')
+      +'</div>';
+  });
+  body+='<button class="rvl-open" onclick="openLesson('+n+')">📖 開啟這一課研讀</button>';
+  return head+'<div class="rv-wrap">'+body+'</div>';
+}
+window.openReview=function(){
+  recCleanup(); state.reviewN=null;
+  if(state.reviewUnit==null){
+    for(var i=0;i<UNITS.length;i++){ var u=UNITS[i]; if(LESSONS.some(function(l){return l.n>=u.start&&l.n<=u.end&&mkLessonMarkCount(l.n).marks>0;})){ state.reviewUnit=u.n; break; } }
+  }
+  state.view="review"; render(); window.scrollTo(0,0);
+};
+window.toggleReviewUnit=function(n){ state.reviewUnit=(state.reviewUnit===n?null:n); rerenderKeepScroll(); };
+window.openLessonReview=function(n){ recCleanup(); state.reviewUnit=unitOfLesson(n); state.reviewN=n; state.view="review"; render(); window.scrollTo(0,0); };
+window.openMarkAt=function(n,key){
+  var t=mkTabOf(key); var l=LESSONS.find(function(x){return x.n===n;}); if(!l) return;
+  recCleanup(); state.reviewN=null; state.lesson=l; state.read[n]=1; state.last=n; markReadDay();
+  state.view="reader"; state.tab=t.tab; state.deep={}; if(t.deep) state.deep[t.deep]=true;
+  saveState(); render(); window.scrollTo(0,0);
+};
+
+/* ===== 建國四方略 ===== */
+var STRATEGIES=[
+ {id:"321",   ic:"🌱", name:"落實321", sub:"生命", tagline:"建立觀念，改變生命"},
+ {id:"920",   ic:"🍇", name:"操練920", sub:"關係", tagline:"建立關係，結出果子"},
+ {id:"235",   ic:"🤝", name:"發展235", sub:"團隊", tagline:"建立團隊，成就事工"},
+ {id:"system",ic:"👑", name:"建立體系", sub:"領域", tagline:"擴展領域，建立神國"}
+];
+function strategyRowHTML(){
+  return '<div class="strat-wrap"><div class="strat-h">🏛️ 建國四方略 · 在地上建立神國</div><div class="strat-row">'
+    +STRATEGIES.map(function(s){
+      return '<button class="strat-cell" onclick="openStrategy(&#39;'+s.id+'&#39;)">'
+        +'<span class="strat-ic">'+s.ic+'</span>'
+        +'<span class="strat-name">'+s.name+'</span>'
+        +'<span class="strat-sub">'+s.sub+'</span></button>';
+    }).join('')+'</div></div>';
+}
+window.openStrategy=function(id){ recCleanup(); state.strategyId=id; state.view="strategy"; render(); window.scrollTo(0,0); };
+function strategyHTML(){
+  var s=STRATEGIES.find(function(x){return x.id===state.strategyId;})||STRATEGIES[0];
+  return s.id==="321" ? s321HTML(s) : (s.id==="920" ? s920HTML(s) : (s.id==="235" ? s235HTML(s) : (s.id==="system" ? sysHTML(s) : strategyComingHTML(s))));
+}
+function strategyComingHTML(s){
+  var detail={
+    "920":"把神放在你身邊的每個人，都當作你的「2」。在這裡，你將建立「我的920名單」——為每個人禱告、記下你對他無己的愛的行動、看見聖靈的九種果子在這份關係中結出。人比事重要，關係比東西重要。",
+    "235":"與沒有問題、無己的人發展團隊。在這裡，你將建立「我的235團隊」三層：2 屬靈同伴、3 屬靈父母兒女、5 屬靈戰友（五重職分）；看見你的屬靈家庭逐漸成形，事工得以繁殖、傳承。",
+    "system":"在神交給你的領域（家庭、職場、教會、城市…）建立屬神的體系。在這裡，你將為每個領域寫下異象、目標與代禱，把生命、關係、團隊匯聚成「在這領域建立神國」的具體行動，成就主禱文——願祢的國降臨。"
+  }[s.id]||"";
+  return '<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">'+s.ic+' '+esc(s.name)+'</div><div class="rv-h-sub">'+esc(s.tagline)+'</div></div></div>'
+    +'<div class="strat-page"><div class="strat-soon"><div class="strat-soon-ic">'+s.ic+'</div><div class="strat-soon-t">即將開放</div><div class="strat-soon-d">'+detail+'</div><div class="strat-soon-tag">敬請期待 ✦ 這個方略正在預備中</div></div></div>';
+}
+var SYS_PRESETS=[{ic:"🏠",name:"我的家庭"},{ic:"💼",name:"我的職場"},{ic:"⛪",name:"我的教會"},{ic:"🎓",name:"我的校園"},{ic:"🏘️",name:"我的社區"},{ic:"🏙️",name:"我的城市"},{ic:"🗺️",name:"我的國家"},{ic:"🌍",name:"列國 · 國度"},{ic:"🌐",name:"網路宣教"}];
+function sysHTML(s){
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">👑 建立體系</div><div class="rv-h-sub">擴展領域，建立神國</div></div></div>';
+  var doms=Array.isArray(state.sys)?state.sys:[];
+  var body='<div class="strat-page">';
+  body+='<div class="sys-vision">'
+    +'<div class="sys-v-t">一個目的 · 建立屬神的體系</div>'
+    +'<div class="sys-v-d">神交給你一塊塊的領域——家庭、職場、教會、城市。在每個領域讓耶穌作王，就是在地上為祂得著神國的領土，成就主禱文：<b>願祢的國降臨，願祢的旨意行在地上，如同行在天上。</b></div>'
+    +'<div class="sys-v-verse">「凡你們腳掌所踏之地，我都照著我所應許摩西的話賜給你們了。」（約書亞記 1:3）</div>'
+    +'</div>';
+  body+='<div class="sys-flow"><span class="sys-flow-i">🌱 生命</span><span class="sys-flow-a">›</span><span class="sys-flow-i">🍇 關係</span><span class="sys-flow-a">›</span><span class="sys-flow-i">🤝 團隊</span><span class="sys-flow-a">›</span><span class="sys-flow-i on">👑 領域</span></div>';
+  if(doms.length){
+    var claimed=0,total=0;
+    doms.forEach(function(d){ var st=Array.isArray(d.steps)?d.steps:[]; total+=st.length; claimed+=st.filter(function(x){return x.done;}).length; });
+    body+='<div class="s235-cover">神國領域 <span class="s235-cover-c">'+doms.length+'</span>　　已得地步 <span class="s235-cover-c">'+claimed+' / '+total+'</span></div>';
+  }
+  body+='<div class="sys-presets"><span>快速加入：</span>';
+  SYS_PRESETS.forEach(function(p,i){ body+='<button class="sys-preset" onclick="sysAddPreset('+i+')">'+p.ic+' '+esc(p.name.split("我的").join(""))+'</button>'; });
+  body+='</div>';
+  body+='<div class="s235-add"><input id="sys-name" class="s920-in" type="text" placeholder="自訂一個領域（例如：我的家庭、公司部門…）"><button class="s920-addbtn" onclick="sysAdd()">＋ 新增</button></div>';
+  if(doms.length===0){
+    body+='<div class="s235-empty">還沒有領域。從你最當得著的那一塊地開始——把它寫下來，求耶穌在這裡作王，一步步為祂得地，建立屬神的體系。</div>';
+  } else {
+    doms.forEach(function(d){
+      var steps=Array.isArray(d.steps)?d.steps:[];
+      var dn=steps.filter(function(x){return x.done;}).length;
+      body+='<div class="s920-card sys-card">';
+      body+='<div class="s920-top"><span class="sys-ic">'+(d.icon||"👑")+'</span><input class="s920-name-in" type="text" value="'+escA(d.name)+'" placeholder="領域名稱…" oninput="sysName(&#39;'+d.id+'&#39;,this.value)"><button class="s920-del" onclick="sysDel(&#39;'+d.id+'&#39;)">刪除</button></div>';
+      body+='<div class="sys-lbl">✨ 異象 · 當耶穌在這領域作王</div>';
+      body+='<textarea class="s920-note" placeholder="想像耶穌在這領域完全作王的光景，把那幅圖畫寫下來……" oninput="sysVision(&#39;'+d.id+'&#39;,this.value)">'+esc(d.vision||"")+'</textarea>';
+      body+='<div class="s235-sub-h">得地步 · 神國的進展 <span class="s235-fl-c">'+dn+' / '+steps.length+'</span></div>';
+      steps.forEach(function(it){
+        body+='<div class="s235-item'+(it.done?" done":"")+'">';
+        body+='<button class="s235-item-chk" onclick="sysStepDone(&#39;'+d.id+'&#39;,&#39;'+it.id+'&#39;)">'+(it.done?"✓":"")+'</button>';
+        body+='<div class="s235-item-fields"><input class="s235-item-task" type="text" value="'+escA(it.text||"")+'" placeholder="要為耶穌得著的下一步…" oninput="sysStepText(&#39;'+d.id+'&#39;,&#39;'+it.id+'&#39;,this.value)"></div>';
+        body+='<button class="s235-item-del" onclick="sysStepDel(&#39;'+d.id+'&#39;,&#39;'+it.id+'&#39;)">✕</button>';
+        body+='</div>';
+      });
+      body+='<button class="s235-item-add" onclick="sysStepAdd(&#39;'+d.id+'&#39;)">＋ 新增一步</button>';
+      body+='<div class="sys-lbl sys-lbl-pray">🙏 代禱 · 求神在這領域動工</div>';
+      body+='<textarea class="s920-note sys-pray" placeholder="為這領域、為這裡的人禱告……（可對應你的 920 名單與 235 團隊）" oninput="sysPrayer(&#39;'+d.id+'&#39;,this.value)">'+esc(d.prayer||"")+'</textarea>';
+      body+='</div>';
+    });
+  }
+  body+='<div class="s235-verse">「我們爭戰的兵器本不是屬血氣的，乃是在神面前有能力，可以攻破堅固的營壘。」（哥林多後書 10:4）　願祢的國降臨！（馬太福音 6:10）</div>';
+  body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
+  body+='</div>';
+  return head+body;
+}
+function sysList(){ if(!Array.isArray(state.sys))state.sys=[]; return state.sys; }
+function sysFind(id){ var l=sysList(); for(var i=0;i<l.length;i++){ if(l[i].id===id)return l[i]; } return null; }
+window.sysAdd=function(){ var n=document.getElementById("sys-name"); var name=n?(n.value||"").trim():""; if(!name)return; sysList().push({id:"d"+Date.now()+Math.floor(Math.random()*1000),icon:"👑",name:name,vision:"",prayer:"",steps:[]}); saveState(); rerenderKeepScroll(); };
+window.sysAddPreset=function(i){ var p=SYS_PRESETS[i]; if(!p)return; sysList().push({id:"d"+Date.now()+Math.floor(Math.random()*1000),icon:p.ic,name:p.name,vision:"",prayer:"",steps:[]}); saveState(); rerenderKeepScroll(); };
+window.sysDel=function(id){ uiConfirm("確定要移除這個領域嗎？", function(){ state.sys=sysList().filter(function(x){return x.id!==id;}); saveState(); rerenderKeepScroll(); }); };
+window.sysName=function(id,v){ var d=sysFind(id); if(d){d.name=v;saveState();} };
+window.sysVision=function(id,v){ var d=sysFind(id); if(d){d.vision=v;saveState();} };
+window.sysPrayer=function(id,v){ var d=sysFind(id); if(d){d.prayer=v;saveState();} };
+function sysSteps(did){ var d=sysFind(did); if(!d)return null; if(!Array.isArray(d.steps))d.steps=[]; return d.steps; }
+function sysStepFind(did,sid){ var l=sysSteps(did); if(!l)return null; for(var i=0;i<l.length;i++){ if(l[i].id===sid)return l[i]; } return null; }
+window.sysStepAdd=function(did){ var l=sysSteps(did); if(!l)return; l.push({id:"p"+Date.now()+Math.floor(Math.random()*1000),text:"",done:false}); saveState(); rerenderKeepScroll(); };
+window.sysStepText=function(did,sid,v){ var it=sysStepFind(did,sid); if(it){it.text=v;saveState();} };
+window.sysStepDone=function(did,sid){ var it=sysStepFind(did,sid); if(!it)return; it.done=!it.done; saveState(); rerenderKeepScroll(); };
+window.sysStepDel=function(did,sid){ var d=sysFind(did); if(!d||!Array.isArray(d.steps))return; d.steps=d.steps.filter(function(x){return x.id!==sid;}); saveState(); rerenderKeepScroll(); };
+function s321HTML(s){
+  var today=todayStr();
+  var rec=(state.s321&&state.s321[today])||{};
+  var days=state.s321?Object.keys(state.s321).filter(function(k){var o=state.s321[k];return o&&(o.a||o.b||o.c||o.d||o.e||(o.note&&String(o.note).trim()));}).length:0;
+  var groups=[
+    {h:"三個基礎", items:[
+      ["a","👣 耶穌是我的榜樣","今天，我有效法耶穌的樣式、跟隨祂的腳蹤，活出像祂的生命嗎？"],
+      ["b","📖 聖經是我的準則","今天，我有讀神的話，並以聖經作我判斷、選擇與行事的準則嗎？"],
+      ["c","🕊️ 聖靈是我的引導","今天，我有尋求、順從聖靈的引導，而非靠自己的聰明與血氣嗎？"]
+    ]},
+    {h:"兩個核心", items:[
+      ["d","👑 讓耶穌作王","今天，我有交出主權、放下自己，讓耶穌在我裡面作王掌權嗎？"],
+      ["e","🌟 讓耶穌得著一切的榮耀","今天，我所說所做，是把榮耀單單歸給耶穌，而非高舉、榮耀自己嗎？"]
+    ]}
+  ];
+  var todayDone=["a","b","c","d","e"].filter(function(k){return rec[k];}).length;
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">🌱 落實321</div><div class="rv-h-sub">建立觀念，改變生命</div></div></div>';
+  var body='<div class="strat-page">';
+  body+='<div class="s321-vision"><div class="s321-vrow"><b>三個基礎</b>耶穌是我的榜樣 · 聖經是我的準則 · 聖靈是我的引導</div><div class="s321-vrow"><b>兩個核心</b>讓耶穌作王 · 讓耶穌得著一切的榮耀</div><div class="s321-vrow"><b>一個目的</b>建立屬神的體系</div></div>';
+  body+='<div class="s321-sec-h">生命的對照 · 從舊人到新人</div>';
+  var pairs=[["舊人 · 有己","新人 · 無己"],["用腦 · 靠自己","用心 · 靠聖靈"],["焦點在自己","焦點在耶穌"]];
+  body+='<div class="s321-pairs">';
+  pairs.forEach(function(p){ body+='<div class="s321-pair"><span class="s321-old">'+p[0]+'</span><span class="s321-arrow">→</span><span class="s321-new">'+p[1]+'</span></div>'; });
+  body+='</div>';
+  body+='<div class="s321-sec-h">今日落實321 · 自我省察 <span class="s321-tally">今日 '+todayDone+' / 5</span></div>';
+  groups.forEach(function(g){
+    body+='<div class="s321-grp">'+g.h+'</div>';
+    body+='<div class="s321-checks">';
+    g.items.forEach(function(c){
+      var on=!!rec[c[0]];
+      body+='<button class="s321-check'+(on?' on':'')+'" onclick="s321Toggle(&#39;'+c[0]+'&#39;)"><span class="s321-box">'+(on?'✓':'')+'</span><span class="s321-ctx"><span class="s321-ct">'+c[1]+'</span><span class="s321-cd">'+c[2]+'</span></span></button>';
+    });
+    body+='</div>';
+  });
+  body+='<textarea class="s321-note" id="s321-note" placeholder="今天聖靈對我說的話、我要落實321的一個具體行動……" oninput="s321Note(this.value)">'+esc(rec.note||"")+'</textarea>';
+  body+='<div class="s321-foot">已落實 <b>'+days+'</b> 天 · 自動儲存於此裝置</div>';
+  body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀（321 的完整訓練）</button>';
+  body+='</div>';
+  return head+body;
+}
+window.s321Toggle=function(k){
+  var t=todayStr(); if(!state.s321)state.s321={}; if(!state.s321[t])state.s321[t]={};
+  state.s321[t][k]=!state.s321[t][k]; saveState(); rerenderKeepScroll();
+};
+window.s321Note=function(v){
+  var t=todayStr(); if(!state.s321)state.s321={}; if(!state.s321[t])state.s321[t]={};
+  state.s321[t].note=v; saveState();
+};
+
+/* ===== 操練920 · 我的920名單 ===== */
+var FRUITS9=["仁愛","喜樂","和平","忍耐","恩慈","良善","信實","溫柔","節制"];
+var FRUITS9_ACT=[
+  "今天主動為他做一件他需要、卻無法回報你的事——不為被看見，只因你愛他。（林前13:4-5）",
+  "為他數算三件可感謝的事，帶著從主而來的喜樂（不是看他的表現）親近他，用笑臉與盼望待他。（腓4:4）",
+  "若你與他之間有未解的張力，今天主動跨出一步和好——先放下「我有理」，為和睦先伸手。（羅12:18）",
+  "在他最容易惹你的那件事上，今天忍住不立刻反應、不翻舊帳；深呼吸，把這口氣交給主。（弗4:2）",
+  "今天對他說一句造就、鼓勵的話，或做一個體貼的小舉動，讓他感到被珍惜。（弗4:32）",
+  "在沒有人看見時，仍為他選擇良善——不在背後議論他，反而暗暗為他著想、為他好。（羅12:9）",
+  "守住你對他的一個承諾、把答應的小事做到底，讓他在你身上經歷可信靠的愛。（路16:10）",
+  "今天用柔和的語氣回應他，即使你有理也不疾言厲色——「回答柔和，使怒消退」。（箴15:1）",
+  "在你最容易在他面前失控之處（脾氣、言語、慾望），今天靠聖靈勒住一次，選擇基督、不放縱自己。（箴25:28）"
+];
+function s920HTML(s){
+  var list=state.s920||[];
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">🍇 操練920</div><div class="rv-h-sub">建立關係，結出果子</div></div></div>';
+  var body='<div class="strat-page">';
+  body+='<div class="s920-intro">'
+    +'<div class="s920-i-row"><span class="s920-i-num">9</span><span>在每份關係中，結出 9 種聖靈的果子</span></div>'
+    +'<div class="s920-i-row"><span class="s920-i-num">2</span><span>每個與你有關係的人，都是你的 2</span></div>'
+    +'<div class="s920-i-row"><span class="s920-i-num">0</span><span>對他活出無己（0）——不為自己，只為耶穌、為他</span></div>'
+    +'</div>';
+  body+='<div class="s321-sec-h">我的920名單 <span class="s321-tally">'+list.length+' 人</span></div>';
+  body+='<div class="s920-add"><input id="s920-name" class="s920-in" type="text" placeholder="加一個神放在你身邊的人（名字）"><input id="s920-rel" class="s920-in s920-rel" type="text" placeholder="關係（家人 / 同事 / 慕道友…）"><button class="s920-addbtn" onclick="s920Add()">＋ 新增</button></div>';
+  if(list.length===0){
+    body+='<div class="s920-empty">還沒有名單。從神放在你身邊的「一個人」開始——把他加進來，天天為他禱告、對他活出無己的愛。<br><br>「我賜給你們一條新命令，乃是叫你們彼此相愛；我怎樣愛你們，你們也要怎樣相愛。」（約翰福音 13:34）</div>';
+  } else {
+    list.forEach(function(p){
+      var fruits=p.fruits||[];
+      body+='<div class="s920-card">';
+      body+='<div class="s920-top"><input class="s920-name-in" type="text" value="'+escA(p.name)+'" placeholder="名字…" oninput="s920Name(&#39;'+p.id+'&#39;,this.value)"><button class="s920-del" onclick="s920Del(&#39;'+p.id+'&#39;)">刪除</button></div>';
+      body+='<input class="s920-rel-in" type="text" value="'+escA(p.rel||"")+'" placeholder="關係…" oninput="s920Rel(&#39;'+p.id+'&#39;,this.value)">';
+      body+='<div class="s920-flabel">這份關係中，聖靈正結出的果子 <span class="s920-fcount">'+fruits.length+' / 9</span></div>';
+      body+='<div class="s920-fruits">';
+      FRUITS9.forEach(function(f,fi){
+        var on=fruits.indexOf(fi)>=0;
+        body+='<button class="s920-fruit'+(on?' on':'')+'" onclick="s920Fruit(&#39;'+p.id+'&#39;,'+fi+')">'+f+'</button>';
+      });
+      body+='</div>';
+      var sel=[]; for(var fz=0;fz<FRUITS9.length;fz++){ if(fruits.indexOf(fz)>=0) sel.push(fz); }
+      if(sel.length){
+        var pdone=p.done||[];
+        var dc=sel.filter(function(fi){return pdone.indexOf(fi)>=0;}).length;
+        body+='<div class="s920-actlabel">今天的操練 · 點 ✓ 標記已做到 <span class="s920-fcount">'+dc+' / '+sel.length+'</span></div>';
+        body+='<div class="s920-acts">';
+        sel.forEach(function(fi){
+          var isDone=pdone.indexOf(fi)>=0;
+          body+='<div class="s920-act'+(isDone?' done':'')+'">'
+            +'<button class="s920-act-chk" onclick="s920Done(&#39;'+p.id+'&#39;,'+fi+')">'+(isDone?'✓':'')+'</button>'
+            +'<div class="s920-act-body"><span class="s920-act-f">'+FRUITS9[fi]+'</span><span class="s920-act-t">'+FRUITS9_ACT[fi]+'</span></div>'
+            +'</div>';
+        });
+        body+='</div>';
+      } else {
+        body+='<div class="s920-acthint">👆 點選上面的果子，這裡會出現「結出這個果子」對他的一個具體操練行動。</div>';
+      }
+      body+='<textarea class="s920-note" placeholder="為他禱告、我對他「無己的愛」的一個具體行動……" oninput="s920Note(&#39;'+p.id+'&#39;,this.value)">'+esc(p.note||"")+'</textarea>';
+      var cfs=p.conflicts||[];
+      body+='<div class="s920-conflict"><button class="s920-cf-h" onclick="s920cfToggle(&#39;'+p.id+'&#39;)"><span>⚔️ 與他起衝突了？用 321 化解'+(cfs.length?' · '+cfs.length:'')+'</span><span class="s920-cf-chev">'+(p.cfOpen?'▾':'▸')+'</span></button>';
+      if(p.cfOpen){
+        body+='<div class="s920-cf-body">';
+        if(cfs.length===0){
+          body+='<div class="s920-cf-empty">遇到衝突了嗎？新增一次，照著 321 一步步化解；化解後可以刪除。</div>';
+        }
+        cfs.forEach(function(cf){
+          var cfd=cf.done||[];
+          body+='<div class="s920-cf-rec">';
+          body+='<div class="s920-cf-rec-top"><span class="s920-cf-evt-label">這次的衝突 · 發生了什麼？</span><button class="s920-cf-del" onclick="s920cfDel(&#39;'+p.id+'&#39;,&#39;'+cf.id+'&#39;)">刪除</button></div>';
+          body+='<textarea class="s920-cf-evt" placeholder="簡單寫下事件、對象與你的感受……" oninput="s920cfEvent(&#39;'+p.id+'&#39;,&#39;'+cf.id+'&#39;,this.value)">'+esc(cf.event||"")+'</textarea>';
+          body+='<div class="s920-cf-prog">依序操練，做到就打勾　<span class="s920-cf-pc">'+cfd.length+' / '+CONFLICT321.length+'</span></div>';
+          CONFLICT321.forEach(function(c,i){
+            var dn=cfd.indexOf(i)>=0;
+            body+='<button class="s920-cf-step'+(dn?' done':'')+'" onclick="s920cfStep(&#39;'+p.id+'&#39;,&#39;'+cf.id+'&#39;,'+i+')"><span class="s920-cf-n">'+(dn?'✓':(i+1))+'</span><span class="s920-cf-tx"><span class="s920-cf-k">'+c[0]+'</span><span class="s920-cf-d">'+c[1]+'</span></span></button>';
+          });
+          body+='</div>';
+        });
+        body+='<button class="s920-cf-add" onclick="s920cfAdd(&#39;'+p.id+'&#39;)">＋ 新增一次衝突</button>';
+        body+='<div class="s920-cf-verse">「凡事謙虛、溫柔、忍耐，用愛心互相寬容，用和平彼此聯絡，竭力保守聖靈所賜合而為一的心。」（以弗所書 4:2-3）</div>';
+        body+='</div>';
+      }
+      body+='</div>';
+      body+='</div>';
+    });
+  }
+  body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
+  body+='</div>';
+  return head+body;
+}
+function s920Find(id){ var l=state.s920||[]; for(var i=0;i<l.length;i++){ if(l[i].id===id) return l[i]; } return null; }
+window.s920Add=function(){
+  var n=document.getElementById("s920-name"), r=document.getElementById("s920-rel");
+  var name=n?(n.value||"").trim():""; if(!name) return;
+  var rel=r?(r.value||"").trim():"";
+  if(!Array.isArray(state.s920)) state.s920=[];
+  state.s920.unshift({id:"p"+Date.now()+Math.floor(Math.random()*1000), name:name, rel:rel, note:"", fruits:[], done:[]});
+  saveState(); rerenderKeepScroll();
+};
+window.s920Del=function(id){
+  uiConfirm("確定要從名單中移除這個人嗎？", function(){
+    state.s920=(state.s920||[]).filter(function(p){return p.id!==id;});
+    saveState(); rerenderKeepScroll();
+  });
+};
+window.s920Name=function(id,v){ var p=s920Find(id); if(p){ p.name=v; saveState(); } };
+window.s920Rel=function(id,v){ var p=s920Find(id); if(p){ p.rel=v; saveState(); } };
+window.s920Note=function(id,v){ var p=s920Find(id); if(p){ p.note=v; saveState(); } };
+window.s920Fruit=function(id,fi){
+  var p=s920Find(id); if(!p) return; if(!Array.isArray(p.fruits)) p.fruits=[];
+  var k=p.fruits.indexOf(fi);
+  if(k>=0){ p.fruits.splice(k,1); if(Array.isArray(p.done)){ var dk=p.done.indexOf(fi); if(dk>=0) p.done.splice(dk,1); } }
+  else p.fruits.push(fi);
+  saveState(); rerenderKeepScroll();
+};
+window.s920Done=function(id,fi){
+  var p=s920Find(id); if(!p) return; if(!Array.isArray(p.done)) p.done=[];
+  var k=p.done.indexOf(fi); if(k>=0) p.done.splice(k,1); else p.done.push(fi);
+  saveState(); rerenderKeepScroll();
+};
+window.s920cfToggle=function(id){ var p=s920Find(id); if(!p)return; p.cfOpen=!p.cfOpen; saveState(); rerenderKeepScroll(); };
+window.s920cfAdd=function(id){ var p=s920Find(id); if(!p)return; if(!Array.isArray(p.conflicts))p.conflicts=[]; p.conflicts.push({id:"c"+Date.now()+Math.floor(Math.random()*1000),event:"",done:[]}); p.cfOpen=true; saveState(); rerenderKeepScroll(); };
+window.s920cfDel=function(id,cid){ uiConfirm("刪除這次衝突的記錄嗎？", function(){ var p=s920Find(id); if(!p)return; p.conflicts=(p.conflicts||[]).filter(function(c){return c.id!==cid;}); saveState(); rerenderKeepScroll(); }); };
+function s920cfFind(id,cid){ var p=s920Find(id); if(!p||!Array.isArray(p.conflicts))return null; for(var i=0;i<p.conflicts.length;i++){ if(p.conflicts[i].id===cid)return p.conflicts[i]; } return null; }
+window.s920cfEvent=function(id,cid,v){ var c=s920cfFind(id,cid); if(c){ c.event=v; saveState(); } };
+window.s920cfStep=function(id,cid,i){ var c=s920cfFind(id,cid); if(!c)return; if(!Array.isArray(c.done))c.done=[]; var k=c.done.indexOf(i); if(k>=0)c.done.splice(k,1); else c.done.push(i); saveState(); rerenderKeepScroll(); };
+/* ===== 發展235 · 我的235團隊 ===== */
+var GIFT5=["使徒","先知","傳福音","牧師","教師"];
+var TIERS235=[
+  {key:"comp", n:"2", title:"屬靈同伴", desc:"與沒有問題、無己的人，彼此扶持、一同奔跑的同行夥伴。", roles:null,
+   verse:"「兩個人總比一個人好……若是跌倒，這人可以扶起他的同伴。」（傳道書 4:9-10）"},
+  {key:"fam",  n:"3", title:"屬靈父母兒女", desc:"屬靈的傳承——被人帶，也帶下一代；上有屬靈父母，下有屬靈兒女，三代同行。", roles:["屬靈父母","屬靈兒女"],
+   verse:"「你在許多見證人面前聽見我所教訓的，也要交託那忠心能教導別人的人。」（提後 2:2）"},
+  {key:"team", n:"5", title:"五重職分戰友", desc:"一同爭戰、彼此配搭的團隊，使肢體各盡其職、共同建立。", roles:GIFT5,
+   verse:"「他所賜的有使徒、有先知、有傳福音的、有牧師和教師……各盡其職，建立基督的身體。」（以弗所書 4:11-12）"}
+];
+function s235List(key){ var d=state.s235||{}; return Array.isArray(d[key])?d[key]:[]; }
+function s235HTML(s){
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">🤝 發展235</div><div class="rv-h-sub">建立團隊，成就事工</div></div></div>';
+  var body='<div class="strat-page">';
+  body+='<div class="s920-intro">'
+    +'<div class="s920-i-row"><span class="s920-i-num">2</span><span>屬靈同伴 — 彼此扶持、一同奔跑</span></div>'
+    +'<div class="s920-i-row"><span class="s920-i-num">3</span><span>屬靈父母兒女 — 被人帶，也帶人，屬靈的傳承</span></div>'
+    +'<div class="s920-i-row"><span class="s920-i-num">5</span><span>五重職分戰友 — 一同爭戰、彼此配搭的團隊</span></div>'
+    +'</div>';
+  var teamOpen = state.s235 && state.s235.teamOpen!==false;
+  body+='<div class="s235-team"><button class="s235-team-h" onclick="s235TeamToggle()"><span>🤝 團隊同行 · 分享領受 · 彼此問責</span><span class="s920-cf-chev">'+(teamOpen?'▾':'▸')+'</span></button>';
+  if(teamOpen){
+    var cov=(state.s235&&state.s235.cov)||""; var c=s235chk();
+    body+='<div class="s235-team-body">';
+    body+='<div class="s235-team-sub">和你的 235 團隊一起用晨讀321：彼此陪伴、分享領受、誠實問責，一同邁向得勝。</div>';
+    body+='<div class="s235-fl">我們的同行約定</div>';
+    body+='<textarea class="s235-ta" placeholder="例如：我們約定天天晨讀、彼此代禱、每週分享領受、誠實問責，一同讓耶穌作王。" oninput="s235Cov(this.value)">'+esc(cov)+'</textarea>';
+    body+='<div class="s235-fl">本週問責 <span class="s235-fl-c">'+c.done.length+' / '+S235CHK.length+'</span></div>';
+    body+='<div class="s235-checks">';
+    S235CHK.forEach(function(t,i){ var on=c.done.indexOf(i)>=0; body+='<button class="s235-chk'+(on?' on':'')+'" onclick="s235ChkToggle('+i+')"><span class="s235-chk-box">'+(on?'✓':'')+'</span><span class="s235-chk-t">'+t+'</span></button>'; });
+    body+='</div>';
+    body+='<div class="s235-fl">🌱 本週領受（神對我說的話）</div>';
+    body+='<textarea class="s235-ta" placeholder="這週神透過晨讀、生活對我說的話……" oninput="s235ChkRecv(this.value)">'+esc(c.receive||"")+'</textarea>';
+    body+='<div class="s235-fl">🙏 我需要的代禱 / 我的軟弱（誠實問責）</div>';
+    body+='<textarea class="s235-ta" placeholder="這週我的掙扎、軟弱，需要團隊為我代禱的……" oninput="s235ChkPray(this.value)">'+esc(c.prayer||"")+'</textarea>';
+    body+='<div class="s235-team-btns"><button class="s235-share-btn" onclick="s235ShareToggle()">📤 產生分享卡</button><button class="s235-reset-btn" onclick="s235ChkReset()">🔄 新的一週</button></div>';
+    if(state.s235&&state.s235.share){
+      body+='<textarea class="s235-sharebox" id="s235-sharebox" readonly>'+esc(s235ShareText())+'</textarea>';
+      body+='<button class="s235-copy-btn" onclick="s235Copy()">📋 複製，貼到 LINE 團隊群組</button>';
+    }
+    body+='<div class="s235-verse">「鐵磨鐵，磨出刃來；朋友相感，也是如此。」（箴言 27:17）　「我們是與神同工的。」（林前 3:9）</div>';
+    body+='</div>';
+  }
+  body+='</div>';
+  TIERS235.forEach(function(t){
+    var list=s235List(t.key);
+    body+='<div class="s235-tier-h"><span class="s235-tier-n">'+t.n+'</span><span class="s235-tier-tx"><span class="s235-tier-t">'+t.title+'<span class="s235-tier-c">'+list.length+'</span></span><span class="s235-tier-d">'+t.desc+'</span></span></div>';
+    if(t.key==="team"){
+      var covered={}; list.forEach(function(p){ if(typeof p.role==="number"&&p.role>=0) covered[p.role]=1; });
+      var cc=Object.keys(covered).length;
+      body+='<div class="s235-cover">五重職分覆蓋 <span class="s235-cover-c">'+cc+' / 5</span><span class="s235-cover-chips">';
+      GIFT5.forEach(function(g,gi){ body+='<span class="s235-cover-chip'+(covered[gi]?' on':'')+'">'+g+'</span>'; });
+      body+='</span></div>';
+    }
+    body+='<div class="s235-add"><input id="s235-name-'+t.key+'" class="s920-in" type="text" placeholder="加一位 '+t.title+'（名字）"><button class="s920-addbtn" onclick="s235Add(&#39;'+t.key+'&#39;)">＋ 新增</button></div>';
+    if(list.length===0){
+      body+='<div class="s235-empty">還沒有 '+t.title+'。神的工作從不是一個人完成的——把神放在你身邊同行的人，加進來吧。</div>';
+    } else {
+      list.forEach(function(p){
+        body+='<div class="s920-card">';
+        body+='<div class="s920-top"><input class="s920-name-in" type="text" value="'+escA(p.name)+'" placeholder="名字…" oninput="s235Name(&#39;'+t.key+'&#39;,&#39;'+p.id+'&#39;,this.value)"><button class="s920-del" onclick="s235Del(&#39;'+t.key+'&#39;,&#39;'+p.id+'&#39;)">刪除</button></div>';
+        if(t.roles){
+          body+='<div class="s235-roles">';
+          t.roles.forEach(function(r,ri){
+            var on=(typeof p.role==="number"&&p.role===ri);
+            body+='<button class="s235-role'+(on?' on':'')+'" onclick="s235Role(&#39;'+t.key+'&#39;,&#39;'+p.id+'&#39;,'+ri+')">'+r+'</button>';
+          });
+          body+='</div>';
+        }
+        body+='<textarea class="s920-note" placeholder="為他禱告、你們如何同行／傳承／配搭……" oninput="s235Note(&#39;'+t.key+'&#39;,&#39;'+p.id+'&#39;,this.value)">'+esc(p.note||"")+'</textarea>';
+        body+='</div>';
+      });
+    }
+    body+='<div class="s235-verse">'+t.verse+'</div>';
+  });
+  var tasks=(state.s235&&Array.isArray(state.s235.tasks))?state.s235.tasks:[];
+  var doneN=tasks.filter(function(x){return x.status===2;}).length;
+  body+='<div class="s235-tier-h"><span class="s235-tier-n s235-tier-task">✦</span><span class="s235-tier-tx"><span class="s235-tier-t">團隊事工與任務<span class="s235-tier-c">'+tasks.length+'</span></span><span class="s235-tier-d">先立定「事工項目」，再分「任務與職責分工」——團隊一起承接神的託付，各盡其職、同心完成。</span></span></div>';
+  if(tasks.length){ body+='<div class="s235-cover">事工完成 <span class="s235-cover-c">'+doneN+' / '+tasks.length+'</span></div>'; }
+  body+='<div class="s235-add"><input id="s235-task-name" class="s920-in" type="text" placeholder="加一項事工項目（例如：週五福音聚會）"><button class="s920-addbtn" onclick="s235TaskAdd()">＋ 新增</button></div>';
+  if(tasks.length===0){
+    body+='<div class="s235-empty">還沒有事工。把神給團隊的託付寫下來，立定事工項目，再分配任務與職責，一起承接、一起完成。</div>';
+  } else {
+    tasks.forEach(function(tk){
+      var st=(typeof tk.status==="number")?tk.status:0;
+      var items=Array.isArray(tk.items)?tk.items:[];
+      var idn=items.filter(function(x){return x.done;}).length;
+      body+='<div class="s920-card s235-mcard">';
+      body+='<div class="s920-top"><input class="s920-name-in" type="text" value="'+escA(tk.name)+'" placeholder="事工項目…" oninput="s235TaskName(&#39;'+tk.id+'&#39;,this.value)"><button class="s920-del" onclick="s235TaskDel(&#39;'+tk.id+'&#39;)">刪除</button></div>';
+      body+='<button class="s235-stat s235-stat-'+st+'" onclick="s235TaskStatus(&#39;'+tk.id+'&#39;)">'+STAT3[st]+' ▸</button>';
+      body+='<textarea class="s920-note" placeholder="這個事工的目標／異象……" oninput="s235TaskNote(&#39;'+tk.id+'&#39;,this.value)">'+esc(tk.note||"")+'</textarea>';
+      body+='<div class="s235-sub-h">任務與職責分工 <span class="s235-fl-c">'+idn+' / '+items.length+'</span></div>';
+      items.forEach(function(it){
+        body+='<div class="s235-item'+(it.done?" done":"")+'">';
+        body+='<button class="s235-item-chk" onclick="s235ItemDone(&#39;'+tk.id+'&#39;,&#39;'+it.id+'&#39;)">'+(it.done?"✓":"")+'</button>';
+        body+='<div class="s235-item-fields"><input class="s235-item-task" type="text" value="'+escA(it.task||"")+'" placeholder="任務內容…" oninput="s235ItemTask(&#39;'+tk.id+'&#39;,&#39;'+it.id+'&#39;,this.value)"><input class="s235-item-owner" type="text" value="'+escA(it.owner||"")+'" placeholder="負責人 / 職責…" oninput="s235ItemOwner(&#39;'+tk.id+'&#39;,&#39;'+it.id+'&#39;,this.value)"></div>';
+        body+='<button class="s235-item-del" onclick="s235ItemDel(&#39;'+tk.id+'&#39;,&#39;'+it.id+'&#39;)">✕</button>';
+        body+='</div>';
+      });
+      body+='<button class="s235-item-add" onclick="s235ItemAdd(&#39;'+tk.id+'&#39;)">＋ 新增任務／分工</button>';
+      body+='</div>';
+    });
+  }
+  body+='<div class="s235-verse">「我父作事直到如今，我也作事。」（約翰福音 5:17）　「各人要照所得的恩賜彼此服事。」（彼得前書 4:10）</div>';
+  body+='<button class="rvl-open" onclick="openLesson('+(state.last||1)+')">📖 繼續晨讀</button>';
+  body+='</div>';
+  return head+body;
+}
+function s235Find(key,id){ var l=s235List(key); for(var i=0;i<l.length;i++){ if(l[i].id===id) return l[i]; } return null; }
+window.s235Add=function(key){
+  var n=document.getElementById("s235-name-"+key); var name=n?(n.value||"").trim():""; if(!name) return;
+  if(!state.s235) state.s235={comp:[],fam:[],team:[]}; if(!Array.isArray(state.s235[key])) state.s235[key]=[];
+  state.s235[key].push({id:"t"+Date.now()+Math.floor(Math.random()*1000), name:name, role:-1, note:""});
+  saveState(); rerenderKeepScroll();
+};
+window.s235Del=function(key,id){
+  uiConfirm("確定要從團隊中移除這個人嗎？", function(){
+    if(state.s235&&Array.isArray(state.s235[key])) state.s235[key]=state.s235[key].filter(function(p){return p.id!==id;});
+    saveState(); rerenderKeepScroll();
+  });
+};
+window.s235Name=function(key,id,v){ var p=s235Find(key,id); if(p){ p.name=v; saveState(); } };
+window.s235Note=function(key,id,v){ var p=s235Find(key,id); if(p){ p.note=v; saveState(); } };
+window.s235Role=function(key,id,ri){ var p=s235Find(key,id); if(!p)return; p.role=(p.role===ri)?-1:ri; saveState(); rerenderKeepScroll(); };
+var STAT3=["籌備中","進行中","已完成"];
+function s235Tasks(){ if(!state.s235)state.s235={comp:[],fam:[],team:[]}; if(!Array.isArray(state.s235.tasks))state.s235.tasks=[]; return state.s235.tasks; }
+function s235TaskFind(id){ var l=s235Tasks(); for(var i=0;i<l.length;i++){ if(l[i].id===id)return l[i]; } return null; }
+window.s235TaskAdd=function(){ var n=document.getElementById("s235-task-name"); var name=n?(n.value||"").trim():""; if(!name)return; s235Tasks().push({id:"k"+Date.now()+Math.floor(Math.random()*1000),name:name,status:0,owner:"",note:""}); saveState(); rerenderKeepScroll(); };
+window.s235TaskDel=function(id){ uiConfirm("刪除這項事工／任務嗎？", function(){ state.s235.tasks=s235Tasks().filter(function(x){return x.id!==id;}); saveState(); rerenderKeepScroll(); }); };
+window.s235TaskName=function(id,v){ var t=s235TaskFind(id); if(t){t.name=v;saveState();} };
+window.s235TaskOwner=function(id,v){ var t=s235TaskFind(id); if(t){t.owner=v;saveState();} };
+window.s235TaskNote=function(id,v){ var t=s235TaskFind(id); if(t){t.note=v;saveState();} };
+window.s235TaskStatus=function(id){ var t=s235TaskFind(id); if(!t)return; t.status=((typeof t.status==="number"?t.status:0)+1)%3; saveState(); rerenderKeepScroll(); };
+function s235Items(mid){ var t=s235TaskFind(mid); if(!t)return null; if(!Array.isArray(t.items))t.items=[]; return t.items; }
+function s235ItemFind(mid,iid){ var l=s235Items(mid); if(!l)return null; for(var i=0;i<l.length;i++){ if(l[i].id===iid)return l[i]; } return null; }
+window.s235ItemAdd=function(mid){ var l=s235Items(mid); if(!l)return; l.push({id:"i"+Date.now()+Math.floor(Math.random()*1000),task:"",owner:"",done:false}); saveState(); rerenderKeepScroll(); };
+window.s235ItemTask=function(mid,iid,v){ var it=s235ItemFind(mid,iid); if(it){it.task=v;saveState();} };
+window.s235ItemOwner=function(mid,iid,v){ var it=s235ItemFind(mid,iid); if(it){it.owner=v;saveState();} };
+window.s235ItemDone=function(mid,iid){ var it=s235ItemFind(mid,iid); if(!it)return; it.done=!it.done; saveState(); rerenderKeepScroll(); };
+window.s235ItemDel=function(mid,iid){ var t=s235TaskFind(mid); if(!t||!Array.isArray(t.items))return; t.items=t.items.filter(function(x){return x.id!==iid;}); saveState(); rerenderKeepScroll(); };
+var S235CHK=[
+  "天天晨讀、親近神",
+  "落實321：讓耶穌作王、焦點對準耶穌",
+  "對920名單活出無己的愛",
+  "與肢體同行、參與聚會",
+  "為團隊中的人代禱"
+];
+function s235chk(){ if(!state.s235) state.s235={comp:[],fam:[],team:[]}; if(!state.s235.chk||typeof state.s235.chk!=="object") state.s235.chk={done:[],receive:"",prayer:""}; if(!Array.isArray(state.s235.chk.done)) state.s235.chk.done=[]; return state.s235.chk; }
+function s235ShareText(){
+  var c=s235chk(); var lines=[];
+  lines.push("【晨讀321 · 本週同行分享】"); lines.push("");
+  lines.push("本週問責：");
+  S235CHK.forEach(function(t,i){ lines.push((c.done.indexOf(i)>=0?"✓ ":"○ ")+t); });
+  lines.push("");
+  if(c.receive&&c.receive.trim()){ lines.push("🌱 本週領受："); lines.push(c.receive.trim()); lines.push(""); }
+  if(c.prayer&&c.prayer.trim()){ lines.push("🙏 我需要的代禱："); lines.push(c.prayer.trim()); lines.push(""); }
+  lines.push("—— 一起讓耶穌作王，邁向得勝 🕊️");
+  return lines.join("\n");
+}
+window.s235TeamToggle=function(){ if(!state.s235)state.s235={comp:[],fam:[],team:[]}; var open=state.s235.teamOpen!==false; state.s235.teamOpen=!open; saveState(); rerenderKeepScroll(); };
+window.s235Cov=function(v){ if(!state.s235)state.s235={comp:[],fam:[],team:[]}; state.s235.cov=v; saveState(); };
+window.s235ChkToggle=function(i){ var c=s235chk(); var k=c.done.indexOf(i); if(k>=0)c.done.splice(k,1); else c.done.push(i); saveState(); rerenderKeepScroll(); };
+window.s235ChkRecv=function(v){ s235chk().receive=v; saveState(); };
+window.s235ChkPray=function(v){ s235chk().prayer=v; saveState(); };
+window.s235ShareToggle=function(){ if(!state.s235)state.s235={comp:[],fam:[],team:[]}; state.s235.share=!state.s235.share; saveState(); rerenderKeepScroll(); };
+window.s235ChkReset=function(){ uiConfirm("開始新的一週？這會清除本週的問責與領受。", function(){ state.s235.chk={done:[],receive:"",prayer:""}; state.s235.share=false; saveState(); rerenderKeepScroll(); }); };
+function s235CopyManual(){
+  var ta=document.getElementById("s235-sharebox");
+  if(ta){ try{ ta.readOnly=false; if(ta.focus)ta.focus(); if(ta.setSelectionRange)ta.setSelectionRange(0,999999); else if(ta.select)ta.select(); ta.readOnly=true; }catch(_){} }
+  uiToast("請長按上方分享卡文字、全選後複製 🙏");
+}
+function s235CopyExec(t){
+  var ok=false;
+  try{
+    var ta=document.createElement("textarea");
+    ta.value=t; ta.contentEditable="true"; ta.readOnly=false;
+    ta.style.cssText="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;";
+    (document.body||document.documentElement).appendChild(ta);
+    var range=document.createRange(); range.selectNodeContents(ta);
+    var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    if(ta.setSelectionRange) ta.setSelectionRange(0,999999);
+    ok=!!(document.execCommand&&document.execCommand("copy"));
+    if(ta.parentNode) ta.parentNode.removeChild(ta);
+  }catch(e){ ok=false; }
+  if(ok){ uiToast("已複製！貼到你的 LINE 團隊群組即可 🙏"); } else { s235CopyManual(); }
+}
+window.s235Copy=function(){
+  var t=s235ShareText();
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ uiToast("已複製！貼到你的 LINE 團隊群組即可 🙏"); }, function(){ s235CopyExec(t); });
+      return;
+    }
+  }catch(e){}
+  s235CopyExec(t);
+};
+var CONFLICT321=[
+  ["焦點對準耶穌","先停下來，回到耶穌——別急著反應。把焦點從「對方」和「自己的情緒」轉回耶穌，深呼吸、求聖靈；用心靠聖靈，不要用腦靠自己。"],
+  ["看見自己的有己","誠實問自己：我此刻是不是在「要作主、要贏、要證明我對」？衝突的根，常是兩個「有己」相撞——先承認自己的驕傲。"],
+  ["謙卑、回到本位","放下「我有理」的權利，回到人的本位，不抓權、也不代替神審判他。神阻擋驕傲的人、賜恩給謙卑的人（雅4:6）——先低頭不是輸，是得勝。"],
+  ["為他、不為自己","把問題從「我要贏」轉成「我要愛他、得著他」。人比事重要，關係比輸贏重要；不為了一件事，傷害一個人。"],
+  ["結出和平的果子","主動跨一步、用柔和的話先和好——「回答柔和，使怒消退」（箴15:1）。先處理關係，再處理事情。"],
+  ["讓耶穌作王","把結果與對方都交在神手中，不靠自己掌控。讓耶穌在這關係中作王，把和好的榮耀歸給祂。"]
+];
+
 function render(){
   const app=document.getElementById("app");
-  app.innerHTML = state.view==="home" ? homeHTML() : readerHTML(state.lesson);
+  app.innerHTML = state.view==="home" ? homeHTML() : (state.view==="review" ? reviewHTML() : (state.view==="strategy" ? strategyHTML() : readerHTML(state.lesson)));
   renderChat();
   if(state.view==="reader"&&state.lesson){
     if(state.tab==="declare") recHydrate("declare",state.lesson.n);
@@ -16301,7 +17318,8 @@ function renderChat(){
   const host=document.getElementById("xiaozhi");
   if(!host) return;
   const fabBottom = state.view==="reader" ? "84px" : "24px";
-  let html='<button class="xz-fab" style="bottom:'+fabBottom+'" onclick="xzOpen()"><span class="xz-fab-ic">✨</span><span class="xz-fab-tx">小智</span></button>';
+  const fabStyle = state.xzPos ? ('left:'+state.xzPos.x+'px;top:'+state.xzPos.y+'px;right:auto;bottom:auto') : ('bottom:'+fabBottom);
+  let html = (state.view==="reader") ? "" : '<button class="xz-fab" style="'+fabStyle+'" onclick="if(!window.__xzJustDragged)xzOpen()"><span class="xz-fab-ic">✨</span><span class="xz-fab-tx">小智</span></button>';
   if(chat.open){
     const l=state.lesson;
     const intro=l
@@ -16325,6 +17343,47 @@ function renderChat(){
       +'</div></div>';
   }
   host.innerHTML=html;
+  var fabEl=host.querySelector(".xz-fab");
+  if(fabEl){
+    if(state.xzPos){
+      var w=fabEl.offsetWidth||120, h=fabEl.offsetHeight||48;
+      var cx=Math.max(6,Math.min(state.xzPos.x,window.innerWidth-w-6));
+      var cy=Math.max(6,Math.min(state.xzPos.y,window.innerHeight-h-6));
+      if(cx!==state.xzPos.x||cy!==state.xzPos.y){ fabEl.style.left=cx+"px"; fabEl.style.top=cy+"px"; state.xzPos={x:cx,y:cy}; }
+    }
+    attachFabDrag(fabEl);
+  }
+}
+function attachFabDrag(fab){
+  if(!fab || fab.__dragWired) return; fab.__dragWired=true;
+  var sx=0,sy=0,ox=0,oy=0,moved=false,dragging=false;
+  fab.addEventListener("pointerdown",function(e){
+    var r=fab.getBoundingClientRect();
+    sx=e.clientX; sy=e.clientY; ox=r.left; oy=r.top; moved=false; dragging=true;
+    fab.style.transition="none";
+    try{fab.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  fab.addEventListener("pointermove",function(e){
+    if(!dragging) return;
+    var dx=e.clientX-sx, dy=e.clientY-sy;
+    if(!moved && (Math.abs(dx)>4||Math.abs(dy)>4)) moved=true;
+    if(!moved) return;
+    var w=fab.offsetWidth, h=fab.offsetHeight;
+    var nx=Math.max(6,Math.min(ox+dx, window.innerWidth-w-6));
+    var ny=Math.max(6,Math.min(oy+dy, window.innerHeight-h-6));
+    fab.style.left=nx+"px"; fab.style.top=ny+"px"; fab.style.right="auto"; fab.style.bottom="auto";
+  });
+  function endDrag(e){
+    if(!dragging) return; dragging=false; fab.style.transition="";
+    try{fab.releasePointerCapture(e.pointerId);}catch(_){}
+    if(moved){
+      var r=fab.getBoundingClientRect();
+      state.xzPos={x:Math.round(r.left), y:Math.round(r.top)}; saveState();
+      window.__xzJustDragged=true; setTimeout(function(){window.__xzJustDragged=false;},350);
+    }
+  }
+  fab.addEventListener("pointerup",endDrag);
+  fab.addEventListener("pointercancel",endDrag);
 }
 window.xzOpen=function(){chat.open=true;renderChat();xzScrollBottom();setTimeout(function(){var i=document.getElementById("xz-input");if(i&&i.focus)i.focus();},60);};
 window.xzClose=function(){chat.open=false;renderChat();};
