@@ -17580,7 +17580,7 @@ function yunUnlock(){
   }catch(_){}
 }
 function yunRateAttr(){
-  var r=(typeof state.spkRate==="number"?state.spkRate:1.0);
+  var r=(typeof state.spkRate==="number"?state.spkRate:0.94);
   var pct=Math.round((r-1)*100);            /* 1.0 → +0%，0.8 → -20% */
   return (pct>=0?"+":"")+pct+"%";
 }
@@ -17672,7 +17672,7 @@ function spkToggleNative(text, id){
     var u = new SpeechSynthesisUtterance(spk.queue[spk.idx++]);
     u.lang = (voice && voice.lang) ? voice.lang : "zh-TW";
     if(voice) u.voice = voice;
-    u.rate = (typeof state.spkRate==="number" ? state.spkRate : 0.96); u.pitch = 1.0;
+    u.rate = (typeof state.spkRate==="number" ? state.spkRate : 0.94); u.pitch = 1.0;
     u.onend = function(){ if(my===spk.token) step(); };
     u.onerror = function(){ if(my===spk.token) step(); };
     try{ window.speechSynthesis.speak(u); }catch(_){ spkStop(); }
@@ -17722,13 +17722,13 @@ window.openSpkSettings=function(){
 };
 window.closeSpkSettings=function(){ var s=document.getElementById("spk-sheet"); if(s){s.style.display="none"; s.innerHTML="";} if(typeof spkStop==="function") spkStop(); };
 window.spkPickVoice=function(name){ state.spkVoice=name||""; saveState(); renderSpkSheet(); };
-window.spkSetRate=function(v){ state.spkRate=Number(v)||0.96; saveState(); var lbl=document.getElementById("spk-rate-lbl"); if(lbl) lbl.textContent=(state.spkRate).toFixed(2)+"×"; };
+window.spkSetRate=function(v){ state.spkRate=Number(v)||0.94; saveState(); var lbl=document.getElementById("spk-rate-lbl"); if(lbl) lbl.textContent=(state.spkRate).toFixed(2)+"×"; };
 window.spkPreview=function(){ spkToggle("平安！這是朗讀的試聽。祂必興旺，我必衰微。願神祝福你今天的晨讀。","preview"); };
 window.spkSetEngine=function(e){ state.ttsEngine=(e==="native")?"native":"yun"; saveState(); if(typeof spkStop==="function") spkStop(); renderSpkSheet(); };
 function renderSpkSheet(){
   var host=document.getElementById("spk-sheet"); if(!host) return;
   var vs=spkListVoices();
-  var rate=(typeof state.spkRate==="number"?state.spkRate:0.96);
+  var rate=(typeof state.spkRate==="number"?state.spkRate:0.94);
   var rows="";
   if(!vs.length){
     rows='<div class="spk-empty">這台裝置目前沒有可用的中文語音。<br>iPhone 可到「設定 → 輔助使用 → 朗讀內容 → 聲音 → 中文」下載語音後再回來選。</div>';
