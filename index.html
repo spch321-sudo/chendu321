@@ -17436,6 +17436,16 @@ function spkListVoices(){
     return zh.length ? zh : vs;
   }catch(_){ return []; }
 }
+function spkSanitize(s){
+  s = String(s||"");
+  // 移除 emoji 表情符號（絕大多數位於 astral 平面，用代理對表示）
+  s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, " ");
+  // 移除常見符號：箭頭、裝飾符號、雜項符號、變體選擇器、ZWJ、keycap
+  s = s.replace(/[\u2190-\u21FF\u2300-\u27BF\u2600-\u26FF\u2B00-\u2BFF\u2122\u2139\u20E3\uFE0E\uFE0F\u200D]/g, " ");
+  // 移除 markdown／自訂標記，避免被念成「星號」等
+  s = s.replace(/[\*_#`⟦⟧]/g, " ");
+  return s;
+}
 function spkChunks(text){
   var t = String(text||"").replace(/\s+/g," ").trim();
   if(!t) return [];
@@ -17466,7 +17476,7 @@ function spkToggle(text, id){
   if(spk.active && spk.curId===id){ spkStop(); return; }
   spkStop();
   var my = ++spk.token;
-  spk.queue = spkChunks(text);
+  spk.queue = spkChunks(spkSanitize(text));
   spk.idx = 0; spk.active = true; spk.curId = id||"";
   var voice = spkVoice();
   function step(){
