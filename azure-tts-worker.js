@@ -53,10 +53,13 @@ export default {
     const ALLOW = ["zh-TW-YunJheNeural", "zh-TW-HsiaoChenNeural", "zh-TW-HsiaoYuNeural", "zh-CN-YunzheNeural"];
     const voice = ALLOW.includes(body.voice) ? body.voice : "zh-TW-YunJheNeural";
     const rate = /^[+-]?\d{1,3}%$/.test(body.rate || "") ? body.rate : "+0%";
-    // 句號之間的停頓（毫秒）；越小越順。預設 200ms，限制在 0~1000。
-    let sil = parseInt(body.sil, 10);
-    if (isNaN(sil)) sil = 200;
-    sil = Math.max(0, Math.min(1000, sil));
+    // 三段式停頓（毫秒），各自限制在 0~5000：
+    const clamp = (v, d) => { let n = parseInt(v, 10); if (isNaN(n)) n = d; return Math.max(0, Math.min(5000, n)); };
+    const silS = clamp(body.sil, 140);   // 句號/問號/驚嘆號（。？！）
+    const silC = clamp(body.silc, 140);  // 逗號（，）
+    const silE = clamp(body.sile, 260);  // 頓號（、）— 標題「一、二、三」聽得清楚
+    // 每段音檔頭尾各補一半句末停頓，讓「換段處的句號」和「段內的句號」聽起來一致
+    const edge = Math.round(silS / 2);
     const text = xmlEscape(body.text || "");
     if (!text.trim()) {
       return new Response("Empty text", { status: 400, headers: CORS });
@@ -65,7 +68,11 @@ export default {
     const ssml =
       `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="zh-TW">` +
       `<voice name="${voice}">` +
-      `<mstts:silence type="Sentenceboundary-exact" value="${sil}ms"/>` +
+      `<mstts:silence type="Leading-exact" value="${edge}ms"/>` +
+      `<mstts:silence type="Tailing-exact" value="${edge}ms"/>` +
+      `<mstts:silence type="Sentenceboundary-exact" value="${silS}ms"/>` +
+      `<mstts:silence type="Comma-exact" value="${silC}ms"/>` +
+      `<mstts:silence type="Enumerationcomma-exact" value="${silE}ms"/>` +
       `<prosody rate="${rate}">${text}</prosody>` +
       `</voice></speak>`;
 
