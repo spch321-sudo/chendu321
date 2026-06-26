@@ -17438,8 +17438,68 @@ function spkListVoices(){
     return zh.length ? zh : vs;
   }catch(_){ return []; }
 }
+/* ===== 朗讀用：經文縮寫還原 + 章節口語化（約3:16 → 約翰福音三章16節） ===== */
+function spkCnNum(n){
+  n=parseInt(n,10); if(isNaN(n)) return String(n);
+  var d=["零","一","二","三","四","五","六","七","八","九"];
+  if(n<10) return d[n];
+  if(n<20) return "十"+(n%10?d[n%10]:"");
+  if(n<100){ var t=Math.floor(n/10),o=n%10; return d[t]+"十"+(o?d[o]:""); }
+  var h=Math.floor(n/100),r=n%100, s=d[h]+"百";
+  if(r===0) return s;
+  if(r<10) return s+"零"+d[r];
+  if(r<20) return s+"一十"+(r%10?d[r%10]:"");
+  var t2=Math.floor(r/10),o2=r%10; return s+d[t2]+"十"+(o2?d[o2]:"");
+}
+/* 縮寫／全名 → 朗讀全名（含天主教式縮寫與常見變體） */
+var SPK_BIBLE={
+  "創世記":"創世記","創":"創世記","出埃及記":"出埃及記","出":"出埃及記","利未記":"利未記","利":"利未記",
+  "民數記":"民數記","民":"民數記","申命記":"申命記","申":"申命記","約書亞記":"約書亞記","書":"約書亞記",
+  "士師記":"士師記","士":"士師記","路得記":"路得記","得":"路得記",
+  "撒母耳記上":"撒母耳記上","撒上":"撒母耳記上","撒母耳記下":"撒母耳記下","撒下":"撒母耳記下",
+  "列王紀上":"列王紀上","王上":"列王紀上","列王紀下":"列王紀下","王下":"列王紀下",
+  "歷代志上":"歷代志上","代上":"歷代志上","歷代志下":"歷代志下","代下":"歷代志下",
+  "以斯拉記":"以斯拉記","拉":"以斯拉記","尼希米記":"尼希米記","尼":"尼希米記","以斯帖記":"以斯帖記","斯":"以斯帖記",
+  "約伯記":"約伯記","伯":"約伯記","詩篇":"詩篇","詩":"詩篇","箴言":"箴言","箴":"箴言",
+  "傳道書":"傳道書","傳":"傳道書","雅歌":"雅歌","歌":"雅歌",
+  "以賽亞書":"以賽亞書","賽":"以賽亞書","耶利米書":"耶利米書","耶":"耶利米書","耶利米哀歌":"耶利米哀歌","哀":"耶利米哀歌",
+  "以西結書":"以西結書","結":"以西結書","但以理書":"但以理書","但":"但以理書",
+  "何西阿書":"何西阿書","何":"何西阿書","約珥書":"約珥書","珥":"約珥書","阿摩司書":"阿摩司書","摩":"阿摩司書",
+  "俄巴底亞書":"俄巴底亞書","俄":"俄巴底亞書","約拿書":"約拿書","拿":"約拿書","彌迦書":"彌迦書","彌":"彌迦書",
+  "那鴻書":"那鴻書","鴻":"那鴻書","哈巴谷書":"哈巴谷書","哈":"哈巴谷書","西番雅書":"西番雅書","番":"西番雅書",
+  "哈該書":"哈該書","該":"哈該書","撒迦利亞書":"撒迦利亞書","亞":"撒迦利亞書","瑪拉基書":"瑪拉基書","瑪":"瑪拉基書",
+  "馬太福音":"馬太福音","太":"馬太福音","馬可福音":"馬可福音","可":"馬可福音","路加福音":"路加福音","路":"路加福音",
+  "約翰福音":"約翰福音","約":"約翰福音","使徒行傳":"使徒行傳","徒":"使徒行傳","羅馬書":"羅馬書","羅":"羅馬書",
+  "哥林多前書":"哥林多前書","林前":"哥林多前書","哥林多後書":"哥林多後書","林後":"哥林多後書",
+  "加拉太書":"加拉太書","加":"加拉太書","以弗所書":"以弗所書","弗":"以弗所書","腓立比書":"腓立比書","腓":"腓立比書",
+  "歌羅西書":"歌羅西書","西":"歌羅西書","帖撒羅尼迦前書":"帖撒羅尼迦前書","帖前":"帖撒羅尼迦前書",
+  "帖撒羅尼迦後書":"帖撒羅尼迦後書","帖後":"帖撒羅尼迦後書","提摩太前書":"提摩太前書","提前":"提摩太前書",
+  "提摩太後書":"提摩太後書","提後":"提摩太後書","提多書":"提多書","多":"提多書","腓利門書":"腓利門書","門":"腓利門書",
+  "希伯來書":"希伯來書","來":"希伯來書","雅各書":"雅各書","雅":"雅各書",
+  "彼得前書":"彼得前書","彼前":"彼得前書","彼得後書":"彼得後書","彼後":"彼得後書",
+  "約翰一書":"約翰一書","約一":"約翰一書","約壹":"約翰一書","約翰二書":"約翰二書","約二":"約翰二書","約貳":"約翰二書",
+  "約翰三書":"約翰三書","約三":"約翰三書","約參":"約翰三書","猶大書":"猶大書","猶":"猶大書",
+  "啟示錄":"啟示錄","啟":"啟示錄"
+};
+var SPK_BIBLE_ALT=Object.keys(SPK_BIBLE).sort(function(a,b){return b.length-a.length;}).join("|");
+var SPK_REF_RE=new RegExp("("+SPK_BIBLE_ALT+")\\s*(\\d{1,3})\\s*[:：]\\s*(\\d{1,3})(?:\\s*[-–~至]\\s*(\\d{1,3}))?\\s*節?","g");
+var SPK_CH_RE =new RegExp("("+SPK_BIBLE_ALT+")\\s*(\\d{1,3})\\s*章","g");
+function spkBibleRefs(s){
+  s=String(s||"");
+  s=s.replace(SPK_REF_RE,function(m,bk,ch,v1,v2){
+    var c=parseInt(ch,10); if(c<1||c>150) return m;       // 超出範圍視為非經文（如時間）
+    var name=SPK_BIBLE[bk]||bk;
+    return name+spkCnNum(c)+"章"+v1+(v2?("到"+v2):"")+"節";
+  });
+  s=s.replace(SPK_CH_RE,function(m,bk,ch){
+    var c=parseInt(ch,10); if(c<1||c>150) return m;
+    return (SPK_BIBLE[bk]||bk)+spkCnNum(c)+"章";
+  });
+  return s;
+}
 function spkSanitize(s){
   s = String(s||"");
+  s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
   // 移除 emoji 表情符號（絕大多數位於 astral 平面，用代理對表示）
   s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, " ");
   // 移除常見符號：箭頭、裝飾符號、雜項符號、變體選擇器、ZWJ、keycap
@@ -17478,6 +17538,7 @@ function spkStop(){
 /* 若 Worker 未設定或連不上，會自動退回裝置內建語音，app 永遠不會因此中斷。          */
 var TTS_ENDPOINT = "https://azure-tts.spch321.workers.dev"; /* ← 改成你自己的 Worker 網址 */
 var TTS_VOICE    = "zh-TW-YunJheNeural";                    /* 雲哲（台灣國語男聲） */
+var TTS_SILENCE  = 200;                                    /* 句號之間停頓(毫秒)，越小越順；可自行微調 */
 var YUN_SILENT   = "data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";      /* 解鎖 iOS 音訊用的靜音片段 */
 var yun = {
   audio: null, cache: {}, unlocked: false,
@@ -17517,12 +17578,12 @@ function yunChunks(text){
   return fin.length?fin:[t];
 }
 function yunFetch(piece){
-  var key=yunRateAttr()+"|"+piece;
+  var key=yunRateAttr()+"|"+TTS_SILENCE+"|"+piece;
   if(yun.cache[key]) return Promise.resolve(yun.cache[key]);
   return fetch(TTS_ENDPOINT,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ voice:TTS_VOICE, rate:yunRateAttr(), text:piece })
+    body:JSON.stringify({ voice:TTS_VOICE, rate:yunRateAttr(), sil:TTS_SILENCE, text:piece })
   }).then(function(res){
     if(!res.ok) throw new Error("TTS HTTP "+res.status);
     return res.blob();
@@ -17550,6 +17611,7 @@ function yunToggle(text, id){
     var piece=spk.queue[spk.idx++];
     yunFetch(piece).then(function(url){
       if(my!==spk.token) return;
+      if(spk.idx<spk.queue.length){ yunFetch(spk.queue[spk.idx]).catch(function(){}); } /* 預抓下一段，換段更順 */
       var a=yunGetAudio(); a.onended=null; a.onerror=null;
       a.src=url;
       a.onended=function(){ if(my===spk.token) step(); };
@@ -17710,8 +17772,12 @@ function xzLessonFullText(l){
     P.push("〔"+clean(sec.h)+"〕"+(sec.paras||[]).map(clean).join(" "));
     if(sec.pq) P.push("（反思）"+clean(sec.pq));
     if(sec.deeper){
-      if(sec.deeper.q) P.push("〔想更深·問〕"+clean(sec.deeper.q));
-      if(sec.deeper.a) P.push("〔想更深·答〕"+clean(sec.deeper.a));
+      var _dq=clean(sec.deeper.q).replace(/^[〔【\[]?\s*想更深\s*[〕】\]]?\s*[？?：:、，,\s]*/,"");
+      var _da=clean(sec.deeper.a);
+      var _seg="";
+      if(_dq) _seg+="問："+_dq;
+      if(_da) _seg+=(_seg?"　":"")+"答："+_da;
+      if(_seg) P.push("〔想更深〕"+_seg);
     }
   });
   if(l.focus) P.push("〔對焦〕"+clean(l.focus));
