@@ -17375,7 +17375,7 @@ function render(){
 /* 設定：預設使用 Anthropic API（Claude.ai 預覽可直接運作）。            */
 /* 正式部署到 LINE/網站時，請把 XZ_ENDPOINT 改成你自己的後端代理網址，   */
 /* 由伺服器端保管金鑰並轉發到 Anthropic（避免在前端暴露金鑰、並繞過 CORS）。*/
-const XZ_ENDPOINT="https://api.anthropic.com/v1/messages";
+const XZ_ENDPOINT="https://xiaozhi-proxy.spch321.workers.dev";
 const XZ_MODEL="claude-sonnet-4-6";
 let chat={open:false,msgs:[],busy:false};
 
@@ -17386,15 +17386,39 @@ function xzQuicks(){return state.lesson
   ?["這一課的重點是什麼？","怎麼把這課活在生活中？","請用這課為我簡短禱告"]
   :["321 理念是什麼？","什麼是「無己」？","請為我今天簡短禱告"];}
 
+function xzLessonFullText(l){
+  if(!l) return "";
+  var P=[];
+  function clean(s){ return xzClean(String(s||"")).split("\n").join(" ").replace(/\s+/g," ").trim(); }
+  if(l.greet) P.push("〔問安〕"+clean(l.greet));
+  if(l.bigidea) P.push("〔核心觀念〕"+clean(l.bigidea));
+  if(l.lead) P.push("〔引言〕"+clean(l.lead));
+  (l.sections||[]).forEach(function(sec){
+    P.push("〔"+clean(sec.h)+"〕"+(sec.paras||[]).map(clean).join(" "));
+    if(sec.pq) P.push("（反思）"+clean(sec.pq));
+    if(sec.deeper){
+      if(sec.deeper.q) P.push("〔想更深·問〕"+clean(sec.deeper.q));
+      if(sec.deeper.a) P.push("〔想更深·答〕"+clean(sec.deeper.a));
+    }
+  });
+  if(l.focus) P.push("〔對焦〕"+clean(l.focus));
+  if(l.hope) P.push("〔盼望〕"+clean(l.hope.t)+" "+(l.hope.paras||[]).map(clean).join(" "));
+  if(l.still) P.push("〔靜默〕"+clean(l.still));
+  if(l.steps&&l.steps.length) P.push("〔操練〕"+l.steps.map(function(s){return clean(s.act);}).join("；"));
+  if(l.declare) P.push("〔宣告〕"+clean(l.declare));
+  if(l.share&&l.share.length) P.push("〔分享題〕"+l.share.map(function(s){return (s.tag?("["+s.tag+"] "):"")+clean(s.q);}).join("　"));
+  return P.join("\n");
+}
 function xzSystem(){
   var l=state.lesson, ctx="";
   if(l){
-    ctx="\n\n【對方正在讀這一課，請以此為背景陪他】\n第"+l.n+"課："+xzClean(l.title).split("\n").join(" ")
+    ctx="\n\n【對方正在讀這一課，請以下面的「課文全文」為背景，緊扣內容陪他、解經、並幫助他把真理活在生活中】\n"
+      +"第"+l.n+"課："+xzClean(l.title).split("\n").join(" ")
       +"\n單元："+(l.unit||"")
       +"\n經文：「"+(l.verse||"")+"」（"+(l.verse_ref||"")+"）"
-      +"\n核心觀念："+xzClean(l.bigidea)
-      +"\n對焦："+xzClean(l.focus).split("\n").join(" ")
-      +"\n你可以針對這一課與他討論、解經、幫助他把真理活在生活中。";
+      +"\n\n──── 課文全文 ────\n"+xzLessonFullText(l)
+      +"\n──── 課文結束 ────\n"
+      +"\n回應時請優先根據以上課文內容，可引用課文裡的話、經文與比喻，幫助他真正讀懂這一課；若他的問題超出本課範圍，再自然延伸。切記只引用課文中或你確有把握的《和合本》經文，絕不杜撰。";
   }
   return [
     "你是「小智」，是「晨讀321 · 國度321空中團契」app 裡的 AI 屬靈學習小幫手，像一位陪讀的屬靈朋友，謙卑、溫暖、滿有盼望與愛心。",
