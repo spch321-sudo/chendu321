@@ -248,6 +248,7 @@
   .xz-name{font-size:18px;font-weight:800;}
   .xz-role{font-size:12px;opacity:.85;margin-top:1px;}
   .xz-x{background:rgba(255,255,255,.16);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .spk-eng{display:flex;gap:8px;margin:10px 0 4px;}.spk-eng-b{flex:1;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:14px;padding:10px 8px;font-size:14px;font-family:inherit;cursor:pointer;}.spk-eng-b.on{background:linear-gradient(135deg,var(--mint),var(--mintDark));color:#fff;border-color:transparent;font-weight:700;}
   .xz-msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;}
   .xz-msg{display:flex;}
   .xz-msg.xz-me{justify-content:flex-end;}
@@ -16345,6 +16346,7 @@ function loadState(){
     if(d.tnote&&typeof d.tnote==="object") state.tnote=d.tnote;
     if(typeof d.spkVoice==="string") state.spkVoice=d.spkVoice;
     if(typeof d.spkRate==="number") state.spkRate=d.spkRate;
+    if(typeof d.ttsEngine==="string") state.ttsEngine=d.ttsEngine;
   }catch(e){}
 }
 function saveState(){
@@ -16352,7 +16354,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkVoice:state.spkVoice, spkRate:state.spkRate
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine
     }));
   }catch(e){}
 }
@@ -17468,9 +17470,116 @@ function spkChunks(text){
 function spkStop(){
   spk.token++; spk.active=false; spk.queue=[]; spk.idx=0; spk.curId="";
   try{ window.speechSynthesis.cancel(); }catch(_){}
+  try{ if(window.yun && yun.audio){ yun.audio.pause(); yun.audio.onended=null; yun.audio.onerror=null; } }catch(_){}
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
+/* ============ 🎙️ 雲哲 · Azure 真人語音引擎（zh-TW-YunJheNeural · 台灣國語男聲） ============ */
+/* 透過 Cloudflare Worker 代理呼叫 Azure 文字轉語音，金鑰由伺服器端保管、不外洩。 */
+/* 若 Worker 未設定或連不上，會自動退回裝置內建語音，app 永遠不會因此中斷。          */
+var TTS_ENDPOINT = "https://azure-tts.spch321.workers.dev"; /* ← 改成你自己的 Worker 網址 */
+var TTS_VOICE    = "zh-TW-YunJheNeural";                    /* 雲哲（台灣國語男聲） */
+var YUN_SILENT   = "data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";      /* 解鎖 iOS 音訊用的靜音片段 */
+var yun = {
+  audio: null, cache: {}, unlocked: false,
+  ready: (typeof TTS_ENDPOINT==="string" && /^https?:\/\//.test(TTS_ENDPOINT))
+};
+window.yun = yun;
+function yunEnabled(){
+  /* 預設：只要設定了 Worker 網址、且使用者沒有強制切回內建，就用雲哲 */
+  return yun.ready && state.ttsEngine!=="native";
+}
+function yunGetAudio(){
+  if(!yun.audio){ yun.audio=new Audio(); yun.audio.preload="auto"; }
+  return yun.audio;
+}
+function yunUnlock(){
+  /* 必須在使用者點擊的當下呼叫一次，iOS Safari 才會允許之後程式播放音訊 */
+  if(yun.unlocked) return;
+  try{
+    var a=yunGetAudio(); a.src=YUN_SILENT;
+    var p=a.play();
+    if(p && p.then){ p.then(function(){ yun.unlocked=true; }).catch(function(){}); }
+    else { yun.unlocked=true; }
+  }catch(_){}
+}
+function yunRateAttr(){
+  var r=(typeof state.spkRate==="number"?state.spkRate:1.0);
+  var pct=Math.round((r-1)*100);            /* 1.0 → +0%，0.8 → -20% */
+  return (pct>=0?"+":"")+pct+"%";
+}
+/* 雲哲用較長的句段（減少請求次數與停頓，聽起來更順） */
+function yunChunks(text){
+  var t=String(text||"").replace(/\s+/g," ").trim(); if(!t) return [];
+  var enders="。！？；\n"; var out=[]; var buf="";
+  for(var i=0;i<t.length;i++){ buf+=t[i]; if(enders.indexOf(t[i])>=0 && buf.length>=120){ out.push(buf); buf=""; } }
+  if(buf.trim()) out.push(buf);
+  var fin=[]; out.forEach(function(s){ while(s.length>320){ fin.push(s.slice(0,320)); s=s.slice(320); } if(s) fin.push(s); });
+  return fin.length?fin:[t];
+}
+function yunFetch(piece){
+  var key=yunRateAttr()+"|"+piece;
+  if(yun.cache[key]) return Promise.resolve(yun.cache[key]);
+  return fetch(TTS_ENDPOINT,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ voice:TTS_VOICE, rate:yunRateAttr(), text:piece })
+  }).then(function(res){
+    if(!res.ok) throw new Error("TTS HTTP "+res.status);
+    return res.blob();
+  }).then(function(blob){
+    var url=URL.createObjectURL(blob); yun.cache[key]=url; return url;
+  });
+}
+function yunStop(){
+  spk.token++; spk.active=false; spk.queue=[]; spk.idx=0; spk.curId="";
+  if(yun.audio){ try{ yun.audio.pause(); }catch(_){} yun.audio.onended=null; yun.audio.onerror=null; }
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+}
+function yunToggle(text, id){
+  /* 正在念同一段 → 停止 */
+  if(spk.active && spk.curId===id){ yunStop(); return; }
+  spkStop();                 /* 先停掉任何在播的（含內建） */
+  yunUnlock();               /* ← 在點擊手勢內解鎖 iOS 音訊 */
+  var my=++spk.token;
+  spk.queue=yunChunks(spkSanitize(text)); spk.idx=0; spk.active=true; spk.curId=id||"";
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+  function step(){
+    if(my!==spk.token) return;
+    if(spk.idx>=spk.queue.length){ yunStop(); return; }
+    var first=(spk.idx===0);
+    var piece=spk.queue[spk.idx++];
+    yunFetch(piece).then(function(url){
+      if(my!==spk.token) return;
+      var a=yunGetAudio(); a.onended=null; a.onerror=null;
+      a.src=url;
+      a.onended=function(){ if(my===spk.token) step(); };
+      a.onerror=function(){ if(my===spk.token) step(); };
+      var p=a.play();
+      if(p && p.catch) p.catch(function(){ if(my===spk.token) step(); });
+    }).catch(function(){
+      if(my!==spk.token) return;
+      if(first){
+        /* 第一段就失敗：雲哲不可用 → 整段改用裝置內建語音，app 不中斷 */
+        if(typeof uiToast==="function") uiToast("雲哲語音暫時連不上，改用裝置內建聲音");
+        spk.active=false; spk.curId="";
+        spkToggleNative(text, id);
+      }else{
+        step();  /* 中途某段失敗：跳過、續念下一段 */
+      }
+    });
+  }
+  step();
+}
+window.yunToggle=yunToggle;
+window.yunStop=yunStop;
+
+/* ============ 朗讀派發器：優先雲哲，否則內建（兩者共用同一顆按鈕） ============ */
 function spkToggle(text, id){
+  if(yunEnabled()) return yunToggle(text, id);
+  return spkToggleNative(text, id);
+}
+
+function spkToggleNative(text, id){
   if(!spk.supported){ if(typeof uiToast==="function") uiToast("這台裝置不支援語音朗讀"); return; }
   // 正在念同一段 → 停止（變成「停止/播放」切換）
   if(spk.active && spk.curId===id){ spkStop(); return; }
@@ -17530,13 +17639,14 @@ function spkGuessGender(v){
   return "";
 }
 window.openSpkSettings=function(){
-  if(!spk.supported){ if(typeof uiToast==="function") uiToast("這台裝置不支援語音朗讀"); return; }
+  if(!spk.supported && !yunEnabled()){ if(typeof uiToast==="function") uiToast("這台裝置不支援語音朗讀"); return; }
   renderSpkSheet();
 };
 window.closeSpkSettings=function(){ var s=document.getElementById("spk-sheet"); if(s){s.style.display="none"; s.innerHTML="";} if(typeof spkStop==="function") spkStop(); };
 window.spkPickVoice=function(name){ state.spkVoice=name||""; saveState(); renderSpkSheet(); };
 window.spkSetRate=function(v){ state.spkRate=Number(v)||0.96; saveState(); var lbl=document.getElementById("spk-rate-lbl"); if(lbl) lbl.textContent=(state.spkRate).toFixed(2)+"×"; };
 window.spkPreview=function(){ spkToggle("平安！這是朗讀的試聽。祂必興旺，我必衰微。願神祝福你今天的晨讀。","preview"); };
+window.spkSetEngine=function(e){ state.ttsEngine=(e==="native")?"native":"yun"; saveState(); if(typeof spkStop==="function") spkStop(); renderSpkSheet(); };
 function renderSpkSheet(){
   var host=document.getElementById("spk-sheet"); if(!host) return;
   var vs=spkListVoices();
@@ -17559,10 +17669,15 @@ function renderSpkSheet(){
     +'<div class="spk-card">'
       +'<div class="spk-h"><div class="spk-h-t">🔊 朗讀聲音</div><button class="spk-x" onclick="closeSpkSettings()">✕</button></div>'
       +'<div class="spk-sub">選一個你喜歡的聲音，點下面「試聽」聽聽看</div>'
+      +(yun.ready?('<div class="spk-eng">'
+        +'<button class="spk-eng-b '+(yunEnabled()?"on":"")+'" onclick="spkSetEngine(\'yun\')">🎙️ 雲哲真人語音</button>'
+        +'<button class="spk-eng-b '+(!yunEnabled()?"on":"")+'" onclick="spkSetEngine(\'native\')">📱 裝置內建</button>'
+      +'</div>'):"")
+      +(yunEnabled()?'<div class="spk-sub" style="margin-top:6px">目前使用雲哲（台灣國語男聲）。下方語音清單僅在雲哲連不上時作為備援。</div>':"")
       +'<div class="spk-list">'+rows+'</div>'
       +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'
       +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
-      +'<div class="spk-tip">想要更自然、有情感的真人男聲？這需要連接高品質語音服務（小幫手可協助設定）。</div>'
+      +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲哲」？請依「雲哲語音設定指南」連接 Azure 語音服務。</div>')
     +'</div></div>';
   host.style.display="block";
 }
