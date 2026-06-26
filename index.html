@@ -132,6 +132,35 @@
   .foot-btn.xz .fb-ic{filter:saturate(1.1);}
   .foot-btn.disabled{opacity:.3;pointer-events:none;}
   .foot-btn:active{transform:scale(.95);}
+  .foot-btn.spk-on{color:var(--mintDeep);font-weight:700;}
+  .foot-btn.spk-on .fb-ic{background:var(--mint);color:#fff;}
+  .xz-spk{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:4px 11px;border:1px solid var(--line);border-radius:999px;background:var(--mintSoft);color:var(--mintDark);font-size:12.5px;font-weight:600;cursor:pointer;line-height:1;-webkit-appearance:none;}
+  .xz-spk:active{transform:scale(.96);}
+  .xz-spk.spk-on{background:var(--mint);border-color:var(--mint);color:#fff;}
+  .xz-spk .spk-ic{font-size:13px;}
+  .fontbtn.spk-open{border-color:var(--mint);color:var(--mintDark);font-weight:600;}
+  .spk-ov{position:fixed;inset:0;background:rgba(20,40,34,.42);z-index:9000;display:flex;align-items:flex-end;justify-content:center;}
+  .spk-card{width:100%;max-width:560px;background:var(--card);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));max-height:84vh;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.18);}
+  .spk-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .spk-h-t{font-size:18px;font-weight:800;color:var(--ink);}
+  .spk-x{border:none;background:var(--mintWash);width:32px;height:32px;border-radius:50%;font-size:15px;color:var(--inkSoft);cursor:pointer;}
+  .spk-sub{font-size:13px;color:var(--inkFaint);margin-bottom:12px;}
+  .spk-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;margin:-4px -4px 8px;padding:4px;}
+  .spk-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;}
+  .spk-row.spk-sel{border-color:var(--mint);background:var(--mintSoft);}
+  .spk-rname{font-size:15px;font-weight:600;color:var(--ink);flex:1;display:flex;align-items:center;gap:7px;}
+  .spk-rlang{font-size:12px;color:var(--inkFaint);}
+  .spk-rck{color:var(--mintDeep);font-weight:800;}
+  .spk-g{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;}
+  .spk-g-m{background:#E1ECF7;color:#3A6EA5;}
+  .spk-g-f{background:#F7E6EE;color:#B5557F;}
+  .spk-empty{font-size:14px;color:var(--inkSoft);line-height:1.7;padding:18px 6px;text-align:center;}
+  .spk-rate{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--inkSoft);margin:4px 2px 14px;}
+  .spk-rate input{flex:1;accent-color:var(--mint);}
+  .spk-acts{display:flex;gap:10px;}
+  .spk-try{flex:1;border:1.5px solid var(--mint);background:var(--mintSoft);color:var(--mintDark);border-radius:14px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+  .spk-done{flex:1;border:none;background:var(--mint);color:#fff;border-radius:14px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+  .spk-tip{font-size:12px;color:var(--inkFaint);line-height:1.6;margin-top:12px;text-align:center;}
 
   .pad-btm{padding-bottom:90px;}
 
@@ -617,6 +646,7 @@
 <div id="search"></div>
 <div id="meitu"></div>
 <div id="mark-sheet" style="display:none"></div>
+<div id="spk-sheet" style="display:none"></div>
 
 <script>
 const C = {
@@ -16313,6 +16343,8 @@ function loadState(){
     if(Array.isArray(d.sys)) state.sys=d.sys;
     if(d.tmk&&typeof d.tmk==="object") state.tmk=d.tmk;
     if(d.tnote&&typeof d.tnote==="object") state.tnote=d.tnote;
+    if(typeof d.spkVoice==="string") state.spkVoice=d.spkVoice;
+    if(typeof d.spkRate==="number") state.spkRate=d.spkRate;
   }catch(e){}
 }
 function saveState(){
@@ -16320,7 +16352,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkVoice:state.spkVoice, spkRate:state.spkRate
     }));
   }catch(e){}
 }
@@ -16350,6 +16382,7 @@ loadState();
 
 function go(view,lesson){
   recCleanup();
+  if(typeof spkStop==="function") spkStop();
   state.view=view;
   if(lesson!==undefined) state.lesson=lesson;
   state.tab="read"; state.deep={}; state.reviewN=null; state.strategyId=null;
@@ -16372,7 +16405,8 @@ function homeHTML(){
   const progHTML=`<div class="overall"><div class="overall-top"><span>晨讀進度</span><span>${readCount} / ${total} 課</span></div><div class="overall-bar"><div class="overall-fill" style="width:${pct}%"></div></div>${streakHTML}</div>`;
   const _mc=mkCounts();
   const reviewCard=`<div class="review-card" onclick="openReview()"><div class="rc-ic">📑</div><div class="rc-tx"><div class="rc-t">我的畫線與領受</div><div class="rc-d">${_mc.marks?(_mc.marks+' 處畫線 · '+_mc.lessons+' 課'):(tmkAny()?'建國四方略的領受與筆記':'畫線與筆記都收藏在這裡 · 點一下開始')}</div></div><div class="rc-go">回顧 ›</div></div>`;
-  const fontHTML=`<div class="fontbar"><span class="fontbar-lbl">閱讀字級</span>`+[["標準",0],["大",1],["特大",2]].map(o=>`<button class="fontbtn ${(state.font||0)===o[1]?'active':''}" onclick="setFont(${o[1]})">${o[0]}</button>`).join("")+`</div>`;
+  const fontHTML=`<div class="fontbar"><span class="fontbar-lbl">閱讀字級</span>`+[["標準",0],["大",1],["特大",2]].map(o=>`<button class="fontbtn ${(state.font||0)===o[1]?'active':''}" onclick="setFont(${o[1]})">${o[0]}</button>`).join("")+`</div>`
+    +`<div class="fontbar"><span class="fontbar-lbl">朗讀聲音</span><button class="fontbtn spk-open" onclick="openSpkSettings()">🔊 選聲音 ›</button></div>`;
   const cards=UNITS.map(u=>{
     const open=state.openUnit===u.n;
     const inU=LESSONS.filter(l=>l.n>=u.start&&l.n<=u.end).sort((a,b)=>a.n-b.n);
@@ -16652,6 +16686,7 @@ function readerHTML(l){
       <button class="foot-btn ${state.tab==='declare'?'active':''}" onclick="setTab('declare')"><span class="fb-ic">🙏</span><span class="fb-tx">宣告</span></button>
       <button class="foot-btn ${state.tab==='share'?'active':''}" onclick="setTab('share')"><span class="fb-ic">💬</span><span class="fb-tx">分享</span></button>
       <button class="foot-btn" onclick="openMeitu()"><span class="fb-ic">🎨</span><span class="fb-tx">美圖</span></button>
+      <button class="foot-btn spk" data-spk="lesson" data-spk-label="朗讀" onclick="spkReadLesson()"><span class="fb-ic spk-ic">🔊</span><span class="fb-tx spk-tx">朗讀</span></button>
       <button class="foot-btn xz" onclick="xzOpen()"><span class="fb-ic">✨</span><span class="fb-tx">小智</span></button>
       <button class="foot-btn nav${nextL?'':' disabled'}" ${nextL?'onclick="nextLesson()"':''}><span class="fb-ic">→</span><span class="fb-tx">下一課</span></button>
     </div>
@@ -17371,6 +17406,158 @@ function render(){
   }
 }
 
+/* ============ 🔊 朗讀引擎（手機內建語音 · 免費 · 離線可用） ============ */
+/* iOS Safari 的 speechSynthesis 有兩個雷：長句會中途斷掉、必須由點擊觸發。 */
+/* 解法：把文字切成短句，用 onend 一句接一句念，避免一次塞太長而中斷。      */
+var spk = {
+  supported: (typeof window!=="undefined" && "speechSynthesis" in window),
+  queue: [], idx: 0, active: false, token: 0, curId: ""
+};
+function spkVoice(){
+  try{
+    var vs = window.speechSynthesis.getVoices() || [];
+    // 使用者自選的聲音優先
+    if(state.spkVoice){
+      var chosen = vs.find(function(v){return v.name===state.spkVoice || v.voiceURI===state.spkVoice;});
+      if(chosen) return chosen;
+    }
+    // 否則：優先台灣國語，其次任何中文語音
+    var pick = vs.find(function(v){return /zh[-_]?TW/i.test(v.lang);})
+            || vs.find(function(v){return /^zh\b/i.test(v.lang)||/zh[-_]/i.test(v.lang);})
+            || vs.find(function(v){return /Chinese|中文|國語|普通话/i.test(v.name);});
+    return pick||null;
+  }catch(_){ return null; }
+}
+// 列出可朗讀中文的語音（給「選聲音」用）
+function spkListVoices(){
+  try{
+    var vs = window.speechSynthesis.getVoices() || [];
+    var zh = vs.filter(function(v){ return /zh|chinese|中文|國語|普通话|粵|cmn|yue/i.test(v.lang+" "+v.name); });
+    return zh.length ? zh : vs;
+  }catch(_){ return []; }
+}
+function spkChunks(text){
+  var t = String(text||"").replace(/\s+/g," ").trim();
+  if(!t) return [];
+  // 依標點切句（不用 lookbehind，相容舊版 iOS），再把過長句子切短
+  var enders = "。！？；：\n";
+  var sents = []; var buf = "";
+  for(var i=0;i<t.length;i++){
+    var ch = t[i]; buf += ch;
+    if(enders.indexOf(ch) >= 0){ sents.push(buf); buf=""; }
+  }
+  if(buf) sents.push(buf);
+  var out = [];
+  sents.forEach(function(s){
+    s = s.trim(); if(!s) return;
+    while(s.length > 60){ out.push(s.slice(0,60)); s = s.slice(60); }
+    if(s) out.push(s);
+  });
+  return out.length ? out : [t];
+}
+function spkStop(){
+  spk.token++; spk.active=false; spk.queue=[]; spk.idx=0; spk.curId="";
+  try{ window.speechSynthesis.cancel(); }catch(_){}
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+}
+function spkToggle(text, id){
+  if(!spk.supported){ if(typeof uiToast==="function") uiToast("這台裝置不支援語音朗讀"); return; }
+  // 正在念同一段 → 停止（變成「停止/播放」切換）
+  if(spk.active && spk.curId===id){ spkStop(); return; }
+  spkStop();
+  var my = ++spk.token;
+  spk.queue = spkChunks(text);
+  spk.idx = 0; spk.active = true; spk.curId = id||"";
+  var voice = spkVoice();
+  function step(){
+    if(my!==spk.token) return;            // 已被新的朗讀或停止取代
+    if(spk.idx >= spk.queue.length){ spkStop(); return; }
+    var u = new SpeechSynthesisUtterance(spk.queue[spk.idx++]);
+    u.lang = (voice && voice.lang) ? voice.lang : "zh-TW";
+    if(voice) u.voice = voice;
+    u.rate = (typeof state.spkRate==="number" ? state.spkRate : 0.96); u.pitch = 1.0;
+    u.onend = function(){ if(my===spk.token) step(); };
+    u.onerror = function(){ if(my===spk.token) step(); };
+    try{ window.speechSynthesis.speak(u); }catch(_){ spkStop(); }
+  }
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+  step();
+}
+// iOS 有時首次取不到語音清單，先觸發一次載入
+if(spk.supported){
+  try{
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function(){
+      var sheet=document.getElementById("spk-sheet");
+      if(sheet && sheet.style.display==="block" && typeof renderSpkSheet==="function") renderSpkSheet();
+    };
+  }catch(_){}
+}
+function updateSpeakButtons(){
+  // 更新所有朗讀鈕的外觀（播放中顯示停止）
+  var btns = document.querySelectorAll("[data-spk]");
+  btns.forEach(function(b){
+    var on = spk.active && spk.curId===b.getAttribute("data-spk");
+    var ic = b.querySelector(".spk-ic"); var tx = b.querySelector(".spk-tx");
+    if(ic) ic.textContent = on ? "⏹" : "🔊";
+    if(tx) tx.textContent = on ? "停止" : (b.getAttribute("data-spk-label")||"朗讀");
+    b.classList.toggle("spk-on", on);
+  });
+}
+window.spkToggle = spkToggle;
+window.spkStop = spkStop;
+window.spkReadLesson = function(){
+  var l = state.lesson; if(!l) return;
+  var head = "第"+l.n+"課。"+ String(l.title||"").split("\n").join("，") + "。";
+  spkToggle(head + "\n" + xzLessonFullText(l), "lesson");
+};
+
+/* ----- 「選聲音」設定面板 ----- */
+function spkGuessGender(v){
+  var s=(v.name+" "+(v.voiceURI||"")).toLowerCase();
+  if(/male|男|yunjhe|yun-?jhe|kangkang|yunyang|zhiyu.*male/.test(s)) return "男";
+  if(/female|女|mei-?jia|meijia|tingting|huihui|xiaoxiao|yaoyao|sinji/.test(s)) return "女";
+  return "";
+}
+window.openSpkSettings=function(){
+  if(!spk.supported){ if(typeof uiToast==="function") uiToast("這台裝置不支援語音朗讀"); return; }
+  renderSpkSheet();
+};
+window.closeSpkSettings=function(){ var s=document.getElementById("spk-sheet"); if(s){s.style.display="none"; s.innerHTML="";} if(typeof spkStop==="function") spkStop(); };
+window.spkPickVoice=function(name){ state.spkVoice=name||""; saveState(); renderSpkSheet(); };
+window.spkSetRate=function(v){ state.spkRate=Number(v)||0.96; saveState(); var lbl=document.getElementById("spk-rate-lbl"); if(lbl) lbl.textContent=(state.spkRate).toFixed(2)+"×"; };
+window.spkPreview=function(){ spkToggle("平安！這是朗讀的試聽。祂必興旺，我必衰微。願神祝福你今天的晨讀。","preview"); };
+function renderSpkSheet(){
+  var host=document.getElementById("spk-sheet"); if(!host) return;
+  var vs=spkListVoices();
+  var rate=(typeof state.spkRate==="number"?state.spkRate:0.96);
+  var rows="";
+  if(!vs.length){
+    rows='<div class="spk-empty">這台裝置目前沒有可用的中文語音。<br>iPhone 可到「設定 → 輔助使用 → 朗讀內容 → 聲音 → 中文」下載語音後再回來選。</div>';
+  }else{
+    rows=vs.map(function(v){
+      var sel=(state.spkVoice===v.name)|| (!state.spkVoice && spkVoice() && spkVoice().name===v.name);
+      var g=spkGuessGender(v); var tag=g?('<span class="spk-g spk-g-'+(g==="男"?"m":"f")+'">'+g+'聲</span>'):"";
+      return '<button class="spk-row '+(sel?"spk-sel":"")+'" onclick="spkPickVoice(\''+String(v.name).split("'").join("\\'")+'\')">'
+        +'<span class="spk-rname">'+esc(v.name)+tag+'</span>'
+        +'<span class="spk-rlang">'+esc(v.lang||"")+'</span>'
+        +(sel?'<span class="spk-rck">✓</span>':'')
+        +'</button>';
+    }).join("");
+  }
+  host.innerHTML='<div class="spk-ov" onclick="if(event.target===this)closeSpkSettings()">'
+    +'<div class="spk-card">'
+      +'<div class="spk-h"><div class="spk-h-t">🔊 朗讀聲音</div><button class="spk-x" onclick="closeSpkSettings()">✕</button></div>'
+      +'<div class="spk-sub">選一個你喜歡的聲音，點下面「試聽」聽聽看</div>'
+      +'<div class="spk-list">'+rows+'</div>'
+      +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'
+      +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
+      +'<div class="spk-tip">想要更自然、有情感的真人男聲？這需要連接高品質語音服務（小幫手可協助設定）。</div>'
+    +'</div></div>';
+  host.style.display="block";
+}
+window.renderSpkSheet=renderSpkSheet;
+
 /* ============ 小智 · AI 屬靈學習小幫手 ============ */
 /* 設定：預設使用 Anthropic API（Claude.ai 預覽可直接運作）。            */
 /* 正式部署到 LINE/網站時，請把 XZ_ENDPOINT 改成你自己的後端代理網址，   */
@@ -17382,6 +17569,7 @@ let chat={open:false,msgs:[],busy:false};
 function xzClean(s){return String(s||"").split("⟦b:").join("").split("⟦s:").join("").split("⟦g:").join("").split("⟧").join("");}
 function xzFmt(s){return esc(s).split("\n").join("<br>");}
 function xzScrollBottom(){var m=document.getElementById("xz-msgs");if(m)m.scrollTop=m.scrollHeight;}
+window.__xzMsgText=function(i){ var m=chat.msgs[i]; return m? String(m.text||"") : ""; };
 function xzQuicks(){return state.lesson
   ?["這一課的重點是什麼？","怎麼把這課活在生活中？","請用這課為我簡短禱告"]
   :["321 理念是什麼？","什麼是「無己」？","請為我今天簡短禱告"];}
@@ -17480,8 +17668,15 @@ function renderChat(){
       ?("平安！我是小智 ✨ 我們正在讀第"+l.n+"課。關於這一課，或任何聖經與 321 的問題，都可以問我，我會陪你一起把焦點對準耶穌。")
       :"平安！我是小智 ✨ 晨讀321 的學習小幫手。聖經、321 理念、或今天的晨讀，有什麼想聊的嗎？我會陪你把焦點對準耶穌。";
     let msgsHtml='<div class="xz-msg xz-ai"><div class="xz-bubble">'+esc(intro)+'</div></div>';
-    chat.msgs.forEach(function(m){
-      msgsHtml+='<div class="xz-msg '+(m.role==="user"?"xz-me":"xz-ai")+'"><div class="xz-bubble">'+xzFmt(m.text)+'</div></div>';
+    chat.msgs.forEach(function(m,mi){
+      if(m.role==="user"){
+        msgsHtml+='<div class="xz-msg xz-me"><div class="xz-bubble">'+xzFmt(m.text)+'</div></div>';
+      }else{
+        var sid="msg"+mi;
+        msgsHtml+='<div class="xz-msg xz-ai"><div class="xz-bubble">'+xzFmt(m.text)
+          +'<button class="xz-spk" data-spk="'+sid+'" data-spk-label="朗讀" onclick="spkToggle(window.__xzMsgText('+mi+'),\''+sid+'\')"><span class="spk-ic">🔊</span> <span class="spk-tx">朗讀</span></button>'
+          +'</div></div>';
+      }
     });
     if(chat.busy) msgsHtml+='<div class="xz-msg xz-ai"><div class="xz-bubble xz-typing"><span></span><span></span><span></span></div></div>';
     if(chat.msgs.length===0){
@@ -17497,6 +17692,7 @@ function renderChat(){
       +'</div></div>';
   }
   host.innerHTML=html;
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
   var fabEl=host.querySelector(".xz-fab");
   if(fabEl){
     if(state.xzPos){
@@ -17540,7 +17736,7 @@ function attachFabDrag(fab){
   fab.addEventListener("pointercancel",endDrag);
 }
 window.xzOpen=function(){chat.open=true;renderChat();xzScrollBottom();setTimeout(function(){var i=document.getElementById("xz-input");if(i&&i.focus)i.focus();},60);};
-window.xzClose=function(){chat.open=false;renderChat();};
+window.xzClose=function(){chat.open=false;if(typeof spkStop==="function")spkStop();renderChat();};
 window.xzSend=function(){var i=document.getElementById("xz-input");if(!i)return;var t=(i.value||"").trim();if(!t||chat.busy)return;chat.msgs.push({role:"user",text:t});i.value="";renderChat();xzScrollBottom();xzCall();};
 window.xzQuick=function(idx){if(chat.busy)return;var t=xzQuicks()[idx];if(!t)return;chat.msgs.push({role:"user",text:t});renderChat();xzScrollBottom();xzCall();};
 
