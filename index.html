@@ -17438,6 +17438,19 @@ function spkListVoices(){
     return zh.length ? zh : vs;
   }catch(_){ return []; }
 }
+/* ===== 朗讀用：常用代號數字逐字讀（321→三二一，不要念成三百二十一） ===== */
+function spkJargon(s){
+  s=String(s||"");
+  /* 3-2-1 / 3–2–1（含破折號與空格） → 三二一 */
+  s=s.replace(/3\s*[-\u2010-\u2015~]\s*2\s*[-\u2010-\u2015~]\s*1/g,"三二一");
+  /* 整組數字（前後都不是數字才換），避免動到一般數字 */
+  var MAP={"321":"三二一","920":"九二零","235":"二三五"};
+  ["321","920","235"].forEach(function(g){
+    var re=new RegExp("(^|[^0-9])"+g+"(?![0-9])","g");
+    s=s.replace(re,function(m,p1){ return p1+MAP[g]; });
+  });
+  return s;
+}
 /* ===== 朗讀用：經文縮寫還原 + 章節口語化（約3:16 → 約翰福音三章16節） ===== */
 function spkCnNum(n){
   n=parseInt(n,10); if(isNaN(n)) return String(n);
@@ -17500,6 +17513,7 @@ function spkBibleRefs(s){
 function spkSanitize(s){
   s = String(s||"");
   s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
+  s = spkJargon(s);     // 常用代號數字逐字讀（321→三二一）
   // 移除 emoji 表情符號（絕大多數位於 astral 平面，用代理對表示）
   s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, " ");
   // 移除常見符號：箭頭、裝飾符號、雜項符號、變體選擇器、ZWJ、keycap
@@ -17771,7 +17785,7 @@ function xzLessonFullText(l){
   if(l.bigidea) P.push("〔核心觀念〕"+clean(l.bigidea));
   if(l.lead) P.push("〔引言〕"+clean(l.lead));
   (l.sections||[]).forEach(function(sec){
-    P.push("〔"+clean(sec.h)+"〕"+(sec.paras||[]).map(clean).join(" "));
+    P.push("〔"+clean(sec.h).replace(/^([一二三四五六七八九十]+)/,"$1、")+"〕"+(sec.paras||[]).map(clean).join(" "));
     if(sec.pq) P.push("（反思）"+clean(sec.pq));
     if(sec.deeper){
       var _dq=clean(sec.deeper.q).replace(/^[〔【\[]?\s*想更深\s*[〕】\]]?\s*[？?：:、，,\s]*/,"");
