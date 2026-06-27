@@ -16400,6 +16400,7 @@ loadState();
 
 function go(view,lesson){
   recCleanup();
+  if(typeof persistSpkResume==="function") persistSpkResume();  /* 離開課文前先記住朗讀位置，回來可接著聽 */
   if(typeof spkStop==="function") spkStop();
   state.view=view;
   if(lesson!==undefined) state.lesson=lesson;
@@ -17896,7 +17897,7 @@ window.spkReadLesson = function(){
     return;
   }
   var startIdx=(state.spkResume && state.spkResume[l.n])?state.spkResume[l.n]:0;
-  if(startIdx>0 && typeof uiToast==="function") uiToast("從上次暫停的地方繼續");
+  if(startIdx>0 && typeof uiToast==="function") uiToast("從上次聽到的地方繼續");
   spkToggle(xzLessonFullText(l, true), "lesson", startIdx);
 };
 /* ====== 預先下載整課語音（重用朗讀管線 → 與播放鍵值完全一致，播放必命中快取） ====== */
