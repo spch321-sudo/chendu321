@@ -649,14 +649,7 @@
 <div id="mark-sheet" style="display:none"></div>
 <div id="spk-sheet" style="display:none"></div>
 
-<script>
-const C = {
-  mint:"#7FB9A6", mintDeep:"#5A9B85", mintDark:"#3E7766",
-  mintWash:"#EAF3EF", goldWash:"#F7F1DE", claySoft:"#F1E4DD",
-};
-
-/* ============ LESSON DATA ============ */
-const LESSONS = [
+<script type="application/json" id="lessons-json">[
  {
   "n": 1,
   "unit": "第一單元 · 3-2-1 邁進末後大復興",
@@ -16264,7 +16257,15 @@ const LESSONS = [
   "next": "",
   "prog": "100"
  }
-];
+]</script>
+<script>
+const C = {
+  mint:"#7FB9A6", mintDeep:"#5A9B85", mintDark:"#3E7766",
+  mintWash:"#EAF3EF", goldWash:"#F7F1DE", claySoft:"#F1E4DD",
+};
+
+/* ============ LESSON DATA ============ */
+const LESSONS = JSON.parse(document.getElementById("lessons-json").textContent);
 
 const UNITS=[
  {n:1,  eyebrow:"復興的藍圖", title:"3-2-1・邁進末後大復興", start:1,   end:10,  verse:"我的民哪，你們要從那城出來。", vref:"啟示錄 18:4"},
@@ -17608,9 +17609,34 @@ function yunChunks(text){
   var fin=[]; out.forEach(function(s){ while(s.length>320){ fin.push(s.slice(0,320)); s=s.slice(320); } if(s) fin.push(s); });
   return fin.length?fin:[t];
 }
-function yunFetch(piece){
-  var key=yunRateAttr()+"|"+TTS_SIL_SENTENCE+"|"+TTS_SIL_COMMA+"|"+TTS_SIL_ENUM+"|"+piece;
-  if(yun.cache[key]) return Promise.resolve(yun.cache[key]);
+/* ====== 雲哲語音永久快取（IndexedDB · 與錄音庫完全隔離） ====== */
+/* 每段語音一生只向 Worker 抓一次，之後秒播、離線可聽，替 Worker 省成本。 */
+/* 任何 IndexedDB 失敗都自動走回網路抓取，絕不影響既有朗讀與內建語音退路。 */
+var TTS_DB="chendu321_tts";
+function ttsDBopen(cb){
+  try{ if(!window.indexedDB) return cb(null);
+    var req=indexedDB.open(TTS_DB,1);
+    req.onupgradeneeded=function(){ try{ var db=req.result;
+      if(!db.objectStoreNames.contains("audio")) db.createObjectStore("audio");
+    }catch(e){} };
+    req.onsuccess=function(){ cb(req.result); };
+    req.onerror=function(){ cb(null); };
+  }catch(e){ cb(null); }
+}
+function ttsCacheGet(key,cb){ ttsDBopen(function(db){ if(!db) return cb(null);
+  try{ var r=db.transaction("audio","readonly").objectStore("audio").get(key);
+    r.onsuccess=function(){ cb(r.result||null); }; r.onerror=function(){ cb(null); };
+  }catch(e){ cb(null); } }); }
+function ttsCachePut(key,blob){ ttsDBopen(function(db){ if(!db) return;
+  try{ db.transaction("audio","readwrite").objectStore("audio").put(blob,key); }catch(e){}
+}); }
+/* 清空語音快取（保留給設定頁按鈕或主控台呼叫） */
+window.ttsCacheClear=function(cb){ ttsDBopen(function(db){ if(!db) return cb&&cb(false);
+  try{ var r=db.transaction("audio","readwrite").objectStore("audio").clear();
+    r.onsuccess=function(){ yun.cache={}; if(typeof uiToast==="function") uiToast("已清空語音快取"); cb&&cb(true); };
+    r.onerror=function(){ cb&&cb(false); };
+  }catch(e){ cb&&cb(false); } }); };
+function ttsNetFetch(piece,key){
   return fetch(TTS_ENDPOINT,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -17619,7 +17645,20 @@ function yunFetch(piece){
     if(!res.ok) throw new Error("TTS HTTP "+res.status);
     return res.blob();
   }).then(function(blob){
+    try{ ttsCachePut(key,blob); }catch(e){}            /* 盡力存檔，存不存得進都不影響播放 */
     var url=URL.createObjectURL(blob); yun.cache[key]=url; return url;
+  });
+}
+function yunFetch(piece){
+  var key=yunRateAttr()+"|"+TTS_SIL_SENTENCE+"|"+TTS_SIL_COMMA+"|"+TTS_SIL_ENUM+"|"+piece;
+  if(yun.cache[key]) return Promise.resolve(yun.cache[key]);   /* 本次工作階段記憶體快取，最快 */
+  return new Promise(function(resolve){
+    ttsCacheGet(key,function(blob){
+      if(blob){
+        try{ var url=URL.createObjectURL(blob); yun.cache[key]=url; resolve(url); return; }catch(e){}
+      }
+      resolve(ttsNetFetch(piece,key));                          /* 沒存過或讀取失敗 → 網路抓取並順手存檔 */
+    });
   });
 }
 function yunStop(){
@@ -17877,10 +17916,19 @@ function xzSystem(){
 
 async function xzCall(){
   chat.busy=true; renderChat(); xzScrollBottom();
+  /* 離線時直接給溫暖回覆，不讓使用者空等 */
+  if(typeof navigator!=="undefined" && navigator.onLine===false){
+    chat.msgs.push({role:"assistant",text:"目前似乎沒有網路，小智暫時陪不了你 🙏\n別忘了——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
+    chat.busy=false; renderChat(); xzScrollBottom(); return;
+  }
+  /* 逾時保護：30 秒沒回應就中止，避免一直轉圈 */
+  var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+  var timer=ctrl?setTimeout(function(){try{ctrl.abort();}catch(_){}} ,30000):null;
   try{
     const res=await fetch(XZ_ENDPOINT,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
+      signal:ctrl?ctrl.signal:undefined,
       body:JSON.stringify({
         model:XZ_MODEL, max_tokens:1000,
         system:xzSystem(),
@@ -17893,7 +17941,10 @@ async function xzCall(){
     if(!text) text="小智一時想不出合適的話，但神的話永不落空。要不要換個方式再問問看？";
     chat.msgs.push({role:"assistant",text:text});
   }catch(e){
-    chat.msgs.push({role:"assistant",text:"小智暫時連不上線，請稍後再試 🙏\n別忘了——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
+    var aborted=e&&(e.name==="AbortError");
+    chat.msgs.push({role:"assistant",text:(aborted?"小智等候得有點久，先暫停一下 🙏 請稍後再試。":"小智暫時連不上線，請稍後再試 🙏")+"\n別忘了——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
+  }finally{
+    if(timer) clearTimeout(timer);
   }
   chat.busy=false; renderChat(); xzScrollBottom();
 }
