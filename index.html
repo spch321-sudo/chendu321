@@ -17781,7 +17781,8 @@ function xzLessonFullText(l){
   if(!l) return "";
   var P=[];
   function clean(s){ return xzClean(String(s||"")).split("\n").join(" ").replace(/\s+/g," ").trim(); }
-  if(l.greet) P.push("〔問安〕"+clean(l.greet));
+  if(l.greet) P.push("平安！"+clean(l.greet)+"。");
+  if(l.verse) P.push("本課主題經文。"+clean(l.verse)+"　"+clean(l.verse_ref||""));
   if(l.bigidea) P.push("〔核心觀念〕"+clean(l.bigidea));
   if(l.lead) P.push("〔引言〕"+clean(l.lead));
   (l.sections||[]).forEach(function(sec){
