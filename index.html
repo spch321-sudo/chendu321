@@ -17578,17 +17578,41 @@ function spkChunks(text){
 }
 function spkStop(){
   spk.token++; spk.active=false; spk.paused=false; spk.mode=""; spk.queue=[]; spk.idx=0; spk.curId="";
+  if(typeof spkMediaSession==="function") spkMediaSession("stop");
   try{ window.speechSynthesis.cancel(); }catch(_){}
   try{ if(window.yun && yun.audio){ yun.audio.pause(); yun.audio.onended=null; yun.audio.onerror=null; } }catch(_){}
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
 /* ====== 朗讀：暫停 / 續播 / 記住停止點（下次接著聽） ====== */
+function spkMediaSession(act){
+  try{
+    if(!("mediaSession" in navigator)) return;
+    var ms=navigator.mediaSession;
+    if(act==="play"){
+      try{
+        if(spk.curId==="lesson" && state.lesson && typeof MediaMetadata!=="undefined"){
+          var t=String(state.lesson.title||"晨讀321").replace(/\s*\n\s*/g,"　");
+          ms.metadata=new MediaMetadata({title:t, artist:"晨讀321", album:String(state.lesson.unit||"")});
+        }
+      }catch(_){}
+      try{ ms.setActionHandler("play",function(){ spkResumeCurrent(); }); }catch(_){}
+      try{ ms.setActionHandler("pause",function(){ spkPauseCurrent(); }); }catch(_){}
+      try{ ms.setActionHandler("stop",function(){ spkStopReset(); }); }catch(_){}
+      try{ ms.playbackState="playing"; }catch(_){}
+    } else if(act==="pause"){
+      try{ ms.playbackState="paused"; }catch(_){}
+    } else {
+      try{ ms.playbackState="none"; }catch(_){}
+    }
+  }catch(_){}
+}
 function spkPauseCurrent(){
   if(!spk.active || spk.paused) return;
   spk.paused=true;
   if(spk.mode==="native"){ try{ window.speechSynthesis.pause(); }catch(_){} }
   else { try{ if(window.yun && yun.audio) yun.audio.pause(); }catch(_){} }
   persistSpkResume();
+  if(typeof spkMediaSession==="function") spkMediaSession("pause");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
 function spkResumeCurrent(){
@@ -17596,6 +17620,7 @@ function spkResumeCurrent(){
   spk.paused=false;
   if(spk.mode==="native"){ try{ window.speechSynthesis.resume(); }catch(_){} }
   else { try{ if(window.yun && yun.audio){ var p=yun.audio.play(); if(p&&p.catch) p.catch(function(){}); } }catch(_){} }
+  if(typeof spkMediaSession==="function") spkMediaSession("play");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
 function persistSpkResume(){
@@ -17734,6 +17759,7 @@ function yunFetch(piece){
 }
 function yunStop(){
   spk.token++; spk.active=false; spk.paused=false; spk.mode=""; spk.queue=[]; spk.idx=0; spk.curId="";
+  if(typeof spkMediaSession==="function") spkMediaSession("stop");
   if(yun.audio){ try{ yun.audio.pause(); }catch(_){} yun.audio.onended=null; yun.audio.onerror=null; }
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
@@ -17749,6 +17775,7 @@ function yunToggle(text, id, startIdx){
   spk.queue=yunChunks(spkSanitize(text));
   spk.idx=(startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0;
   spk.active=true; spk.paused=false; spk.mode="yun"; spk.curId=id||"";
+  if(typeof spkMediaSession==="function") spkMediaSession("play");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
   function step(){
     if(my!==spk.token) return;
@@ -17799,6 +17826,7 @@ function spkToggleNative(text, id, startIdx){
   spk.queue = spkChunks(spkSanitize(text));
   spk.idx = (startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0;
   spk.active = true; spk.paused=false; spk.mode="native"; spk.curId = id||"";
+  if(typeof spkMediaSession==="function") spkMediaSession("play");
   var voice = spkVoice();
   function step(){
     if(my!==spk.token) return;            // 已被新的朗讀或停止取代
