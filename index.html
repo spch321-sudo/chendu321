@@ -16530,6 +16530,9 @@ function mkSentence(l,key){
   else if(pre==="T"){ var st=(l.steps&&l.steps[parseInt(rest,10)]); raw=st?(st.act||""):""; }
   else if(pre==="Q"){ raw=l.declare||""; }
   else if(pre==="R"){ var sh=(l.share&&l.share[parseInt(rest,10)]); raw=sh?(sh.q||""):""; }
+  else if(pre==="V"){ raw=l.verse||""; }
+  else if(pre==="B"){ raw=l.bigidea||""; }
+  else if(pre==="P"){ var psec=(l.sections||[])[parseInt(rest,10)]; raw=psec?(psec.pq||""):""; }
   else{ var ab2=pid.split("-"); var sec=(l.sections||[])[parseInt(ab2[0],10)]; raw=sec?((sec.paras||[])[parseInt(ab2[1],10)]||""):""; }
   var arr=mkSplit(raw); return (arr[si]||"").replace(/^\s+/,"");
 }
@@ -16600,8 +16603,9 @@ function paneHTML(l){
   if(state.tab==="read"){
     let s="";
     s+=`<div class="greet">${esc(l.greet)}</div>`;
-    s+=`<div class="verse-card"><div class="verse-txt">「${esc(l.verse)}」</div><div class="verse-ref">— ${esc(l.verse_ref)}</div></div>`;
-    if(l.bigidea) s+=`<div class="bigidea">${inline(l.bigidea)}</div>`;
+    var _vr=mkInline(l,"V",l.verse||"");
+    s+=`<div class="verse-card"><div class="verse-txt">「${_vr.body}」</div><div class="verse-ref">— ${esc(l.verse_ref)}</div></div>`+mkNotesBlock(_vr);
+    if(l.bigidea){ var _br=mkInline(l,"B",l.bigidea); s+=`<div class="bigidea mk-p">${_br.body}</div>`+mkNotesBlock(_br); }
     if(!(state.marks&&state.marks[l.n]&&Object.keys(state.marks[l.n]).length))
       s+=`<div class="mk-hint">💡 讀到聖靈光照、有感動的句子，<b>點一下</b>就能畫線；畫線後<b>再點一下</b>可以寫下你的領受。</div>`;
     if(l.lead) s+=mkParaHTML(l,"L",l.lead,"lead");
@@ -16609,7 +16613,7 @@ function paneHTML(l){
       var head=sec.h.replace(/^([一二三四五六七八九十]+)/,"$1、");
       s+=`<div class="section"><div class="sec-h">${esc(head)}</div>`;
       (sec.paras||[]).forEach((p,pi)=>{s+=mkParaHTML(l,i+"-"+pi,p);});
-      if(sec.pq) s+=`<div class="pq">${inline(sec.pq)}</div>`;
+      if(sec.pq){ var _pr=mkInline(l,"P"+i,sec.pq); s+=`<div class="pq mk-p">${_pr.body}</div>`+mkNotesBlock(_pr); }
       if(sec.deeper){
         const k="d"+i, open=state.deep[k];
         s+=`<button class="deep-btn" id="dbtn-${k}" aria-expanded="${open?'true':'false'}" onclick="toggleDeep('${k}')"><span class="deep-arrow">${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
@@ -16738,6 +16742,9 @@ function mkTabOf(pid){
   if(pre==="T") return {tab:"steps",label:"操練",rank:5};
   if(pre==="Q") return {tab:"declare",label:"宣告",rank:6};
   if(pre==="R") return {tab:"share",label:"分享",rank:7};
+  if(pre==="V") return {tab:"read",label:"經文",rank:1};
+  if(pre==="B") return {tab:"read",label:"核心",rank:1};
+  if(pre==="P") return {tab:"read",label:"省思",rank:1};
   return {tab:"read",label:"讀",rank:1};
 }
 function mkKeyOrder(key){
