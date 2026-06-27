@@ -124,6 +124,10 @@
   body.fs-lg .note-area{font-size:20px;} body.fs-xl .note-area{font-size:23px;}
 
   .rd-foot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px));display:flex;gap:2px;align-items:stretch;}
+  #spk-stopbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));width:100%;max-width:520px;display:none;text-align:center;z-index:60;pointer-events:none;}
+  .spk-stop-pill{pointer-events:auto;display:inline-flex;align-items:center;gap:7px;border:none;background:rgba(38,42,50,.93);color:#fff;border-radius:999px;padding:9px 18px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.22);}
+  .spk-stop-pill:active{transform:scale(.96);}
+  .spk-stop-ic{font-size:15px;line-height:1;}
   .foot-btn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 1px;border-radius:12px;border:none;background:none;color:var(--inkSoft);cursor:pointer;transition:all .15s;}
   .foot-btn .fb-ic{font-size:18px;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--mintWash);border-radius:11px;transition:background .15s;}
   .foot-btn .fb-tx{font-size:10.5px;font-weight:600;white-space:nowrap;line-height:1;position:relative;}
@@ -17422,6 +17426,7 @@ function render(){
     if(state.tab==="declare") recHydrate("declare",state.lesson.n);
     else if(state.tab==="note") recHydrate("note",state.lesson.n);
   }
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
 
 /* ============ 🔊 朗讀引擎（手機內建語音 · 免費 · 離線可用） ============ */
@@ -17609,6 +17614,27 @@ function maybeClearResumeOnComplete(){
 }
 window.spkPauseCurrent=spkPauseCurrent;
 window.spkResumeCurrent=spkResumeCurrent;
+/* ====== 停止（回到開頭）：朗讀進行中浮出的小膠囊，整段歸零、清除續聽點 ====== */
+function updateStopBar(){
+  var show = spk.active && spk.curId==="lesson" && state.view==="reader";
+  var bar=document.getElementById("spk-stopbar");
+  if(!bar){
+    if(!show) return;
+    bar=document.createElement("div");
+    bar.id="spk-stopbar";
+    bar.innerHTML='<button class="spk-stop-pill" onclick="spkStopReset()"><span class="spk-stop-ic">⏹</span><span class="spk-stop-tx">停止（回到開頭）</span></button>';
+    document.body.appendChild(bar);
+  }
+  bar.style.display = show ? "block" : "none";
+}
+window.updateStopBar=updateStopBar;
+window.spkStopReset=function(){
+  var n=(spk.curId==="lesson" && state.lesson)?state.lesson.n:null;
+  spkStop();
+  if(n!=null && typeof clearSpkResume==="function") clearSpkResume(n);
+  if(typeof updateStopBar==="function") updateStopBar();
+  if(typeof uiToast==="function") uiToast("已停止，下次從頭開始");
+};
 /* ============ 🎙️ 雲哲 · Azure 真人語音引擎（zh-TW-YunJheNeural · 台灣國語男聲） ============ */
 /* 透過 Cloudflare Worker 代理呼叫 Azure 文字轉語音，金鑰由伺服器端保管、不外洩。 */
 /* 若 Worker 未設定或連不上，會自動退回裝置內建語音，app 永遠不會因此中斷。          */
@@ -17810,6 +17836,7 @@ function updateSpeakButtons(){
     else { if(ic) ic.textContent="🔊"; if(tx) tx.textContent=(b.getAttribute("data-spk-label")||"朗讀"); }
     b.classList.toggle("spk-on", mine);
   });
+  if(typeof updateStopBar==="function") updateStopBar();
 }
 window.spkToggle = spkToggle;
 window.spkStop = spkStop;
