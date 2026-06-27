@@ -17583,7 +17583,26 @@ function spkStop(){
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
 /* ====== 朗讀：暫停 / 續播 / 記住停止點（下次接著聽） ====== */
+var _wakeLock=null;
+/* 朗讀時螢幕恆亮（Wake Lock）：播放/續播請求、暫停/停止釋放；不支援則自動略過。 */
+function spkWakeAcquire(){
+  try{
+    if(_wakeLock || !navigator.wakeLock) return;
+    navigator.wakeLock.request("screen").then(function(wl){
+      _wakeLock=wl;
+      try{ wl.addEventListener("release",function(){ _wakeLock=null; }); }catch(_){}
+    }).catch(function(){ _wakeLock=null; });
+  }catch(_){}
+}
+function spkWakeRelease(){
+  try{ if(_wakeLock){ var wl=_wakeLock; _wakeLock=null; wl.release().catch(function(){}); } }catch(_){}
+}
+/* 切回前景時若仍在朗讀就重新請求（Wake Lock 在頁面隱藏時會被系統自動釋放） */
+document.addEventListener("visibilitychange",function(){
+  try{ if(document.visibilityState==="visible" && spk.active && !spk.paused) spkWakeAcquire(); }catch(_){}
+});
 function spkMediaSession(act){
+  try{ if(act==="play") spkWakeAcquire(); else spkWakeRelease(); }catch(_){}
   try{
     if(!("mediaSession" in navigator)) return;
     var ms=navigator.mediaSession;
