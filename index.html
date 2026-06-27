@@ -17515,6 +17515,7 @@ function spkSanitize(s){
   s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
   s = spkJargon(s);     // 常用代號數字逐字讀（321→三二一）
   s = s.split("：").join("，");  // 朗讀：全形冒號→逗號，讓「基礎一：…」等冒號處停頓
+  s = s.split("得享").join("德享");  // 朗讀正音：得享→德享（同音 dé，避免「得」讀輕聲；畫面不變）
   // 移除 emoji 表情符號（絕大多數位於 astral 平面，用代理對表示）
   s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, " ");
   // 移除常見符號：箭頭、裝飾符號、雜項符號、變體選擇器、ZWJ、keycap
@@ -17785,7 +17786,7 @@ function xzLessonFullText(l, spk){
   // 開場：問安 + 自然帶入課題（朗讀）／結構標籤（AI 背景）
   if(spk){
     if(l.greet) P.push("平安！"+clean(l.greet)+"。");
-    P.push("今天，我們一起來讀第"+(l.n||"")+"課，"+clean(String(l.title||"").split("\n").join("，"))+"。");
+    P.push("現在，我們一起來讀第"+(l.n||"")+"課，"+clean(String(l.title||"").split("\n").join("，"))+"。");
   } else {
     if(l.greet) P.push("〔問安〕"+clean(l.greet));
   }
