@@ -17696,7 +17696,11 @@ function yunEnabled(){
   return yun.ready && state.ttsEngine!=="native";
 }
 function yunGetAudio(){
-  if(!yun.audio){ yun.audio=new Audio(); yun.audio.preload="auto"; }
+  if(!yun.audio){
+    yun.audio=new Audio(); yun.audio.preload="auto";
+    /* 以「行內媒體」方式呈現：在 Safari / 主畫面App 下對背景與鎖屏播放較友善 */
+    try{ yun.audio.playsInline=true; yun.audio.setAttribute("playsinline",""); yun.audio.setAttribute("webkit-playsinline",""); }catch(_){}
+  }
   return yun.audio;
 }
 function yunUnlock(){
