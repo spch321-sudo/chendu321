@@ -85,7 +85,9 @@
   .sec-p{font-size:20px;color:var(--ink);line-height:1.95;margin-bottom:12px;}
   .pq{background:var(--goldWash);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;margin:14px 0;font-size:18px;color:var(--ink);font-style:italic;line-height:1.8;}
   .deep-btn{background:none;border:1px solid var(--mint);border-radius:20px;padding:6px 14px;font-size:16px;color:var(--mintDeep);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:12px;}
-  .deep-body{margin-top:10px;padding:14px 16px;background:var(--mintSoft);border-radius:10px;font-size:18px;color:var(--inkSoft);line-height:1.9;}
+  .deep-body{display:grid;grid-template-rows:0fr;margin-top:0;opacity:0;transition:grid-template-rows .28s ease,margin-top .28s ease,opacity .22s ease;font-size:18px;color:var(--inkSoft);line-height:1.9;}
+  .deep-body.open{grid-template-rows:1fr;margin-top:10px;opacity:1;}
+  .deep-inner{overflow:hidden;min-height:0;padding:14px 16px;background:var(--mintSoft);border-radius:10px;}
   .deep-p{margin:0 0 .7em;} .deep-body .mk-p:last-child{margin-bottom:0;}
   .deep-body .mk-note{font-size:13.5px;background:#fff;}
 
@@ -160,6 +162,10 @@
   .spk-acts{display:flex;gap:10px;}
   .spk-try{flex:1;border:1.5px solid var(--mint);background:var(--mintSoft);color:var(--mintDark);border-radius:14px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
   .spk-done{flex:1;border:none;background:var(--mint);color:#fff;border-radius:14px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+  .spk-dl{margin:14px 0 4px;}
+  .spk-dl-btn{width:100%;border:1.5px solid var(--gold);background:var(--goldWash);color:#8a6d1f;border-radius:14px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .spk-dl-btn:disabled{opacity:.7;cursor:default;}
+  .spk-dl-sub{font-size:12.5px;color:var(--inkFaint);line-height:1.6;margin:8px 2px 0;text-align:center;}
   .spk-tip{font-size:12px;color:var(--inkFaint);line-height:1.6;margin-top:12px;text-align:center;}
 
   .pad-btm{padding-bottom:90px;}
@@ -16394,7 +16400,17 @@ function go(view,lesson){
 }
 function setTab(t){recCleanup();state.tab=t;render();window.scrollTo(0,0);}
 function rerenderKeepScroll(){var y=window.scrollY||window.pageYOffset||0;render();window.scrollTo(0,y);if(window.requestAnimationFrame)requestAnimationFrame(function(){window.scrollTo(0,y);});}
-function toggleDeep(k){state.deep[k]=!state.deep[k];rerenderKeepScroll();}
+function toggleDeep(k){
+  state.deep[k]=!state.deep[k];
+  var body=document.getElementById("dbody-"+k), btn=document.getElementById("dbtn-"+k);
+  if(body&&btn&&body.classList){           /* 只切換那一塊的顯隱，瞬間展開、不重繪整課 */
+    body.classList.toggle("open",state.deep[k]);
+    var ar=btn.querySelector(".deep-arrow"); if(ar) ar.textContent=state.deep[k]?"▼":"▶";
+    btn.setAttribute("aria-expanded",state.deep[k]?"true":"false");
+    return;
+  }
+  rerenderKeepScroll();                     /* 找不到元素 → 退回原本的安全重繪 */
+}
 
 /* ============ VIEWS ============ */
 function homeHTML(){
@@ -16593,12 +16609,10 @@ function paneHTML(l){
       if(sec.pq) s+=`<div class="pq">${inline(sec.pq)}</div>`;
       if(sec.deeper){
         const k="d"+i, open=state.deep[k];
-        s+=`<button class="deep-btn" onclick="toggleDeep('${k}')"><span>${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
-        if(open){
-          var dps=mkParaList(sec.deeper.a), db="";
-          dps.forEach(function(para,pi){ db+=mkParaHTML(l,"D"+i+"-"+pi,para,"deep-p"); });
-          s+=`<div class="deep-body">${db}</div>`;
-        }
+        s+=`<button class="deep-btn" id="dbtn-${k}" aria-expanded="${open?'true':'false'}" onclick="toggleDeep('${k}')"><span class="deep-arrow">${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
+        var dps=mkParaList(sec.deeper.a), db="";
+        dps.forEach(function(para,pi){ db+=mkParaHTML(l,"D"+i+"-"+pi,para,"deep-p"); });
+        s+=`<div class="deep-body${open?' open':''}" id="dbody-${k}"><div class="deep-inner">${db}</div></div>`;
       }
       s+=`</div>`;
     });
@@ -17761,6 +17775,36 @@ window.spkReadLesson = function(){
   var l = state.lesson; if(!l) return;
   spkToggle(xzLessonFullText(l, true), "lesson");
 };
+/* ====== 預先下載整課語音（重用朗讀管線 → 與播放鍵值完全一致，播放必命中快取） ====== */
+/* 把整課語音一次抓進 IndexedDB，之後離線可聽、且不再耗用 Worker。失敗段落可再按一次補齊。 */
+window.spkPreloadLesson = function(){
+  var l = state.lesson;
+  if(!l){ if(typeof uiToast==="function") uiToast("請先進入一課再下載"); return; }
+  if(!yunEnabled()){ if(typeof uiToast==="function") uiToast("目前是裝置內建語音，本來就能離線使用"); return; }
+  if(window.__spkPreloadBusy) return;
+  var chunks = yunChunks(spkSanitize(xzLessonFullText(l, true)));
+  if(!chunks.length){ if(typeof uiToast==="function") uiToast("這一課沒有可下載的語音內容"); return; }
+  window.__spkPreloadBusy = true;
+  var total = chunks.length, ok = 0, fail = 0, started = 0, running = 0, CONC = 3;
+  function btn(){ return document.getElementById("spk-preload-btn"); }
+  function label(t){ var b = btn(); if(b) b.textContent = t; }
+  function disable(d){ var b = btn(); if(b) b.disabled = !!d; }
+  disable(true); label("下載中… 0/" + total);
+  function pump(){
+    while(running < CONC && started < chunks.length){
+      var piece = chunks[started++]; running++;
+      yunFetch(piece).then(function(){ ok++; }, function(){ fail++; }).then(function(){
+        running--; label("下載中… " + (ok + fail) + "/" + total); pump();
+      });
+    }
+    if(running === 0 && started >= chunks.length){
+      window.__spkPreloadBusy = false; disable(false);
+      if(fail){ label("已下載 " + ok + "/" + total + "（稍後可再按一次補齊）"); if(typeof uiToast==="function") uiToast("大致下載完成，少數段落可稍後重試"); }
+      else { label("✓ 整課語音已下載，離線可聽"); if(typeof uiToast==="function") uiToast("整課語音已下載，之後離線也能聽"); }
+    }
+  }
+  pump();
+};
 
 /* ----- 「選聲音」設定面板 ----- */
 function spkGuessGender(v){
@@ -17807,6 +17851,7 @@ function renderSpkSheet(){
       +(yunEnabled()?'<div class="spk-sub" style="margin-top:6px">目前使用雲哲（台灣國語男聲）。下方語音清單僅在雲哲連不上時作為備援。</div>':"")
       +'<div class="spk-list">'+rows+'</div>'
       +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'
+      +((yunEnabled()&&state.lesson)?('<div class="spk-dl"><button class="spk-dl-btn" id="spk-preload-btn" onclick="spkPreloadLesson()">⬇ 預先下載這一課的語音</button><div class="spk-dl-sub">下載後，這一課的雲哲語音可離線聆聽，之後也不再耗用網路</div></div>'):"")
       +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
       +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲哲」？請依「雲哲語音設定指南」連接 Azure 語音服務。</div>')
     +'</div></div>';
@@ -18035,19 +18080,25 @@ window.xzQuick=function(idx){if(chat.busy)return;var t=xzQuicks()[idx];if(!t)ret
 
 /* ============ 搜尋 ============ */
 function sClean(s){return String(s||"").split("⟦b:").join("").split("⟦s:").join("").split("⟦g:").join("").split("⟧").join("").split("\n").join(" ");}
-var SEARCH_INDEX=LESSONS.map(function(l){
-  var parts=[];
-  function add(t){if(t)parts.push(sClean(t));}
-  add(l.title);add(l.unit);add(l.verse);add(l.verse_ref);add(l.bigidea);add(l.lead);add(l.focus);
-  (l.sections||[]).forEach(function(sec){add(sec.h);(sec.paras||[]).forEach(add);if(sec.pq)add(sec.pq);if(sec.deeper){add(sec.deeper.q);add(sec.deeper.a);}});
-  if(l.hope){add(l.hope.t);(l.hope.paras||[]).forEach(add);}
-  (l.share||[]).forEach(function(sh){add(sh.q);});
-  return {n:l.n,no:l.no,title:sClean(l.title),unit:sClean(l.unit),verse:sClean(l.verse),vref:l.verse_ref||"",hay:parts.join("　")};
-});
+/* 搜尋索引改為「第一次搜尋才建立」，開機不再掃全部課程，加快啟動 */
+var SEARCH_INDEX=null;
+function getSearchIndex(){
+  if(SEARCH_INDEX) return SEARCH_INDEX;
+  SEARCH_INDEX=LESSONS.map(function(l){
+    var parts=[];
+    function add(t){if(t)parts.push(sClean(t));}
+    add(l.title);add(l.unit);add(l.verse);add(l.verse_ref);add(l.bigidea);add(l.lead);add(l.focus);
+    (l.sections||[]).forEach(function(sec){add(sec.h);(sec.paras||[]).forEach(add);if(sec.pq)add(sec.pq);if(sec.deeper){add(sec.deeper.q);add(sec.deeper.a);}});
+    if(l.hope){add(l.hope.t);(l.hope.paras||[]).forEach(add);}
+    (l.share||[]).forEach(function(sh){add(sh.q);});
+    return {n:l.n,no:l.no,title:sClean(l.title),unit:sClean(l.unit),verse:sClean(l.verse),vref:l.verse_ref||"",hay:parts.join("　")};
+  });
+  return SEARCH_INDEX;
+}
 function searchLessons(q){
   q=(q||"").trim(); if(!q) return [];
   var ql=q.toLowerCase(), res=[];
-  SEARCH_INDEX.forEach(function(it){
+  getSearchIndex().forEach(function(it){
     var score=0;
     if(it.title.toLowerCase().indexOf(ql)>=0) score+=100;
     if((it.verse+" "+it.vref).toLowerCase().indexOf(ql)>=0) score+=40;
