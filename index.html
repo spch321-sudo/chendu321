@@ -636,6 +636,11 @@
   .s235-copy-btn{width:100%;margin-top:9px;border:none;background:var(--gold);color:#fff;font-weight:800;font-size:14px;border-radius:11px;padding:12px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
   .s920-note{width:100%;box-sizing:border-box;min-height:62px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;}
   .s920-note:focus{outline:none;border-color:var(--mint);}
+  .home-tools{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);}
+  .home-fab-cont{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:50;display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--mint),var(--mintDark));color:#fff;border-radius:26px;padding:11px 17px 11px 14px;box-shadow:0 6px 20px rgba(90,155,133,.42);font-family:inherit;}
+  .home-fab-cont:active{transform:scale(.96);}
+  .home-fab-cont .hfc-ic{font-size:15px;line-height:1;}
+  .home-fab-cont .hfc-tx{font-size:15px;font-weight:700;letter-spacing:1px;}
 </style>
 </head>
 <body>
@@ -16326,7 +16331,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:1,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{}};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16338,7 +16343,7 @@ function loadState(){
     if(d.checked) state.checked=d.checked;
     if(d.read) state.read=d.read;
     if(d.last) state.last=d.last;
-    if(d.openUnit!==undefined&&d.openUnit!==null) state.openUnit=d.openUnit;
+    if(d.contPos&&typeof d.contPos==="object") state.contPos=d.contPos;
     if(typeof d.font==="number") state.font=d.font;
     if(typeof d.streak==="number") state.streak=d.streak;
     if(d.lastDate) state.lastDate=d.lastDate;
@@ -16364,7 +16369,7 @@ function saveState(){
   try{
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
-      openUnit:state.openUnit, font:state.font,
+      openUnit:state.openUnit, contPos:state.contPos, font:state.font,
       streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine
     }));
   }catch(e){}
@@ -16422,6 +16427,7 @@ function homeHTML(){
   const readCount=Object.keys(state.read||{}).length;
   const pct=total?Math.round(readCount/total*100):0;
   const lastL=state.last?LESSONS.find(l=>l.n===state.last):null;
+  const contStyle=state.contPos?('left:'+state.contPos.x+'px;top:'+state.contPos.y+'px;right:auto;bottom:auto'):'';
   const streak=effectiveStreak();
   const streakHTML=streak>0?`<div class="streak"><span class="streak-fire">🔥</span><span class="streak-txt">連續晨讀 <b>${streak}</b> 天</span>${(state.best&&state.best>streak)?`<span class="streak-best">最佳 ${state.best} 天</span>`:''}</div>`:'';
   const continueHTML=lastL?`<div class="continue-card" onclick="openLesson(${lastL.n})"><div class="cc-label">繼續閱讀</div><div class="cc-title">第 ${lastL.n} 課 · ${esc(lastL.title).split("\n").join(" ")}</div><div class="cc-go">繼續 →</div></div>`:"";
@@ -16465,27 +16471,19 @@ function homeHTML(){
     <div class="home-eyebrow">國度321空中團契</div>
     <div class="home-title">晨讀 3-2-1</div>
     <div class="home-sub">邁進末後大復興 · 迎接主再來</div>
-    <div class="home-box">
-      <b>3 個基礎 · 2 個核心 · 1 個目的</b>
-      耶穌是我的榜樣 · 聖經是我的準則 · 聖靈是我的引導<br>
-      讓耶穌作王 · 讓耶穌得到一切的榮耀<br>
-      建立屬神的體系
-      <div class="home-box-sep"></div>
-      <b>操練 920 · 發展 235</b>
-      每個與你有關係的人都是你的 2：活出無己（0）、結出 9 種聖靈的果子<br>
-      成為 2 屬靈同伴 · 建立 3 屬靈父母兒女 · 發展 5 五重職分的團隊
-    </div>
   </div>
   <div class="list-wrap">
     <div class="s-bar" onclick="searchOpenOverlay()"><span class="s-bar-ico">🔍</span><span class="s-bar-tx">搜尋課程、經文、主題…</span></div>
     ${strategyRowHTML()}
-    ${continueHTML}
-    ${reviewCard}
-    ${progHTML}
-    ${fontHTML}
     <div class="list-label">十個單元 · 共 ${total} 課</div>
     ${cards}
+    <div class="home-tools">
+      ${reviewCard}
+      ${progHTML}
+      ${fontHTML}
+    </div>
     <div class="list-end">活出基督 ✦ 成為得勝者</div>
+    ${lastL?`<button class="home-fab-cont" style="${contStyle}" onclick="if(!window.__contJustDragged)openLesson(${lastL.n})"><span class="hfc-ic">▶</span><span class="hfc-tx">繼續</span></button>`:""}
   </div>`;
 }
 
@@ -17426,6 +17424,7 @@ function render(){
     else if(state.tab==="note") recHydrate("note",state.lesson.n);
   }
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+  if(typeof wireContFab==="function") wireContFab();
 }
 
 /* ============ 🔊 朗讀引擎（手機內建語音 · 免費 · 離線可用） ============ */
@@ -18175,6 +18174,50 @@ function attachFabDrag(fab){
   fab.addEventListener("pointerup",endDrag);
   fab.addEventListener("pointercancel",endDrag);
 }
+function wireContFab(){
+  var fab=document.querySelector(".home-fab-cont");
+  if(!fab) return;
+  if(state.contPos){
+    var w=fab.offsetWidth||110, h=fab.offsetHeight||48;
+    var cx=Math.max(6,Math.min(state.contPos.x,window.innerWidth-w-6));
+    var cy=Math.max(6,Math.min(state.contPos.y,window.innerHeight-h-6));
+    fab.style.left=cx+"px"; fab.style.top=cy+"px"; fab.style.right="auto"; fab.style.bottom="auto";
+    if(cx!==state.contPos.x||cy!==state.contPos.y) state.contPos={x:cx,y:cy};
+  }
+  attachContDrag(fab);
+}
+function attachContDrag(fab){
+  if(!fab || fab.__dragWired) return; fab.__dragWired=true;
+  var sx=0,sy=0,ox=0,oy=0,moved=false,dragging=false;
+  fab.addEventListener("pointerdown",function(e){
+    var r=fab.getBoundingClientRect();
+    sx=e.clientX; sy=e.clientY; ox=r.left; oy=r.top; moved=false; dragging=true;
+    fab.style.transition="none";
+    try{fab.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  fab.addEventListener("pointermove",function(e){
+    if(!dragging) return;
+    var dx=e.clientX-sx, dy=e.clientY-sy;
+    if(!moved && (Math.abs(dx)>4||Math.abs(dy)>4)) moved=true;
+    if(!moved) return;
+    var w=fab.offsetWidth, h=fab.offsetHeight;
+    var nx=Math.max(6,Math.min(ox+dx, window.innerWidth-w-6));
+    var ny=Math.max(6,Math.min(oy+dy, window.innerHeight-h-6));
+    fab.style.left=nx+"px"; fab.style.top=ny+"px"; fab.style.right="auto"; fab.style.bottom="auto";
+  });
+  function endDrag(e){
+    if(!dragging) return; dragging=false; fab.style.transition="";
+    try{fab.releasePointerCapture(e.pointerId);}catch(_){}
+    if(moved){
+      var r=fab.getBoundingClientRect();
+      state.contPos={x:Math.round(r.left), y:Math.round(r.top)}; saveState();
+      window.__contJustDragged=true; setTimeout(function(){window.__contJustDragged=false;},350);
+    }
+  }
+  fab.addEventListener("pointerup",endDrag);
+  fab.addEventListener("pointercancel",endDrag);
+}
+window.wireContFab=wireContFab;
 window.xzOpen=function(){chat.open=true;renderChat();xzScrollBottom();setTimeout(function(){var i=document.getElementById("xz-input");if(i&&i.focus)i.focus();},60);};
 window.xzClose=function(){chat.open=false;if(typeof spkStop==="function")spkStop();renderChat();};
 window.xzSend=function(){var i=document.getElementById("xz-input");if(!i)return;var t=(i.value||"").trim();if(!t||chat.busy)return;chat.msgs.push({role:"user",text:t});i.value="";renderChat();xzScrollBottom();xzCall();};
