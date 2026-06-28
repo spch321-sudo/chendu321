@@ -651,6 +651,12 @@
   .bk-btn{flex:1;padding:11px 8px;border-radius:11px;border:1px solid var(--mintDeep);background:#fff;color:var(--mintDeep);font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background .15s;}
   .bk-btn:active{transform:scale(.96);}
   .bk-exp{background:var(--mintDeep);color:#fff;}
+  #update-pill{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:9px;background:var(--mintDeep,#2C6E5A);color:#fff;padding:8px 9px 8px 15px;border-radius:999px;box-shadow:0 6px 22px rgba(0,0,0,.24);font-size:13.5px;max-width:calc(100vw - 24px);animation:upIn .3s ease;}
+  @keyframes upIn{from{opacity:0;transform:translate(-50%,-14px);}to{opacity:1;transform:translate(-50%,0);}}
+  #update-pill .up-tx{font-weight:600;white-space:nowrap;}
+  #update-pill .up-go{background:#fff;color:var(--mintDeep,#2C6E5A);border:none;padding:6px 13px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  #update-pill .up-go:active{transform:scale(.95);}
+  #update-pill .up-x{background:transparent;border:none;color:rgba(255,255,255,.85);font-size:14px;cursor:pointer;padding:3px 5px;line-height:1;}
   .home-fab-cont{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:50;display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--mint),var(--mintDark));color:#fff;border-radius:26px;padding:11px 17px 11px 14px;box-shadow:0 6px 20px rgba(90,155,133,.42);font-family:inherit;}
   .home-fab-cont:active{transform:scale(.96);}
   .home-fab-cont .hfc-ic{font-size:15px;line-height:1;}
@@ -16293,7 +16299,22 @@ const C = {
 };
 
 /* ============ LESSON DATA ============ */
-const LESSONS = JSON.parse(document.getElementById("lessons-json").textContent);
+let LESSONS;
+try{
+  LESSONS = JSON.parse(document.getElementById("lessons-json").textContent);
+}catch(_e){ LESSONS = null; }
+if(!Array.isArray(LESSONS) || !LESSONS.length){
+  try{
+    var _ap=document.getElementById("app");
+    if(_ap) _ap.innerHTML='<div style="max-width:480px;margin:56px auto;padding:40px 28px;text-align:center;font-family:\'PingFang TC\',\'Noto Sans TC\',\'Microsoft JhengHei\',sans-serif;color:#2C4A40;line-height:1.75;">'
+      +'<div style="font-size:42px;margin-bottom:14px;">📖</div>'
+      +'<div style="font-size:19px;font-weight:700;margin-bottom:10px;">晨讀內容載入時遇到問題</div>'
+      +'<div style="font-size:15px;color:#5a6b64;margin-bottom:24px;">可能是更新中或網路不穩。請點下面的按鈕重新載入；若仍打不開，請關掉 App 再重新開啟一次。</div>'
+      +'<button onclick="location.reload()" style="background:#2C6E5A;color:#fff;border:none;padding:13px 32px;border-radius:999px;font-size:16px;font-weight:600;-webkit-tap-highlight-color:transparent;cursor:pointer;">重新載入</button>'
+      +'</div>';
+  }catch(_e2){}
+  throw new Error("LESSONS load failed");
+}
 
 const UNITS=[
  {n:1,  eyebrow:"復興的藍圖", title:"3-2-1・邁進末後大復興", start:1,   end:10,  verse:"我的民哪，你們要從那城出來。", vref:"啟示錄 18:4"},
@@ -18855,8 +18876,20 @@ renderChat();
 </script>
 <script>
 if ("serviceWorker" in navigator) {
+  window.__showUpdatePill=function(){
+    if(document.getElementById("update-pill")) return;
+    var p=document.createElement("div");
+    p.id="update-pill";
+    p.innerHTML='<span class="up-tx">✦ 已有新版本</span><button class="up-go">立即更新</button><button class="up-x" aria-label="關閉">✕</button>';
+    (document.body||document.documentElement).appendChild(p);
+    var go=p.querySelector(".up-go"); if(go) go.onclick=function(){ location.reload(); };
+    var x=p.querySelector(".up-x"); if(x) x.onclick=function(){ try{p.remove();}catch(e){p.style.display="none";} };
+  };
   window.addEventListener("load", function(){
     navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+  navigator.serviceWorker.addEventListener("message", function(ev){
+    if(ev && ev.data && ev.data.type==="update-available"){ if(window.__showUpdatePill) window.__showUpdatePill(); }
   });
 }
 </script>
