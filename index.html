@@ -16589,8 +16589,8 @@ function homeHTML(){
 function tabbarHTML(){
   const hasNote=!!(state.lesson&&state.notes&&(state.notes[state.lesson.n]||"").trim());
   const tabs=[["read","📖","閱讀"],["focus","🎯","對焦"],["hope","✦","盼望"],["still","🤫","靜默"],["steps","👣","操練"],["note","✍️","筆記"]];
-  return '<div class="tabbar">'+tabs.map(t=>
-    `<button class="tab ${state.tab===t[0]?'active':''}" onclick="setTab('${t[0]}')"><span class="tab-ic">${t[1]}</span><span class="tab-tx">${t[2]}${(t[0]==="note"&&hasNote)?'<span class="note-dot"></span>':''}</span></button>`
+  return '<div class="tabbar" role="tablist">'+tabs.map(t=>
+    `<button class="tab ${state.tab===t[0]?'active':''}" role="tab" aria-selected="${state.tab===t[0]?'true':'false'}" aria-label="${t[2]}" onclick="setTab('${t[0]}')"><span class="tab-ic" aria-hidden="true">${t[1]}</span><span class="tab-tx">${t[2]}${(t[0]==="note"&&hasNote)?'<span class="note-dot"></span>':''}</span></button>`
   ).join("")+'</div>';
 }
 
@@ -16643,12 +16643,12 @@ function mkInline(l,paraId,raw){
     var has=Object.prototype.hasOwnProperty.call(marks,key);
     var note=has?String(marks[key]||""):"";
     var disp=inline(sents[i].replace(/^\s+/,"")).split("\n").join("<br>");
-    body+='<span class="mk-s'+(has?" mk-hl":"")+'" onclick="mkTap('+l.n+',&#39;'+key+'&#39;)">'+disp+'</span>';
+    body+='<span class="mk-s'+(has?" mk-hl":"")+'" onclick="mkTap('+l.n+',&#39;'+key+'&#39;,this)">'+disp+'</span>';
     if(has&&note){
       var nk=l.n+":"+key;
       var nopen=!!(state.noteOpen&&state.noteOpen[nk]);
-      body+='<span class="mk-flag'+(nopen?' on':'')+'" onclick="toggleNote(&#39;'+nk+'&#39;)" role="button" aria-label="領受筆記">'+(nopen?'▼':'▶')+'</span>';
-      notes+='<div class="mk-note'+(nopen?' open':'')+'"><div class="mk-note-in"><b>領受：</b>'+esc(note).split("\n").join("<br>")+'</div></div>';
+      body+='<span class="mk-flag'+(nopen?' on':'')+'" id="mkflag-'+nk+'" onclick="toggleNote(&#39;'+nk+'&#39;)" role="button" aria-label="領受筆記">'+(nopen?'▼':'▶')+'</span>';
+      notes+='<div class="mk-note'+(nopen?' open':'')+'" id="mknote-'+nk+'"><div class="mk-note-in"><b>領受：</b>'+esc(note).split("\n").join("<br>")+'</div></div>';
     }
   }
   return {body:body, notes:notes};
@@ -16658,11 +16658,15 @@ function mkParaHTML(l,paraId,raw,cls){
   var r=mkInline(l,paraId,raw);
   return '<p class="'+(cls||"sec-p")+' mk-p">'+r.body+'</p>'+mkNotesBlock(r);
 }
-window.mkTap=function(n,key){
+window.mkTap=function(n,key,el){
   if(!state.marks) state.marks={};
   if(!state.marks[n]) state.marks[n]={};
   if(Object.prototype.hasOwnProperty.call(state.marks[n],key)){ window.mkNote(n,key); }
-  else{ state.marks[n][key]=""; saveState(); rerenderKeepScroll(); }
+  else{
+    state.marks[n][key]=""; saveState();
+    if(el&&el.classList){ el.classList.add("mk-hl"); return; }  /* 只把這一句畫上線，不重繪整課 */
+    rerenderKeepScroll();
+  }
 };
 window.mkNote=function(n,key){
   var l=mkLessonByN(n); if(!l) return;
@@ -16719,7 +16723,7 @@ function paneHTML(l){
       if(sec.pq){ var _pr=mkInline(l,"P"+i,sec.pq); s+=`<div class="pq mk-p">${_pr.body}</div>`+mkNotesBlock(_pr); }
       if(sec.deeper){
         const k="d"+i, open=state.deep[k];
-        s+=`<button class="deep-btn" id="dbtn-${k}" aria-expanded="${open?'true':'false'}" onclick="toggleDeep('${k}')"><span class="deep-arrow">${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
+        s+=`<button class="deep-btn" id="dbtn-${k}" aria-expanded="${open?'true':'false'}" onclick="toggleDeep('${k}')"><span class="deep-arrow" aria-hidden="true">${open?'▼':'▶'}</span>${esc(sec.deeper.q)}</button>`;
         var dps=mkParaList(sec.deeper.a), db="";
         dps.forEach(function(para,pi){ db+=mkParaHTML(l,"D"+i+"-"+pi,para,"deep-p"); });
         s+=`<div class="deep-body${open?' open':''}" id="dbody-${k}"><div class="deep-inner">${db}</div></div>`;
@@ -16796,26 +16800,26 @@ function readerHTML(l){
   return `<div class="pad-btm">
     <div class="rd-head">
       <div class="rd-top">
-        <button class="rd-back" onclick="goHome()">←</button>
+        <button class="rd-back" onclick="goHome()" aria-label="返回首頁">←</button>
         <div style="flex:1">
           <div class="rd-unit">${esc(l.unit)}</div>
           <div class="rd-title">${nl(l.title)}</div>
         </div>
-        <button class="rd-font" onclick="cycleFont()">A⁺</button>
-        <div class="rd-prog"><span>${l.prog}%</span></div>
+        <button class="rd-font" onclick="cycleFont()" aria-label="調整字級大小">A⁺</button>
+        <div class="rd-prog" role="img" aria-label="閱讀進度 ${l.prog}%"><span>${l.prog}%</span></div>
       </div>
       <div class="rd-barbg"><div class="rd-barfill" style="width:${l.prog}%"></div></div>
       ${tabbarHTML()}
     </div>
     <div class="rd-body">${paneHTML(l)}</div>
     <div class="rd-foot">
-      <button class="foot-btn nav${prevL?'':' disabled'}" ${prevL?'onclick="prevLesson()"':''}><span class="fb-ic">←</span><span class="fb-tx">上一課</span></button>
-      <button class="foot-btn ${state.tab==='declare'?'active':''}" onclick="setTab('declare')"><span class="fb-ic">🙏</span><span class="fb-tx">宣告</span></button>
-      <button class="foot-btn ${state.tab==='share'?'active':''}" onclick="setTab('share')"><span class="fb-ic">💬</span><span class="fb-tx">分享</span></button>
-      <button class="foot-btn" onclick="openMeitu()"><span class="fb-ic">🎨</span><span class="fb-tx">美圖</span></button>
-      <button class="foot-btn spk" data-spk="lesson" data-spk-label="朗讀" onclick="spkReadLesson()"><span class="fb-ic spk-ic">🔊</span><span class="fb-tx spk-tx">朗讀</span></button>
-      <button class="foot-btn xz" onclick="xzOpen()"><span class="fb-ic">✨</span><span class="fb-tx">小智</span></button>
-      <button class="foot-btn nav${nextL?'':' disabled'}" ${nextL?'onclick="nextLesson()"':''}><span class="fb-ic">→</span><span class="fb-tx">下一課</span></button>
+      <button class="foot-btn nav${prevL?'':' disabled'}" ${prevL?'onclick="prevLesson()"':'aria-disabled="true"'}><span class="fb-ic" aria-hidden="true">←</span><span class="fb-tx">上一課</span></button>
+      <button class="foot-btn ${state.tab==='declare'?'active':''}" onclick="setTab('declare')"><span class="fb-ic" aria-hidden="true">🙏</span><span class="fb-tx">宣告</span></button>
+      <button class="foot-btn ${state.tab==='share'?'active':''}" onclick="setTab('share')"><span class="fb-ic" aria-hidden="true">💬</span><span class="fb-tx">分享</span></button>
+      <button class="foot-btn" onclick="openMeitu()"><span class="fb-ic" aria-hidden="true">🎨</span><span class="fb-tx">美圖</span></button>
+      <button class="foot-btn spk" data-spk="lesson" data-spk-label="朗讀" onclick="spkReadLesson()"><span class="fb-ic spk-ic" aria-hidden="true">🔊</span><span class="fb-tx spk-tx">朗讀</span></button>
+      <button class="foot-btn xz" onclick="xzOpen()"><span class="fb-ic" aria-hidden="true">✨</span><span class="fb-tx">小智</span></button>
+      <button class="foot-btn nav${nextL?'':' disabled'}" ${nextL?'onclick="nextLesson()"':'aria-disabled="true"'}><span class="fb-ic" aria-hidden="true">→</span><span class="fb-tx">下一課</span></button>
     </div>
   </div>`;
 }
@@ -16828,7 +16832,20 @@ window.prevLesson=function(){const pv=LESSONS.find(l=>l.n===state.lesson.n-1);if
 window.setTab=setTab;
 window.toggleDeep=toggleDeep;
 window.toggleStep=function(key){state.checked[key]=!state.checked[key];saveState();rerenderKeepScroll();};
-window.toggleNote=function(nk){ if(!state.noteOpen)state.noteOpen={}; state.noteOpen[nk]=!state.noteOpen[nk]; saveState(); rerenderKeepScroll(); };
+window.toggleNote=function(nk){
+  if(!state.noteOpen)state.noteOpen={};
+  state.noteOpen[nk]=!state.noteOpen[nk];
+  var open=state.noteOpen[nk];
+  var note=document.getElementById("mknote-"+nk), flag=document.getElementById("mkflag-"+nk);
+  if(note&&flag&&note.classList){           /* 只切換那一則，瞬間開合、不重繪整課 */
+    note.classList.toggle("open",open);
+    flag.classList.toggle("on",open);
+    flag.textContent=open?"▼":"▶";
+    flag.setAttribute("aria-expanded",open?"true":"false");
+    return;
+  }
+  rerenderKeepScroll();                       /* 後備 */
+};
 window.toggleUnit=function(n){state.openUnit=(state.openUnit===n?null:n);saveState();render();};
 window.cycleFont=function(){state.font=((state.font||0)+1)%3;applyFont();saveState();};
 window.setFont=function(n){state.font=n;applyFont();saveState();render();};
