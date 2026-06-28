@@ -642,6 +642,15 @@
   .s920-note{width:100%;box-sizing:border-box;min-height:62px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;line-height:1.75;color:var(--ink);background:var(--mintSoft);resize:vertical;font-family:inherit;}
   .s920-note:focus{outline:none;border-color:var(--mint);}
   .home-tools{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);}
+  .backup-card{margin-top:14px;padding:15px 15px 13px;background:var(--mintWash);border:1px solid var(--line);border-radius:16px;}
+  .bk-head{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;}
+  .bk-ic{font-size:23px;line-height:1.15;}
+  .bk-t{font-weight:700;color:var(--mintDeep);font-size:15.5px;}
+  .bk-d{font-size:12.5px;color:var(--inkSoft,#5a6b64);margin-top:3px;line-height:1.5;}
+  .bk-btns{display:flex;gap:10px;}
+  .bk-btn{flex:1;padding:11px 8px;border-radius:11px;border:1px solid var(--mintDeep);background:#fff;color:var(--mintDeep);font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background .15s;}
+  .bk-btn:active{transform:scale(.96);}
+  .bk-exp{background:var(--mintDeep);color:#fff;}
   .home-fab-cont{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:50;display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--mint),var(--mintDark));color:#fff;border-radius:26px;padding:11px 17px 11px 14px;box-shadow:0 6px 20px rgba(90,155,133,.42);font-family:inherit;}
   .home-fab-cont:active{transform:scale(.96);}
   .home-fab-cont .hfc-ic{font-size:15px;line-height:1;}
@@ -16320,6 +16329,65 @@ window.uiConfirm=function(msg,onYes){
   var no=document.getElementById("ui-cf-no"); if(no) no.onclick=close;
   var yes=document.getElementById("ui-cf-yes"); if(yes) yes.onclick=function(){ close(); if(onYes) onYes(); };
 };
+/* ===== 備份 / 還原：把畫線、領受、進度存成檔案，可換機或清快取後還原 ===== */
+window.exportBackup=function(){
+  try{ if(typeof saveState==="function") saveState(); }catch(e){}
+  var raw=localStorage.getItem(LS_KEY)||"{}";
+  var d=new Date();
+  var ymd=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+  var fname="晨讀321-備份-"+ymd+".json";
+  var dataObj; try{ dataObj=JSON.parse(raw); }catch(e){ dataObj={}; }
+  var payload=JSON.stringify({app:"chendu321",type:"backup",ver:1,date:d.toISOString(),data:dataObj});
+  var blob=new Blob([payload],{type:"application/json"});
+  try{
+    if(navigator.canShare && window.File){
+      var file=new File([blob],fname,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:"晨讀321 備份",text:"晨讀321 的畫線與領受備份"}).then(function(){
+          if(typeof uiToast==="function") uiToast("已開啟分享，可存到「檔案」或傳給自己");
+        }).catch(function(){});
+        return;
+      }
+    }
+  }catch(e){}
+  try{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a"); a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{document.body.removeChild(a);}catch(_){} URL.revokeObjectURL(url); },1500);
+    if(typeof uiToast==="function") uiToast("已匯出備份檔："+fname);
+  }catch(e){
+    if(typeof uiToast==="function") uiToast("匯出失敗，請改用 Safari 開啟再試一次");
+  }
+};
+window.importBackup=function(){
+  var inp=document.createElement("input");
+  inp.type="file"; inp.accept="application/json,.json"; inp.style.display="none";
+  inp.onchange=function(ev){ window.__onBackupFile(ev); try{document.body.removeChild(inp);}catch(e){} };
+  document.body.appendChild(inp); inp.click();
+};
+window.__onBackupFile=function(ev){
+  var f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var obj=null;
+    try{ obj=JSON.parse(String(reader.result||"")); }catch(e){ if(typeof uiToast==="function") uiToast("這個檔案不是有效的備份檔"); return; }
+    var data=(obj&&obj.app==="chendu321"&&obj.data)?obj.data:obj;
+    if(!data||typeof data!=="object"||(!data.marks&&!data.notes&&!data.read&&!data.checked)){
+      if(typeof uiToast==="function") uiToast("這個檔案看起來不是晨讀321的備份"); return;
+    }
+    var mc=data.marks?Object.keys(data.marks).length:0;
+    var msg="確定要用這個備份還原嗎？備份內含約 "+mc+" 課的畫線與領受。還原會「取代」目前手機上的畫線、領受與進度，建議先匯出目前的備份再還原。";
+    uiConfirm(msg, function(){
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+      catch(e){ if(typeof uiToast==="function") uiToast("還原失敗：儲存空間不足"); return; }
+      if(typeof uiToast==="function") uiToast("已還原，正在重新整理…");
+      setTimeout(function(){ location.reload(); }, 600);
+    });
+  };
+  reader.onerror=function(){ if(typeof uiToast==="function") uiToast("讀取檔案失敗"); };
+  reader.readAsText(f);
+};
 function inline(text){
   let out="", last=0, re=/⟦([bsg]):([^⟧]*)⟧/g, m;
   while((m=re.exec(text))!==null){
@@ -16487,6 +16555,10 @@ function homeHTML(){
       ${reviewCard}
       ${progHTML}
       ${fontHTML}
+      <div class="backup-card">
+        <div class="bk-head"><span class="bk-ic">🗂️</span><div class="bk-tx"><div class="bk-t">備份與還原</div><div class="bk-d">把畫線與領受存成檔案；換手機、清快取都不怕不見</div></div></div>
+        <div class="bk-btns"><button class="bk-btn bk-exp" onclick="exportBackup()">⬆ 匯出備份</button><button class="bk-btn" onclick="importBackup()">⬇ 匯入還原</button></div>
+      </div>
     </div>
     <div class="list-end">活出基督 ✦ 成為得勝者</div>
     ${lastL?`<button class="home-fab-cont" style="${contStyle}" onclick="if(!window.__contJustDragged)openLesson(${lastL.n})"><span class="hfc-ic">▶</span><span class="hfc-tx">繼續</span></button>`:""}
