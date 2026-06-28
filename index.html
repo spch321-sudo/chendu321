@@ -347,18 +347,13 @@
   .declare-card .mk-hl{background:linear-gradient(transparent 56%, rgba(232,196,90,.62) 56%);}
   .still-card .mk-hl,.still-hint .mk-hl,.focus-card .mk-hl{background:linear-gradient(transparent 60%, rgba(212,175,55,.5) 60%);}
   .mk-hl:active{background:linear-gradient(transparent 58%, rgba(212,175,55,.62) 58%);}
-  .mk-flag{font-size:12px;margin:0 2px;vertical-align:.12em;opacity:.9;}
-  .mk-notes{margin:7px 0 4px;}
-  .mk-note{font-size:13.5px;color:var(--inkSoft,#3a4a44);background:var(--mintWash);border-left:3px solid var(--gold,#C9A227);border-radius:9px;margin:6px 0;line-height:1.7;overflow:hidden;}
-  .mk-note-h{display:flex;align-items:center;gap:7px;width:100%;background:transparent;border:none;font-family:inherit;cursor:pointer;padding:8px 12px;text-align:left;-webkit-tap-highlight-color:transparent;}
-  .mk-note-ar{font-size:10px;color:var(--gold,#C9A227);flex:none;}
-  .mk-note-lb{color:var(--mintDeep);font-weight:700;font-size:13.5px;flex:none;}
-  .mk-note-peek{color:var(--inkFaint,#8a9a92);font-weight:400;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
-  .mk-note.open .mk-note-peek{display:none;}
-  .mk-note-bd{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease;}
-  .mk-note.open .mk-note-bd{grid-template-rows:1fr;}
-  .mk-note-in{overflow:hidden;min-height:0;padding:0 12px;}
-  .mk-note.open .mk-note-in{padding:0 12px 10px 12px;}
+  .mk-flag{font-size:13px;margin:0 3px;vertical-align:.1em;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent;transition:opacity .15s,transform .15s;display:inline-block;}
+  .mk-flag.on{opacity:1;transform:scale(1.12);}
+  .mk-flag:active{transform:scale(.88);}
+  .mk-notes{margin:0;}
+  .mk-note{display:grid;grid-template-rows:0fr;margin:0;transition:grid-template-rows .26s ease,margin .26s ease;}
+  .mk-note.open{grid-template-rows:1fr;margin:6px 0;}
+  .mk-note-in{overflow:hidden;min-height:0;font-size:13.5px;color:var(--inkSoft,#3a4a44);background:var(--mintWash);border-left:3px solid var(--gold,#C9A227);border-radius:9px;line-height:1.7;padding:8px 12px;}
   .mk-note b{color:var(--mintDeep);font-weight:700;}
   .sheet-mask{position:fixed;inset:0;background:rgba(20,32,28,.42);z-index:60;}
   .sheet-card{position:fixed;left:0;right:0;bottom:0;z-index:61;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 36px rgba(0,0,0,.18);max-width:620px;margin:0 auto;animation:sheetUp .22s ease;}
@@ -16556,18 +16551,10 @@ function mkInline(l,paraId,raw){
     var disp=inline(sents[i].replace(/^\s+/,"")).split("\n").join("<br>");
     body+='<span class="mk-s'+(has?" mk-hl":"")+'" onclick="mkTap('+l.n+',&#39;'+key+'&#39;)">'+disp+'</span>';
     if(has&&note){
-      body+='<span class="mk-flag">📝</span>';
       var nk=l.n+":"+key;
       var nopen=!!(state.noteOpen&&state.noteOpen[nk]);
-      var peek=esc(note.length>16?note.slice(0,16)+"…":note);
-      notes+='<div class="mk-note'+(nopen?' open':'')+'">'
-        +'<button class="mk-note-h" onclick="toggleNote(&#39;'+nk+'&#39;)">'
-          +'<span class="mk-note-ar">'+(nopen?'▼':'▶')+'</span>'
-          +'<span class="mk-note-lb">領受</span>'
-          +'<span class="mk-note-peek">'+peek+'</span>'
-        +'</button>'
-        +'<div class="mk-note-bd"><div class="mk-note-in">'+esc(note).split("\n").join("<br>")+'</div></div>'
-        +'</div>';
+      body+='<span class="mk-flag'+(nopen?' on':'')+'" onclick="toggleNote(&#39;'+nk+'&#39;)" role="button" aria-label="領受筆記">📝</span>';
+      notes+='<div class="mk-note'+(nopen?' open':'')+'"><div class="mk-note-in"><b>領受：</b>'+esc(note).split("\n").join("<br>")+'</div></div>';
     }
   }
   return {body:body, notes:notes};
@@ -16607,7 +16594,7 @@ window.mkNote=function(n,key){
 window.mkSave=function(n,key){
   var t=document.getElementById("mk-ta"); var v=t?t.value.trim():"";
   if(!state.marks) state.marks={}; if(!state.marks[n]) state.marks[n]={};
-  state.marks[n][key]=v; saveState(); mkSheetClose(); rerenderKeepScroll();
+  state.marks[n][key]=v; if(v){ if(!state.noteOpen)state.noteOpen={}; state.noteOpen[n+":"+key]=true; } saveState(); mkSheetClose(); rerenderKeepScroll();
 };
 window.mkRemove=function(n,key){
   if(state.marks&&state.marks[n]){ delete state.marks[n][key]; if(!Object.keys(state.marks[n]).length) delete state.marks[n]; }
