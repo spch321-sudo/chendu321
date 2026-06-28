@@ -347,9 +347,9 @@
   .declare-card .mk-hl{background:linear-gradient(transparent 56%, rgba(232,196,90,.62) 56%);}
   .still-card .mk-hl,.still-hint .mk-hl,.focus-card .mk-hl{background:linear-gradient(transparent 60%, rgba(212,175,55,.5) 60%);}
   .mk-hl:active{background:linear-gradient(transparent 58%, rgba(212,175,55,.62) 58%);}
-  .mk-flag{font-size:13px;margin:0 3px;vertical-align:.1em;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent;transition:opacity .15s,transform .15s;display:inline-block;}
-  .mk-flag.on{opacity:1;transform:scale(1.12);}
-  .mk-flag:active{transform:scale(.88);}
+  .mk-flag{display:inline-block;color:var(--mintDeep);font-size:.78em;line-height:1;margin:0 5px;vertical-align:.12em;cursor:pointer;opacity:.9;-webkit-tap-highlight-color:transparent;transition:opacity .15s,transform .15s;}
+  .mk-flag.on{opacity:1;}
+  .mk-flag:active{transform:scale(.85);}
   .mk-notes{margin:0;}
   .mk-note{display:grid;grid-template-rows:0fr;margin:0;transition:grid-template-rows .26s ease,margin .26s ease;}
   .mk-note.open{grid-template-rows:1fr;margin:6px 0;}
@@ -16553,7 +16553,7 @@ function mkInline(l,paraId,raw){
     if(has&&note){
       var nk=l.n+":"+key;
       var nopen=!!(state.noteOpen&&state.noteOpen[nk]);
-      body+='<span class="mk-flag'+(nopen?' on':'')+'" onclick="toggleNote(&#39;'+nk+'&#39;)" role="button" aria-label="領受筆記">📝</span>';
+      body+='<span class="mk-flag'+(nopen?' on':'')+'" onclick="toggleNote(&#39;'+nk+'&#39;)" role="button" aria-label="領受筆記">'+(nopen?'▼':'▶')+'</span>';
       notes+='<div class="mk-note'+(nopen?' open':'')+'"><div class="mk-note-in"><b>領受：</b>'+esc(note).split("\n").join("<br>")+'</div></div>';
     }
   }
@@ -16594,7 +16594,7 @@ window.mkNote=function(n,key){
 window.mkSave=function(n,key){
   var t=document.getElementById("mk-ta"); var v=t?t.value.trim():"";
   if(!state.marks) state.marks={}; if(!state.marks[n]) state.marks[n]={};
-  state.marks[n][key]=v; if(v){ if(!state.noteOpen)state.noteOpen={}; state.noteOpen[n+":"+key]=true; } saveState(); mkSheetClose(); rerenderKeepScroll();
+  state.marks[n][key]=v; saveState(); mkSheetClose(); rerenderKeepScroll();
 };
 window.mkRemove=function(n,key){
   if(state.marks&&state.marks[n]){ delete state.marks[n][key]; if(!Object.keys(state.marks[n]).length) delete state.marks[n]; }
