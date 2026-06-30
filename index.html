@@ -16425,7 +16425,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"xiaochen"};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"xiaochen",voiceMig:0};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16458,6 +16458,9 @@ function loadState(){
     if(typeof d.spkRate==="number") state.spkRate=d.spkRate;
     if(typeof d.ttsEngine==="string") state.ttsEngine=d.ttsEngine;
     if(typeof d.ttsVoice==="string") state.ttsVoice=d.ttsVoice;
+    // 一次性：曾停在「裝置內建」者，開啟更新版自動回到預設曉辰（只跑一次，之後仍可自由切換）
+    if(!d.voiceMig){ if(state.ttsEngine==="native"){ state.ttsEngine="yun"; state.ttsVoice="xiaochen"; } state.voiceMig=1; }
+    else state.voiceMig=d.voiceMig;
   }catch(e){}
 }
 function saveState(){
@@ -16465,7 +16468,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, contPos:state.contPos, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig
     }));
   }catch(e){}
 }
@@ -17659,8 +17662,21 @@ function spkBibleRefs(s){
   });
   return s;
 }
+/* 朗讀用：移除「純經文出處」括號附註（如（啟12:11）（參約3:16）（羅8:28、弗1:11）），
+   但保留解釋性括號（如（在神面前承認自己的驕傲）（脾氣、言語、慾望））。 */
+var SPK_REFTOK_RE = new RegExp("("+SPK_BIBLE_ALT+")\\s*\\d{1,3}\\s*(?:[:：]\\s*\\d{1,3}(?:\\s*[-–~、，,]\\s*\\d{1,3})*|[章篇])\\s*[节節]?","g");
+function spkStripRefParens(s){
+  s=String(s||"");
+  return s.replace(/\s?[（(]([^（）()]*)[）)]/g, function(m, inner){
+    var t=String(inner);
+    t=t.replace(SPK_REFTOK_RE,"");
+    t=t.replace(/[、，,;；和與与及节節章篇上下\s·／/参參見见另比較比较照同cf：:]/gi,"");
+    return t.length ? m : "";
+  });
+}
 function spkSanitize(s){
   s = String(s||"");
+  s = spkStripRefParens(s);  // 先移除「純經文出處」括號附註（不讀出處）
   s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
   s = spkJargon(s);     // 常用代號數字逐字讀（321→三二一）
   s = s.split("：").join("，");  // 朗讀：全形冒號→逗號，讓「基礎一：…」等冒號處停頓
@@ -18212,7 +18228,7 @@ function xzLessonFullText(l, spk){
   }
   // 主題經文
   if(l.verse){
-    if(spk) P.push("我們先來讀今天的主題經文。"+clean(l.verse)+"　這段經文出自"+clean(l.verse_ref||"")+"。");
+    if(spk) P.push("我們先來讀今天的主題經文。"+clean(l.verse));   // 只讀經文本身，出處（附註）不讀出
     else    P.push("〔主題經文〕"+clean(l.verse)+"　"+clean(l.verse_ref||""));
   }
   if(l.bigidea) P.push(lab("核心觀念","今天這一課的核心，是這樣的。")+clean(l.bigidea));
