@@ -16324,8 +16324,8 @@ const UNITS=[
  {n:5,  eyebrow:"不再是我",   title:"復興之路——無己",       start:61,  end:71,  verse:"現在活著的不再是我，乃是基督在我裡面活著。", vref:"加拉太書 2:20"},
  {n:6,  eyebrow:"謙卑為鑰",   title:"無己的鑰匙——謙卑",     start:72,  end:98,  verse:"神阻擋驕傲的人，賜恩給謙卑的人。", vref:"雅各書 4:6"},
  {n:7,  eyebrow:"天天捨己",   title:"無己的過程——捨己",     start:99,  end:113, verse:"若有人要跟從我，就當捨己，背起他的十字架來跟從我。", vref:"馬太福音 16:24"},
- {n:8,  eyebrow:"以命為本",   title:"復興的基礎——生命",     start:114, end:146, verse:"我來了，是要叫羊得生命，並且得的更豐盛。", vref:"約翰福音 10:10"},
- {n:9,  eyebrow:"重整次序",   title:"復興的實際——建立關係", start:147, end:156, verse:"你要盡心、盡性、盡意愛主你的神……其次也相倣，就是要愛人如己。", vref:"馬太福音 22:37,39"},
+ {n:8,  eyebrow:"以命為本",   title:"復興的基礎——生命",     start:114, end:146, verse:"我來瞭，是要叫羊得生命，並且得的更豐盛。", vref:"約翰福音 10:10"},
+ {n:9,  eyebrow:"重整次序",   title:"復興的實際——建立關係", start:147, end:156, verse:"你要盡心、盡性、盡意愛主你的神……其次也相仿，就是要愛人如己。", vref:"馬太福音 22:37,39"},
  {n:10, eyebrow:"走上服侍",   title:"復興的必需——服侍",     start:157, end:171, verse:"人子來，並不是要受人的服事，乃是要服事人。", vref:"馬太福音 20:28"}
 ];
 
@@ -16425,7 +16425,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{}};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe"};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16457,6 +16457,7 @@ function loadState(){
     if(typeof d.spkVoice==="string") state.spkVoice=d.spkVoice;
     if(typeof d.spkRate==="number") state.spkRate=d.spkRate;
     if(typeof d.ttsEngine==="string") state.ttsEngine=d.ttsEngine;
+    if(typeof d.ttsVoice==="string") state.ttsVoice=d.ttsVoice;
   }catch(e){}
 }
 function saveState(){
@@ -16464,7 +16465,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, contPos:state.contPos, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice
     }));
   }catch(e){}
 }
@@ -16513,7 +16514,7 @@ function toggleDeep(k){
     btn.setAttribute("aria-expanded",state.deep[k]?"true":"false");
     return;
   }
-  rerenderKeepScroll();                     /* 找不到元素 → 退回原本的安全重繪 */
+  rerenderKeepScroll();                     /* 找不到元素 → 退迴原本的安全重繪 */
 }
 
 /* ============ VIEWS ============ */
@@ -16891,8 +16892,8 @@ function mkSortedKeys(m){
   return keys;
 }
 function unitOfLesson(n){ for(var i=0;i<UNITS.length;i++){ if(n>=UNITS[i].start&&n<=UNITS[i].end) return UNITS[i].n; } return null; }
-/* ===== 建國四方略 · 畫線與筆記（接入「我的畫線與領受」彙整） ===== */
-var TOOL_META={ "321":{ic:"🌱",name:"落實321",sub:"生命"}, "920":{ic:"🍇",name:"操練920",sub:"關係"}, "235":{ic:"🤝",name:"發展235",sub:"事工"}, "sys":{ic:"👑",name:"建立體系",sub:"領域"} };
+/* ===== 建國四方略 · 畫線與筆記（接入「我的畫線與領受」匯整） ===== */
+var TOOL_META={ "321":{ic:"🌱",name:"落實321",sub:"生命"}, "920":{ic:"🍇",name:"操練920",sub:"關係"}, "235":{ic:"🤝",name:"發展235",sub:"事工"}, "sys":{ic:"👑",name:"建立體係",sub:"領域"} };
 var TOOL_TRUTHS={
   "321":[
     "耶穌是我的榜樣，聖經是我的準則，聖靈是我的引導。",
@@ -16938,7 +16939,7 @@ function toolNoteBlockHTML(id){
   h+='</div>';
   var nv=(state.tnote&&state.tnote[id])||"";
   h+='<div class="tnk-free-h">📝 筆記</div>';
-  h+='<textarea class="tnk-ta" placeholder="寫下你在這個方略中的領受、計畫、禱告……（會一起收進彙整）" oninput="tnoteSet(&#39;'+id+'&#39;,this.value)">'+esc(nv)+'</textarea>';
+  h+='<textarea class="tnk-ta" placeholder="寫下你在這個方略中的領受、計畫、禱告……（會一起收進匯整）" oninput="tnoteSet(&#39;'+id+'&#39;,this.value)">'+esc(nv)+'</textarea>';
   h+='</div>';
   return h;
 }
@@ -17074,7 +17075,7 @@ var STRATEGIES=[
  {id:"321",   ic:"🌱", name:"落實321", sub:"生命", tagline:"建立觀念，改變生命"},
  {id:"920",   ic:"🍇", name:"操練920", sub:"關係", tagline:"建立關係，結出果子"},
  {id:"235",   ic:"🤝", name:"發展235", sub:"事工", tagline:"建立團隊，成就事工"},
- {id:"system",ic:"👑", name:"建立體系", sub:"領域", tagline:"擴展領域，建立神國"}
+ {id:"system",ic:"👑", name:"建立體係", sub:"領域", tagline:"擴展領域，建立神國"}
 ];
 function strategyRowHTML(){
   return '<div class="strat-wrap"><div class="strat-h">🏛️ 建國四方略 · 在地上建立神國</div><div class="strat-row">'
@@ -17101,7 +17102,7 @@ function strategyComingHTML(s){
 }
 var SYS_PRESETS=[{ic:"🏠",name:"我的家庭"},{ic:"💼",name:"我的職場"},{ic:"⛪",name:"我的教會"},{ic:"🎓",name:"我的校園"},{ic:"🏘️",name:"我的社區"},{ic:"🏙️",name:"我的城市"},{ic:"🗺️",name:"我的國家"},{ic:"🌍",name:"列國 · 國度"},{ic:"🌐",name:"網路宣教"}];
 function sysHTML(s){
-  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">👑 建立體系</div><div class="rv-h-sub">擴展領域，建立神國</div></div></div>';
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">👑 建立體係</div><div class="rv-h-sub">擴展領域，建立神國</div></div></div>';
   var doms=Array.isArray(state.sys)?state.sys:[];
   var body='<div class="strat-page">';
   body+='<div class="sys-vision">'
@@ -17223,7 +17224,7 @@ var FRUITS9_ACT=[
   "今天對他說一句造就、鼓勵的話，或做一個體貼的小舉動，讓他感到被珍惜。（弗4:32）",
   "在沒有人看見時，仍為他選擇良善——不在背後議論他，反而暗暗為他著想、為他好。（羅12:9）",
   "守住你對他的一個承諾、把答應的小事做到底，讓他在你身上經歷可信靠的愛。（路16:10）",
-  "今天用柔和的語氣回應他，即使你有理也不疾言厲色——「回答柔和，使怒消退」。（箴15:1）",
+  "今天用柔和的語氣回應他，即使你有理也不疾言厲色——「迴答柔和，使怒消退」。（箴15:1）",
   "在你最容易在他面前失控之處（脾氣、言語、慾望），今天靠聖靈勒住一次，選擇基督、不放縱自己。（箴25:28）"
 ];
 function s920HTML(s){
@@ -17538,9 +17539,9 @@ window.s235Copy=function(){
 var CONFLICT321=[
   ["焦點對準耶穌","先停下來，回到耶穌——別急著反應。把焦點從「對方」和「自己的情緒」轉回耶穌，深呼吸、求聖靈；用心靠聖靈，不要用腦靠自己。"],
   ["看見自己的有己","誠實問自己：我此刻是不是在「要作主、要贏、要證明我對」？衝突的根，常是兩個「有己」相撞——先承認自己的驕傲。"],
-  ["謙卑、回到本位","放下「我有理」的權利，回到人的本位，不抓權、也不代替神審判他。神阻擋驕傲的人、賜恩給謙卑的人（雅4:6）——先低頭不是輸，是得勝。"],
+  ["謙卑、迴到本位","放下「我有理」的權利，迴到人的本位，不抓權、也不代替神審判他。神阻擋驕傲的人、賜恩給謙卑的人（雅4:6）——先低頭不是輸，是得勝。"],
   ["為他、不為自己","把問題從「我要贏」轉成「我要愛他、得到他」。人比事重要，關係比輸贏重要；不為了一件事，傷害一個人。"],
-  ["結出和平的果子","主動跨一步、用柔和的話先和好——「回答柔和，使怒消退」（箴15:1）。先處理關係，再處理事情。"],
+  ["結出和平的果子","主動跨一步、用柔和的話先和好——「迴答柔和，使怒消退」（箴15:1）。先處理關係，再處理事情。"],
   ["讓耶穌作王","把結果與對方都交在神手中，不靠自己掌控。讓耶穌在這關係中作王，把和好的榮耀歸給祂。"]
 ];
 
@@ -17571,10 +17572,10 @@ function spkVoice(){
       var chosen = vs.find(function(v){return v.name===state.spkVoice || v.voiceURI===state.spkVoice;});
       if(chosen) return chosen;
     }
-    // 否則：優先台灣國語，其次任何中文語音
-    var pick = vs.find(function(v){return /zh[-_]?TW/i.test(v.lang);})
+    // 否則：優先大陸普通話，其次任何中文語音
+    var pick = vs.find(function(v){return /zh[-_]?CN/i.test(v.lang);})
             || vs.find(function(v){return /^zh\b/i.test(v.lang)||/zh[-_]/i.test(v.lang);})
-            || vs.find(function(v){return /Chinese|中文|國語|普通话/i.test(v.name);});
+            || vs.find(function(v){return /Chinese|中文|普通話|國語/i.test(v.name);});
     return pick||null;
   }catch(_){ return null; }
 }
@@ -17582,7 +17583,7 @@ function spkVoice(){
 function spkListVoices(){
   try{
     var vs = window.speechSynthesis.getVoices() || [];
-    var zh = vs.filter(function(v){ return /zh|chinese|中文|國語|普通话|粵|cmn|yue/i.test(v.lang+" "+v.name); });
+    var zh = vs.filter(function(v){ return /zh|chinese|中文|國語|普通話|粵|cmn|yue/i.test(v.lang+" "+v.name); });
     return zh.length ? zh : vs;
   }catch(_){ return []; }
 }
@@ -17619,7 +17620,7 @@ var SPK_BIBLE={
   "士師記":"士師記","士":"士師記","路得記":"路得記","得":"路得記",
   "撒母耳記上":"撒母耳記上","撒上":"撒母耳記上","撒母耳記下":"撒母耳記下","撒下":"撒母耳記下",
   "列王紀上":"列王紀上","王上":"列王紀上","列王紀下":"列王紀下","王下":"列王紀下",
-  "歷代志上":"歷代志上","代上":"歷代志上","歷代志下":"歷代志下","代下":"歷代志下",
+  "歷代志上":"歷代誌上","代上":"歷代志上","歷代志下":"歷代誌下","代下":"歷代誌下",
   "以斯拉記":"以斯拉記","拉":"以斯拉記","尼希米記":"尼希米記","尼":"尼希米記","以斯帖記":"以斯帖記","斯":"以斯帖記",
   "約伯記":"約伯記","伯":"約伯記","詩篇":"詩篇","詩":"詩篇","箴言":"箴言","箴":"箴言",
   "傳道書":"傳道書","傳":"傳道書","雅歌":"雅歌","歌":"雅歌",
@@ -17663,7 +17664,7 @@ function spkSanitize(s){
   s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
   s = spkJargon(s);     // 常用代號數字逐字讀（321→三二一）
   s = s.split("：").join("，");  // 朗讀：全形冒號→逗號，讓「基礎一：…」等冒號處停頓
-  // ===== 朗讀多音字正音表：畫面文字不變，僅朗讀時用「同音字」矯正雲哲常讀錯的字 =====
+  // ===== 朗讀多音字正音表：畫面文字不變，僅朗讀時用「同音字」矯正雲帆常讀錯的字 =====
   // (A) 無誤傷風險者，直接替換
   var SPK_POLY = [
     ["得享",   "德享"],     // 得 ㄉㄜˊ（德）　非輕聲ㄉㄜ˙
@@ -17691,11 +17692,11 @@ function spkSanitize(s){
     // ───── 第一區常用字：晨讀最常用的「復興、長老」一併鎖定 ─────
     ["復興","復星"],["興起","星起"],["興旺","星旺"],["興盛","星盛"],  // 興 ㄒㄧㄥ（星）復興興起　非高興ㄒㄧㄥˋ
     ["長老","掌老"],                                                  // 長 ㄓㄤˇ（掌）長老　非長久ㄔㄤˊ
-    ["今天","今添"],                                                  // 天 ㄊㄧㄢ（添）今天　修正引擎誤加四聲ㄊㄧㄢˋ
-    ["血","寫"]                                                       // 血 依台灣一般口語讀ㄒㄧㄝˇ（寫）：寶血→寶ㄒㄧㄝˇ、流血→流ㄒㄧㄝˇ　非文讀ㄒㄩㄝˋ
+    ["今天","金添"]                                                  // 今 ㄐㄧㄣ（金）+ 天 ㄊㄧㄢ（添）：連「今」一起鎖定，HD 才不會誤讀ㄍㄣ
+    // 註：原「血→寫」一條已移除——大陸普通話「寶血/流血」讀 xuè（文讀）為標準，雲帆預設即正確
   ];
   for (var _p = 0; _p < SPK_POLY.length; _p++) { s = s.split(SPK_POLY[_p][0]).join(SPK_POLY[_p][1]); }
-  // (B) 需前字守衛者：避免「尊重生命」「人數算」等被誤改（含小智 AI 回覆）
+  // (B) 需前字守衛者：避免「尊重生命」「人數算」等被誤改（含小智 AI 迴覆）
   s = s.replace(/(^|[^尊看注貴珍敬慎莊嚴沉隆著加偏倚輕比體過])重生/g, "$1崇生");          // 重生 ㄔㄨㄥˊ（崇）
   s = s.replace(/(^|[^次人歲總度分全少多基單雙半整約倍級點筆字頁件票步局路])數算/g, "$1屬算"); // 數算 ㄕㄨˇ（屬）
   s = s.replace(/(^|[^部充身本過成])分([出別享開散])/g, "$1芬$2");   // 分 ㄈㄣ（芬）分出/分別/分享/分開/分散　非部分/身分ㄈㄣˋ
@@ -17787,11 +17788,14 @@ function spkPauseCurrent(){
 }
 function spkResumeCurrent(){
   if(!spk.active || !spk.paused) return;
-  spk.paused=false;
-  if(spk.mode==="native"){ try{ window.speechSynthesis.resume(); }catch(_){} }
-  else { try{ if(window.yun && yun.audio){ var p=yun.audio.play(); if(p&&p.catch) p.catch(function(){}); } }catch(_){} }
-  if(typeof spkMediaSession==="function") spkMediaSession("play");
-  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+  if(spk.mode==="native"){
+    /* 內建語音：從暫停的那一段重念（iOS 的 speechSynthesis.resume() 不穩定） */
+    nativeRunFrom(Math.max(0, spk.idx-1));
+  }else{
+    /* 雲帆：從「暫停的那一段」重新念起，最可靠——iOS 背景後 audio 元素常被迴收，
+       單純 play() 可能失效或從頭；改以重念當前段（spk.idx-1）確保「從剛才暫停處」接續。 */
+    yunRunFrom(Math.max(0, spk.idx-1));
+  }
 }
 function persistSpkResume(){
   try{ if(spk.curId==="lesson" && state.lesson){
@@ -17829,11 +17833,21 @@ window.spkStopReset=function(){
   if(typeof updateStopBar==="function") updateStopBar();
   if(typeof uiToast==="function") uiToast("已停止，下次從頭開始");
 };
-/* ============ 🎙️ 雲哲 · Azure 真人語音引擎（zh-TW-YunJheNeural · 台灣國語男聲） ============ */
+/* ============ 🎙️ 雲帆 · Azure 真人語音引擎（zh-CN-YunxiNeural · 大陸普通話男聲） ============ */
 /* 透過 Cloudflare Worker 代理呼叫 Azure 文字轉語音，金鑰由伺服器端保管、不外洩。 */
 /* 若 Worker 未設定或連不上，會自動退回裝置內建語音，app 永遠不會因此中斷。          */
 var TTS_ENDPOINT = "https://azure-tts.spch321.workers.dev"; /* ← 改成你自己的 Worker 網址 */
-var TTS_VOICE    = "zh-TW-YunJheNeural";                    /* 雲哲（台灣國語男聲） */
+var TTS_VOICE    = "zh-TW-YunJheNeural";      /* 預設語音；實際使用以 ttsVoiceName() 為準（使用者可在面闆自選） */
+/* 可選聲音：使用者在「朗讀聲音」面闆自行切換；HD（含冒號）走精簡 SSML，標準走註音+停頓（Worker 自動判別） */
+var TTS_VOICES = {
+  yunfan:   { name:"zh-CN-Yunfan:DragonHDLatestNeural",   label:"雲帆", desc:"高清男聲 HD" },
+  xiaochen: { name:"zh-CN-Xiaochen:DragonHDLatestNeural", label:"曉辰", desc:"高清女聲 HD" },
+  yunjhe:   { name:"zh-TW-YunJheNeural",                  label:"雲哲", desc:"台灣國語男聲" }
+};
+function ttsVoiceName(){
+  var k=state.ttsVoice;
+  return (TTS_VOICES[k] && TTS_VOICES[k].name) || "zh-TW-YunJheNeural";
+}
 var TTS_SIL_SENTENCE = 140;   /* 句號/問號/驚嘆號停頓(ms)，跟逗號差不多短 */
 var TTS_SIL_COMMA    = 140;   /* 逗號停頓(ms) */
 var TTS_SIL_ENUM     = 260;   /* 頓號「、」停頓(ms)，標題「一、二、三」聽得清楚 */
@@ -17844,7 +17858,7 @@ var yun = {
 };
 window.yun = yun;
 function yunEnabled(){
-  /* 預設：只要設定了 Worker 網址、且使用者沒有強制切回內建，就用雲哲 */
+  /* 預設：只要設定瞭 Worker 網址、且使用者沒有強制切回內建，就用雲帆 */
   return yun.ready && state.ttsEngine!=="native";
 }
 function yunGetAudio(){
@@ -17870,7 +17884,7 @@ function yunRateAttr(){
   var pct=Math.round((r-1)*100);            /* 1.0 → +0%，0.8 → -20% */
   return (pct>=0?"+":"")+pct+"%";
 }
-/* 雲哲用較長的句段（減少請求次數與停頓，聽起來更順） */
+/* 雲帆用較長的句段（減少請求次數與停頓，聽起來更順） */
 function yunChunks(text){
   var t=String(text||"").replace(/\s+/g," ").trim(); if(!t) return [];
   var enders="。！？；\n"; var out=[]; var buf="";
@@ -17879,8 +17893,8 @@ function yunChunks(text){
   var fin=[]; out.forEach(function(s){ while(s.length>320){ fin.push(s.slice(0,320)); s=s.slice(320); } if(s) fin.push(s); });
   return fin.length?fin:[t];
 }
-/* ====== 雲哲語音永久快取（IndexedDB · 與錄音庫完全隔離） ====== */
-/* 每段語音一生只向 Worker 抓一次，之後秒播、離線可聽，替 Worker 省成本。 */
+/* ====== 雲帆語音永久快取（IndexedDB · 與錄音庫完全隔離） ====== */
+/* 每段語音一生隻嚮 Worker 抓一次，之後秒播、離線可聽，替 Worker 省成本。 */
 /* 任何 IndexedDB 失敗都自動走回網路抓取，絕不影響既有朗讀與內建語音退路。 */
 var TTS_DB="chendu321_tts";
 function ttsDBopen(cb){
@@ -17910,7 +17924,7 @@ function ttsNetFetch(piece,key){
   return fetch(TTS_ENDPOINT,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ voice:TTS_VOICE, rate:yunRateAttr(), sil:TTS_SIL_SENTENCE, silc:TTS_SIL_COMMA, sile:TTS_SIL_ENUM, text:piece })
+    body:JSON.stringify({ voice:ttsVoiceName(), rate:yunRateAttr(), sil:TTS_SIL_SENTENCE, silc:TTS_SIL_COMMA, sile:TTS_SIL_ENUM, text:piece })
   }).then(function(res){
     if(!res.ok) throw new Error("TTS HTTP "+res.status);
     return res.blob();
@@ -17920,7 +17934,7 @@ function ttsNetFetch(piece,key){
   });
 }
 function yunFetch(piece){
-  var key=yunRateAttr()+"|"+TTS_SIL_SENTENCE+"|"+TTS_SIL_COMMA+"|"+TTS_SIL_ENUM+"|"+piece;
+  var key=ttsVoiceName()+"|"+yunRateAttr()+"|"+TTS_SIL_SENTENCE+"|"+TTS_SIL_COMMA+"|"+TTS_SIL_ENUM+"|"+piece;
   if(yun.cache[key]) return Promise.resolve(yun.cache[key]);   /* 本次工作階段記憶體快取，最快 */
   return new Promise(function(resolve){
     ttsCacheGet(key,function(blob){
@@ -17945,10 +17959,17 @@ function yunToggle(text, id, startIdx){
   }
   spkStop();                 /* 先停掉任何在播的（含內建） */
   yunUnlock();               /* ← 在點擊手勢內解鎖 iOS 音訊 */
-  var my=++spk.token;
   spk.queue=yunChunks(spkSanitize(text));
-  spk.idx=(startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0;
-  spk.active=true; spk.paused=false; spk.mode="yun"; spk.curId=id||"";
+  spk.curId=id||"";
+  spk.curText=text||"";      /* 暫存全文：首段失敗迴退內建語音時用 */
+  yunRunFrom((startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0);
+}
+/* 從 spk.queue 的指定段開始播放（重用既有隊列）；初次播放與「續播」共用，
+   續播時不依賴可能已被 iOS 迴收的 audio 元素，而是直接從暫停的那一段重念，最可靠。 */
+function yunRunFrom(startIdx){
+  var my=++spk.token;
+  spk.idx=(startIdx>0 && startIdx<spk.queue.length)?startIdx:0;
+  spk.active=true; spk.paused=false; spk.mode="yun";
   if(typeof spkMediaSession==="function") spkMediaSession("play");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
   function step(){
@@ -17956,6 +17977,7 @@ function yunToggle(text, id, startIdx){
     if(spk.idx>=spk.queue.length){ maybeClearResumeOnComplete(); yunStop(); return; }
     var first=(spk.idx===0);
     var piece=spk.queue[spk.idx++];
+    persistSpkResume();   /* 每段即時記錄進度：鎖屏/切換/退出等任何中斷都能從此續播 */
     yunFetch(piece).then(function(url){
       if(my!==spk.token) return;
       if(spk.idx<spk.queue.length){ yunFetch(spk.queue[spk.idx]).catch(function(){}); } /* 預抓下一段，換段更順 */
@@ -17968,10 +17990,10 @@ function yunToggle(text, id, startIdx){
     }).catch(function(){
       if(my!==spk.token) return;
       if(first){
-        /* 第一段就失敗：雲哲不可用 → 整段改用裝置內建語音，app 不中斷 */
-        if(typeof uiToast==="function") uiToast("雲哲語音暫時連不上，改用裝置內建聲音");
-        spk.active=false; spk.curId="";
-        spkToggleNative(text, id);
+        /* 第一段就失敗：雲帆不可用 → 整段改用裝置內建語音，app 不中斷 */
+        if(typeof uiToast==="function") uiToast("雲帆語音暫時連不上，改用裝置內建聲音");
+        spk.active=false;
+        spkToggleNative(spk.curText||"", spk.curId);
       }else{
         step();  /* 中途某段失敗：跳過、續念下一段 */
       }
@@ -17982,7 +18004,7 @@ function yunToggle(text, id, startIdx){
 window.yunToggle=yunToggle;
 window.yunStop=yunStop;
 
-/* ============ 朗讀派發器：優先雲哲，否則內建（兩者共用同一顆按鈕） ============ */
+/* ============ 朗讀派發器：優先雲帆，否則內建（兩者共用同一顆按鈕） ============ */
 function spkToggle(text, id, startIdx){
   if(yunEnabled()) return yunToggle(text, id, startIdx);
   return spkToggleNative(text, id, startIdx);
@@ -17996,17 +18018,27 @@ function spkToggleNative(text, id, startIdx){
     return;
   }
   spkStop();
-  var my = ++spk.token;
   spk.queue = spkChunks(spkSanitize(text));
-  spk.idx = (startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0;
-  spk.active = true; spk.paused=false; spk.mode="native"; spk.curId = id||"";
+  spk.curId = id||"";
+  spk.curText = text||"";
+  nativeRunFrom((startIdx&&startIdx>0&&startIdx<spk.queue.length)?startIdx:0);
+}
+/* 從 spk.queue 的指定段開始（內建語音）；初次播放與「續播」共用，
+   續播時從暫停的那一段重念，避免 iOS 上 speechSynthesis.resume() 不穩定。 */
+function nativeRunFrom(startIdx){
+  if(!spk.supported) return;
+  var my = ++spk.token;
+  spk.idx = (startIdx>0 && startIdx<spk.queue.length)?startIdx:0;
+  spk.active = true; spk.paused=false; spk.mode="native";
   if(typeof spkMediaSession==="function") spkMediaSession("play");
   var voice = spkVoice();
+  try{ window.speechSynthesis.cancel(); }catch(_){}   /* 清掉殘留，避免疊音 */
   function step(){
     if(my!==spk.token) return;            // 已被新的朗讀或停止取代
     if(spk.idx >= spk.queue.length){ maybeClearResumeOnComplete(); spkStop(); return; }
     var u = new SpeechSynthesisUtterance(spk.queue[spk.idx++]);
-    u.lang = (voice && voice.lang) ? voice.lang : "zh-TW";
+    persistSpkResume();   /* 每段即時記錄進度：任何中斷都能從此續播 */
+    u.lang = (voice && voice.lang) ? voice.lang : "zh-CN";
     if(voice) u.voice = voice;
     u.rate = (typeof state.spkRate==="number" ? state.spkRate : 0.94); u.pitch = 1.0;
     u.onend = function(){ if(my===spk.token) step(); };
@@ -18051,7 +18083,7 @@ window.spkReadLesson = function(){
   if(startIdx>0 && typeof uiToast==="function") uiToast("從上次聽到的地方繼續");
   spkToggle(xzLessonFullText(l, true), "lesson", startIdx);
 };
-/* ====== 預先下載整課語音（重用朗讀管線 → 與播放鍵值完全一致，播放必命中快取） ====== */
+/* ====== 預先下載整課語音（重用朗讀管線 → 與播放鍵值完全一緻，播放必命中快取） ====== */
 /* 把整課語音一次抓進 IndexedDB，之後離線可聽、且不再耗用 Worker。失敗段落可再按一次補齊。 */
 window.spkPreloadLesson = function(){
   var l = state.lesson;
@@ -18082,7 +18114,7 @@ window.spkPreloadLesson = function(){
   pump();
 };
 
-/* ----- 「選聲音」設定面板 ----- */
+/* ----- 「選聲音」設定面闆 ----- */
 function spkGuessGender(v){
   var s=(v.name+" "+(v.voiceURI||"")).toLowerCase();
   if(/male|男|yunjhe|yun-?jhe|kangkang|yunyang|zhiyu.*male/.test(s)) return "男";
@@ -18098,6 +18130,14 @@ window.spkPickVoice=function(name){ state.spkVoice=name||""; saveState(); render
 window.spkSetRate=function(v){ state.spkRate=Number(v)||0.94; saveState(); var lbl=document.getElementById("spk-rate-lbl"); if(lbl) lbl.textContent=(state.spkRate).toFixed(2)+"×"; };
 window.spkPreview=function(){ spkToggle("平安！這是朗讀的試聽。祂必興旺，我必衰微。願神祝福你今天的晨讀。","preview"); };
 window.spkSetEngine=function(e){ state.ttsEngine=(e==="native")?"native":"yun"; saveState(); if(typeof spkStop==="function") spkStop(); renderSpkSheet(); };
+/* 選擇朗讀聲音：azure 三種（雲帆/曉辰/雲哲）或裝置內建 */
+window.spkSetVoice=function(choice){
+  if(choice==="native"){ state.ttsEngine="native"; }
+  else if(TTS_VOICES[choice]){ state.ttsEngine="yun"; state.ttsVoice=choice; }
+  saveState();
+  if(typeof spkStop==="function") spkStop();
+  renderSpkSheet();
+};
 function renderSpkSheet(){
   var host=document.getElementById("spk-sheet"); if(!host) return;
   var vs=spkListVoices();
@@ -18120,16 +18160,20 @@ function renderSpkSheet(){
     +'<div class="spk-card">'
       +'<div class="spk-h"><div class="spk-h-t">🔊 朗讀聲音</div><button class="spk-x" onclick="closeSpkSettings()">✕</button></div>'
       +'<div class="spk-sub">選一個你喜歡的聲音，點下面「試聽」聽聽看</div>'
-      +(yun.ready?('<div class="spk-eng">'
-        +'<button class="spk-eng-b '+(yunEnabled()?"on":"")+'" onclick="spkSetEngine(\'yun\')">🎙️ 雲哲真人語音</button>'
-        +'<button class="spk-eng-b '+(!yunEnabled()?"on":"")+'" onclick="spkSetEngine(\'native\')">📱 裝置內建</button>'
+      +(yun.ready?('<div class="spk-eng" style="flex-wrap:wrap">'
+        + Object.keys(TTS_VOICES).map(function(k){
+            var on = yunEnabled() && (state.ttsVoice||"yunfan")===k;
+            var v=TTS_VOICES[k];
+            return '<button class="spk-eng-b '+(on?"on":"")+'" style="flex:1 1 44%" onclick="spkSetVoice(\''+k+'\')">'+v.label+'<br><span style="font-size:11px;opacity:.85">'+v.desc+'</span></button>';
+          }).join("")
+        +'<button class="spk-eng-b '+(!yunEnabled()?"on":"")+'" style="flex:1 1 44%" onclick="spkSetVoice(\'native\')">📱 裝置內建<br><span style="font-size:11px;opacity:.85">本機合成</span></button>'
       +'</div>'):"")
-      +(yunEnabled()?'<div class="spk-sub" style="margin-top:6px">目前使用雲哲（台灣國語男聲）。下方語音清單僅在雲哲連不上時作為備援。</div>':"")
+      +(yunEnabled()?('<div class="spk-sub" style="margin-top:6px">目前使用「'+((TTS_VOICES[state.ttsVoice||"yunfan"]||{}).label||"雲帆")+'」。下方清單僅在真人語音連不上時作為備援。</div>'):"")
       +'<div class="spk-list">'+rows+'</div>'
       +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'
-      +((yunEnabled()&&state.lesson)?('<div class="spk-dl"><button class="spk-dl-btn" id="spk-preload-btn" onclick="spkPreloadLesson()">⬇ 預先下載這一課的語音</button><div class="spk-dl-sub">下載後，這一課的雲哲語音可離線聆聽，之後也不再耗用網路</div></div>'):"")
+      +((yunEnabled()&&state.lesson)?('<div class="spk-dl"><button class="spk-dl-btn" id="spk-preload-btn" onclick="spkPreloadLesson()">⬇ 預先下載這一課的語音</button><div class="spk-dl-sub">下載後，這一課的雲帆語音可離線聆聽，之後也不再耗用網路</div></div>'):"")
       +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
-      +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲哲」？請依「雲哲語音設定指南」連接 Azure 語音服務。</div>')
+      +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲帆」？請依「雲帆語音設定指南」連接 Azure 語音服務。</div>')
     +'</div></div>';
   host.style.display="block";
 }
@@ -18224,7 +18268,7 @@ function xzSystem(){
     "核心生命：無己（不再是我，乃是基督在我裡面活）、謙卑勝過驕傲、用心靠聖靈不用腦靠自己、先生命再關係後事工。",
     "",
     "【風格】",
-    "一律用繁體中文。引用聖經一律用《和合本》，且只在你有把握時引用、絕不杜撰經文或出處；不確定就如實說明，或請對方自行查考。",
+    "一律用繁體中文。引用聖經一律用《和合本》，且隻在你有把握時引用、絕不杜撰經文或出處；不確定就如實說明，或請對方自行查考。",
     "深入淺出、善用比喻、條理清晰、溫暖有盼望。回應精簡（通常二、三段內），不長篇大論。",
     "",
     "【安全】",
@@ -18239,7 +18283,7 @@ async function xzCall(){
   chat.busy=true; renderChat(); xzScrollBottom();
   /* 離線時直接給溫暖回覆，不讓使用者空等 */
   if(typeof navigator!=="undefined" && navigator.onLine===false){
-    chat.msgs.push({role:"assistant",text:"目前似乎沒有網路，小智暫時陪不了你 🙏\n別忘了——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
+    chat.msgs.push({role:"assistant",text:"目前似乎沒有網路，小智暫時陪不了你 🙏\n別忘瞭——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
     chat.busy=false; renderChat(); xzScrollBottom(); return;
   }
   /* 逾時保護：30 秒沒回應就中止，避免一直轉圈 */
@@ -18263,7 +18307,7 @@ async function xzCall(){
     chat.msgs.push({role:"assistant",text:text});
   }catch(e){
     var aborted=e&&(e.name==="AbortError");
-    chat.msgs.push({role:"assistant",text:(aborted?"小智等候得有點久，先暫停一下 🙏 請稍後再試。":"小智暫時連不上線，請稍後再試 🙏")+"\n別忘了——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
+    chat.msgs.push({role:"assistant",text:(aborted?"小智等候得有點久，先暫停一下 🙏 請稍後再試。":"小智暫時連不上線，請稍後再試 🙏")+"\n別忘瞭——最好的同伴是聖靈與神的話，你隨時可以直接向主傾心吐意。"});
   }finally{
     if(timer) clearTimeout(timer);
   }
@@ -18478,7 +18522,7 @@ window.searchOpen=function(n){search.open=false;search.q="";renderSearch();openL
 /* ============ 美圖分享 · 經文卡片（內容／風格／版型／識別）============ */
 var MT_FONT='"PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",sans-serif';
 /* 團契識別設定：App 放上固定網址後，把網址填入 MT_SITE（會顯示在卡片底部）；
-   待有「掃描測試過」的 QR 圖，把它的 data URL 貼到 MT_QR，卡片右下角就會出現掃碼。*/
+   待有「掃描測試過」的 QR 圖，把牠的 data URL 貼到 MT_QR，卡片右下角就會出現掃碼。*/
 var MT_SITE="";   // 例："chendu321.org"
 var MT_QR="";     // 例："data:image/png;base64,...."（經實機掃描測試過的 QR 圖）
 var mtQRImg=null;
@@ -18693,7 +18737,7 @@ function recSkeleton(kind,n){
   }
   var title=isNote?"🎙️ 錄下口述心得":"🎙️ 錄下你的宣告";
   var sub=isNote?"用說的比用打的更快——把今天的領受、感動與禱告口述錄下來，常常回聽。錄音只存在你自己的裝置。"
-                :"親口把這篇宣告禱告出來，錄起來常常聆聽，讓真理刻在心版上。錄音只存在你自己的裝置。";
+                :"親口把這篇宣告禱告出來，錄起來常常聆聽，讓真理刻在心版上。錄音隻存在你自己的裝置。";
   return '<div class="rec-card"><div class="rec-title">'+title+'</div>'
     +'<div class="rec-sub">'+sub+'</div>'
     +'<button class="rec-btn" onclick="recStart(\''+kind+'\','+n+')">● 開始錄音</button></div>';

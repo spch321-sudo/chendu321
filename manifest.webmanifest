@@ -1,17 +1,20 @@
 {
-  "name": "晨讀321",
+  "name": "晨讀321 · 國度321空中團契",
   "short_name": "晨讀321",
-  "description": "國度321空中團契 · 晨讀 3-2-1 · 邁進末後大復興，落實321理念，活出基督、成為得勝者。",
   "lang": "zh-Hant",
-  "start_url": ".",
-  "scope": ".",
+  "dir": "ltr",
+  "description": "國度321空中團契 · 晨讀321：每天在線學習聖經真理與321理念，活出基督的生命。",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FBFCFB",
-  "theme_color": "#3E7766",
+  "theme_color": "#7FB9A6",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "favicon-32.png",        "sizes": "32x32",   "type": "image/png" },
+    { "src": "icon-180.png",          "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
