@@ -17638,7 +17638,7 @@ function bookRefRE(){
   var keys=[]; if(typeof SPK_BIBLE!=="undefined") keys=Object.keys(SPK_BIBLE);
   keys=keys.concat(Object.keys(BK_SUPP)).filter(function(k){return k.length<=4;}).sort(function(a,b){return b.length-a.length;});
   var alt=keys.map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}).join("|");
-  _BKRE=new RegExp("("+alt+")?\\s*(\\d+)[:：](\\d+)(?:[-－~～](\\d+))?","g");
+  _BKRE=new RegExp("("+alt+")?\\s*(\\d+)[:：](\\d+)(?:[-－~～](\\d+))?((?:[,，]\\d+(?:[-－]\\d+)?(?![:：\\d]))*)","g");
   return _BKRE;
 }
 function bookLinkifyRefs(t){
