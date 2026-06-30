@@ -17641,16 +17641,26 @@ function bookRefRE(){
   _BKRE=new RegExp("("+alt+")?\\s*(\\d+)[:：](\\d+)(?:[-－~～](\\d+))?((?:[,，]\\d+(?:[-－]\\d+)?(?![:：\\d]))*)","g");
   return _BKRE;
 }
+function bkURL(usfm,ch,vs,ev){ return "https://www.bible.com/bible/46/"+usfm+"."+ch+"."+vs+(ev?("-"+ev):"")+".CUNP"; }
+function bkA(url,label){ return '<a class="bk-ref" href="'+url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+label+'</a>'; }
 function bookLinkifyRefs(t){
   var last="";
-  return t.replace(bookRefRE(), function(m, bn, ch, vs, ev){
+  return t.replace(bookRefRE(), function(m, bn, ch, vs, ev, cont){
     var full = bn ? bookFullName(bn) : last;
     if(!full) return m;
     last = full;
     var usfm = BOOK_USFM[full];
     if(!usfm) return m;
-    var url="https://www.bible.com/bible/46/"+usfm+"."+ch+"."+vs+(ev?("-"+ev):"")+".CUNP";
-    return '<a class="bk-ref" href="'+url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+m+'</a>';
+    cont = cont||"";
+    var primaryLabel = m.slice(0, m.length - cont.length);
+    var html = bkA(bkURL(usfm, ch, vs, ev), primaryLabel);
+    if(cont){
+      var re2=/([,，])(\d+)(?:[-－](\d+))?/g, mm;
+      while((mm=re2.exec(cont))){
+        html += mm[1] + bkA(bkURL(usfm, ch, mm[2], mm[3]), mm[2]+(mm[3]?("-"+mm[3]):""));
+      }
+    }
+    return html;
   });
 }
 var _BKCRE=null;
