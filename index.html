@@ -16425,7 +16425,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe"};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"xiaochen"};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16893,7 +16893,7 @@ function mkSortedKeys(m){
 }
 function unitOfLesson(n){ for(var i=0;i<UNITS.length;i++){ if(n>=UNITS[i].start&&n<=UNITS[i].end) return UNITS[i].n; } return null; }
 /* ===== 建國四方略 · 畫線與筆記（接入「我的畫線與領受」匯整） ===== */
-var TOOL_META={ "321":{ic:"🌱",name:"落實321",sub:"生命"}, "920":{ic:"🍇",name:"操練920",sub:"關係"}, "235":{ic:"🤝",name:"發展235",sub:"事工"}, "sys":{ic:"👑",name:"建立體係",sub:"領域"} };
+var TOOL_META={ "321":{ic:"🌱",name:"落實321",sub:"生命"}, "920":{ic:"🍇",name:"操練920",sub:"關係"}, "235":{ic:"🤝",name:"發展235",sub:"事工"}, "sys":{ic:"👑",name:"建立體系",sub:"領域"} };
 var TOOL_TRUTHS={
   "321":[
     "耶穌是我的榜樣，聖經是我的準則，聖靈是我的引導。",
@@ -17075,7 +17075,7 @@ var STRATEGIES=[
  {id:"321",   ic:"🌱", name:"落實321", sub:"生命", tagline:"建立觀念，改變生命"},
  {id:"920",   ic:"🍇", name:"操練920", sub:"關係", tagline:"建立關係，結出果子"},
  {id:"235",   ic:"🤝", name:"發展235", sub:"事工", tagline:"建立團隊，成就事工"},
- {id:"system",ic:"👑", name:"建立體係", sub:"領域", tagline:"擴展領域，建立神國"}
+ {id:"system",ic:"👑", name:"建立體系", sub:"領域", tagline:"擴展領域，建立神國"}
 ];
 function strategyRowHTML(){
   return '<div class="strat-wrap"><div class="strat-h">🏛️ 建國四方略 · 在地上建立神國</div><div class="strat-row">'
@@ -17102,7 +17102,7 @@ function strategyComingHTML(s){
 }
 var SYS_PRESETS=[{ic:"🏠",name:"我的家庭"},{ic:"💼",name:"我的職場"},{ic:"⛪",name:"我的教會"},{ic:"🎓",name:"我的校園"},{ic:"🏘️",name:"我的社區"},{ic:"🏙️",name:"我的城市"},{ic:"🗺️",name:"我的國家"},{ic:"🌍",name:"列國 · 國度"},{ic:"🌐",name:"網路宣教"}];
 function sysHTML(s){
-  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">👑 建立體係</div><div class="rv-h-sub">擴展領域，建立神國</div></div></div>';
+  var head='<div class="rv-head"><button class="rd-back" onclick="goHome()">←</button><div class="rv-h-tx"><div class="rv-h-title">👑 建立體系</div><div class="rv-h-sub">擴展領域，建立神國</div></div></div>';
   var doms=Array.isArray(state.sys)?state.sys:[];
   var body='<div class="strat-page">';
   body+='<div class="sys-vision">'
@@ -17837,17 +17837,19 @@ window.spkStopReset=function(){
 /* 透過 Cloudflare Worker 代理呼叫 Azure 文字轉語音，金鑰由伺服器端保管、不外洩。 */
 /* 若 Worker 未設定或連不上，會自動退回裝置內建語音，app 永遠不會因此中斷。          */
 var TTS_ENDPOINT = "https://azure-tts.spch321.workers.dev"; /* ← 改成你自己的 Worker 網址 */
-var TTS_VOICE    = "zh-TW-YunJheNeural";      /* 預設語音；實際使用以 ttsVoiceName() 為準（使用者可在面闆自選） */
-/* 可選聲音：使用者在「朗讀聲音」面闆自行切換；HD（含冒號）走精簡 SSML，標準走註音+停頓（Worker 自動判別） */
+var TTS_VOICE    = "zh-TW-YunJheNeural";      /* 預設語音；實際使用以 ttsVoiceName() 為準（使用者可在面板自選） */
+/* 可選聲音：使用者在「朗讀聲音」面板自行切換；HD（含冒號）走精簡 SSML，標準走註音+停頓（Worker 自動判別） */
 var TTS_VOICES = {
   yunfan:   { name:"zh-CN-Yunfan:DragonHDLatestNeural",   label:"雲帆", desc:"高清男聲 HD" },
   xiaochen: { name:"zh-CN-Xiaochen:DragonHDLatestNeural", label:"曉辰", desc:"高清女聲 HD" },
   yunjhe:   { name:"zh-TW-YunJheNeural",                  label:"雲哲", desc:"台灣國語男聲" }
 };
 function ttsVoiceName(){
+  if(spk && spk.curId && spk.curId.indexOf("msg")===0) return XZ_VOICE;
   var k=state.ttsVoice;
   return (TTS_VOICES[k] && TTS_VOICES[k].name) || "zh-TW-YunJheNeural";
 }
+var XZ_VOICE = "zh-TW-YunJheNeural";   /* 小智 AI 固定聲音（繁體版＝雲哲男聲） */
 var TTS_SIL_SENTENCE = 140;   /* 句號/問號/驚嘆號停頓(ms)，跟逗號差不多短 */
 var TTS_SIL_COMMA    = 140;   /* 逗號停頓(ms) */
 var TTS_SIL_ENUM     = 260;   /* 頓號「、」停頓(ms)，標題「一、二、三」聽得清楚 */
@@ -18006,6 +18008,7 @@ window.yunStop=yunStop;
 
 /* ============ 朗讀派發器：優先雲帆，否則內建（兩者共用同一顆按鈕） ============ */
 function spkToggle(text, id, startIdx){
+  if(id && id.indexOf("msg")===0 && yun.ready) return yunToggle(text, id, startIdx);
   if(yunEnabled()) return yunToggle(text, id, startIdx);
   return spkToggleNative(text, id, startIdx);
 }
@@ -18114,7 +18117,7 @@ window.spkPreloadLesson = function(){
   pump();
 };
 
-/* ----- 「選聲音」設定面闆 ----- */
+/* ----- 「選聲音」設定面板 ----- */
 function spkGuessGender(v){
   var s=(v.name+" "+(v.voiceURI||"")).toLowerCase();
   if(/male|男|yunjhe|yun-?jhe|kangkang|yunyang|zhiyu.*male/.test(s)) return "男";
