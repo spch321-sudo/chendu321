@@ -277,6 +277,7 @@
   .xz-quicks{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;}
   .xz-quick{background:var(--mintWash);border:1px solid var(--line);color:var(--mintDark);border-radius:18px;padding:8px 13px;font-size:14px;cursor:pointer;font-family:inherit;}
   .xz-cat-label{color:var(--inkFaint);font-size:12px;text-align:center;letter-spacing:1px;margin:16px 0 9px;}
+  .xz-home-sep{text-align:center;color:var(--inkFaint);font-size:11.5px;letter-spacing:1px;margin:20px 0 2px;opacity:.85;}
   .xz-cats{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:2px;}
   .xz-cat{background:var(--paper);border:1px solid var(--mint);color:var(--mintDark);border-radius:16px;padding:6px 15px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
   .xz-cat.active{background:var(--mintDeep);border-color:var(--mintDeep);color:#fff;}
@@ -18668,13 +18669,20 @@ function renderChat(){
       }
     });
     if(chat.busy) msgsHtml+='<div class="xz-msg xz-ai"><div class="xz-bubble xz-typing"><span></span><span></span><span></span></div></div>';
+    var xzPicker=function(label){
+      var h='<div class="xz-cat-label">'+esc(label)+'</div>';
+      h+='<div class="xz-cats">'+XZ_TOPICS.map(function(t,ci){return '<button class="xz-cat'+(chat.topic===ci?' active':'')+'" onclick="xzTopic('+ci+')">'+esc(t.c)+'</button>';}).join("")+'</div>';
+      if(chat.topic>=0&&XZ_TOPICS[chat.topic]){
+        h+='<div class="xz-quicks xz-topic-qs">'+XZ_TOPICS[chat.topic].qs.map(function(q,qi){return '<button class="xz-quick" onclick="xzTopicAsk('+chat.topic+','+qi+')">'+esc(q)+'</button>';}).join("")+'</div>';
+      }
+      return h;
+    };
     if(chat.msgs.length===0){
       msgsHtml+='<div class="xz-quicks">'+xzQuicks().map(function(q,i){return '<button class="xz-quick" onclick="xzQuick('+i+')">'+esc(q)+'</button>';}).join("")+'</div>';
-      msgsHtml+='<div class="xz-cat-label">換個主題聊聊 · 點範疇看更多提問</div>';
-      msgsHtml+='<div class="xz-cats">'+XZ_TOPICS.map(function(t,ci){return '<button class="xz-cat'+(chat.topic===ci?' active':'')+'" onclick="xzTopic('+ci+')">'+esc(t.c)+'</button>';}).join("")+'</div>';
-      if(chat.topic>=0&&XZ_TOPICS[chat.topic]){
-        msgsHtml+='<div class="xz-quicks xz-topic-qs">'+XZ_TOPICS[chat.topic].qs.map(function(q,qi){return '<button class="xz-quick" onclick="xzTopicAsk('+chat.topic+','+qi+')">'+esc(q)+'</button>';}).join("")+'</div>';
-      }
+      msgsHtml+=xzPicker("換個主題聊聊 · 點範疇看更多提問");
+    } else if(!chat.busy){
+      msgsHtml+='<div class="xz-home-sep">· 前面的問答已保留 ·</div>';
+      msgsHtml+=xzPicker("換個主題．回這裡繼續發問");
     }
     html+='<div class="xz-overlay">'
       +'<div class="xz-sheet">'
