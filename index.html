@@ -278,6 +278,17 @@
   .xz-quick{background:var(--mintWash);border:1px solid var(--line);color:var(--mintDark);border-radius:18px;padding:8px 13px;font-size:14px;cursor:pointer;font-family:inherit;}
   .xz-cat-label{color:var(--inkFaint);font-size:12px;text-align:center;letter-spacing:1px;margin:16px 0 9px;}
   .xz-home-sep{text-align:center;color:var(--inkFaint);font-size:11.5px;letter-spacing:1px;margin:20px 0 2px;opacity:.85;}
+  .xz-head-r{display:flex;align-items:center;gap:8px;}
+  .xz-hbtn{background:rgba(255,255,255,.16);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .xz-hbtn:active{background:rgba(255,255,255,.32);}
+  .xz-fav.on{color:var(--gold);font-weight:700;}
+  .xz-favs-head{display:flex;align-items:center;gap:10px;padding:2px 2px 12px;position:sticky;top:0;background:var(--paper);z-index:2;}
+  .xz-back-chat{background:var(--mintWash);border:1px solid var(--line);color:var(--mintDark);border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;}
+  .xz-favs-title{font-weight:800;color:var(--mintDark);font-size:15px;}
+  .xz-favs-empty{text-align:center;color:var(--inkFaint);font-size:13.5px;line-height:1.9;padding:40px 20px;}
+  .xz-fav-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .xz-fav-q{font-weight:700;color:var(--mintDark);font-size:14.5px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
+  .xz-fav-a{color:var(--ink);font-size:14px;line-height:1.75;white-space:pre-wrap;}
   .xz-cats{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:2px;}
   .xz-cat{background:var(--paper);border:1px solid var(--mint);color:var(--mintDark);border-radius:16px;padding:6px 15px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
   .xz-cat.active{background:var(--mintDeep);border-color:var(--mintDeep);color:#fff;}
@@ -16519,6 +16530,7 @@ function loadState(){
     if(d.notes&&typeof d.notes==="object") state.notes=d.notes;
     if(d.marks&&typeof d.marks==="object") state.marks=d.marks;
     if(d.bookMarks&&typeof d.bookMarks==="object") state.bookMarks=d.bookMarks;
+    if(d.xzFavs&&Array.isArray(d.xzFavs)) state.xzFavs=d.xzFavs;
     if(d.s321&&typeof d.s321==="object") state.s321=d.s321;
     if(d.xzPos&&typeof d.xzPos==="object") state.xzPos=d.xzPos;
     if(d.spkResume&&typeof d.spkResume==="object") state.spkResume=d.spkResume;
@@ -16545,7 +16557,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, contPos:state.contPos, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, xzFavs:state.xzFavs, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
     }));
   }catch(e){}
 }
@@ -17973,6 +17985,7 @@ function spkStripRefParens(s){
 }
 function spkSanitize(s){
   s = String(s||"");
+  s = s.replace(/\*\*/g,"").replace(/《/g,"").replace(/》/g,"").replace(/^[ \t]*#{1,6}[ \t]*/gm,"").replace(/^[ \t]*>[ \t]?/gm,"").replace(/^[ \t]*\|.*\|[ \t]*$/gm,"").replace(/^[ \t]*[-*][ \t]+/gm,"");  // 朗讀前：清除 markdown 星號/井號/引言/表格/項目符號 與書名號，讓經文與內容能被正確朗讀
   s = spkStripRefParens(s);  // 先移除「純經文出處」括號附註（不讀出處）
   s = spkBibleRefs(s);  // 經文縮寫還原、章節口語化（朗讀用）
   s = spkJargon(s);     // 常用代號數字逐字讀（321→三二一）
@@ -17993,6 +18006,7 @@ function spkSanitize(s){
     ["外地","外帝"],["異地","異帝"],["兩地","兩帝"],["領地","領帝"],["陸地","陸帝"],
     ["聖地","聖帝"],["福地","福帝"],["田地","田帝"],["旱地","旱帝"],["荒地","荒帝"],
     ["境地","境帝"],["餘地","餘帝"],["死地","死帝"],["絕地","絕帝"],
+    ["喚地","喚帝"],  // 呼天喚地：地 ㄉㄧˋ（帝）非輕聲ㄉㄜ˙
     // ───── 依《中文多音字校對清單》第三區黑名單校正（畫面文字不變，僅朗讀同音矯正）─────
     ["應許","英許"],                                                  // 應 ㄧㄥ（英）神的應許／應許之地　非答應ㄧㄥˋ
     ["降服","祥服"],["降伏","祥伏"],                                  // 降 ㄒㄧㄤˊ（祥）降服降伏己心　非降臨ㄐㄧㄤˋ
@@ -18511,7 +18525,7 @@ window.renderSpkSheet=renderSpkSheet;
 /* 由伺服器端保管金鑰並轉發到 Anthropic（避免在前端暴露金鑰、並繞過 CORS）。*/
 const XZ_ENDPOINT="https://xiaozhi-proxy.spch321.workers.dev";
 const XZ_MODEL="claude-sonnet-4-6";
-let chat={open:false,msgs:[],busy:false};
+let chat={open:false,msgs:[],busy:false,favView:false,topic:-1};
 
 function xzClean(s){return String(s||"").split("⟦b:").join("").split("⟦s:").join("").split("⟦g:").join("").split("⟧").join("");}
 function xzFmt(s){return esc(s).split("\n").join("<br>");}
@@ -18598,6 +18612,13 @@ function xzSystem(){
     "一律用繁體中文。引用聖經一律用《和合本》，且隻在你有把握時引用、絕不杜撰經文或出處；不確定就如實說明，或請對方自行查考。",
     "深入淺出、善用比喻、條理清晰、溫暖有盼望。回應精簡（通常二、三段內），不長篇大論。",
     "",
+    "【回答格式（重要，因為回答會被朗讀出來）】",
+    "1. 用自然、口語、可以順暢朗讀的文字，像面對面說話一樣。",
+    "2. 絕對不要使用表格，也不要用直線「|」分隔欄位；需要比較時，改用文字一句一句說清楚。",
+    "3. 不要使用 Markdown 語法：不用井號（#）標題、不用星號（**）粗體、不用大於號（>）引言、不用條列符號。需要強調時直接用文字。",
+    "4. 引用經文時把書名與章節寫清楚、可被朗讀，例如「以弗所書一章四節」或「約翰福音三章十六節」；避免只寫「1:4」這種冒號格式。",
+    "5. 段落簡短，多用句號分句，讓人好讀也好聽。",
+    "",
     "【安全】",
     "只在信仰、聖經、屬靈成長、品格與生活應用、為人禱告、鼓勵造就的範圍內服事。",
     "遇到醫療、法律、心理危機或自我傷害等情況，溫柔表達關心，鼓勵尋求專業協助與信任的人、牧者，不假裝專業、不下診斷。",
@@ -18652,19 +18673,22 @@ function renderChat(){
     const intro=l
       ?("平安！我是小智 ✨ 我們正在讀第"+l.n+"課。關於這一課，或任何聖經與 321 的問題，都可以問我，我會陪你一起把焦點對準耶穌。")
       :"平安！我是小智 ✨ 晨讀321 的學習小幫手。聖經、321 理念、或今天的晨讀，有什麼想聊的嗎？我會陪你把焦點對準耶穌。";
-    let msgsHtml='<div class="xz-msg xz-ai"><div class="xz-bubble">'+esc(intro)+'</div></div>';
+    let msgsHtml='';
+    if(chat.favView){ msgsHtml=xzFavsHTML(); } else {
+    msgsHtml='<div class="xz-msg xz-ai"><div class="xz-bubble">'+esc(intro)+'</div></div>';
     chat.msgs.forEach(function(m,mi){
       if(m.role==="user"){
         msgsHtml+='<div class="xz-msg xz-me"><div class="xz-bubble">'+xzFmt(m.text)+'</div></div>';
       }else{
         var sid="msg"+mi;
         var _col=!!m.collapsed;
+        var _favq=(mi>0&&chat.msgs[mi-1]&&chat.msgs[mi-1].role==="user")?chat.msgs[mi-1].text:"";var _isfav=xzIsFav(_favq,m.text);
         var _body=_col?('<div class="xz-collapsed-preview">'+esc(String(m.text||"").replace(/\s+/g," ").slice(0,28))+'…</div>'):xzFmt(m.text);
         msgsHtml+='<div class="xz-msg xz-ai"><div class="xz-bubble">'+_body
           +'<div class="xz-acts">'
           +'<button class="xz-spk" data-spk="'+sid+'" data-spk-label="朗讀" onclick="spkToggle(window.__xzMsgText('+mi+'),\''+sid+'\')"><span class="spk-ic">🔊</span> <span class="spk-tx">朗讀</span></button>'
           +'<button class="xz-act" onclick="xzToggleCollapse('+mi+')">'+(_col?'▸ 展開':'▾ 收合')+'</button>'
-          +'<button class="xz-act xz-del" onclick="xzDelMsg('+mi+')">🗑 刪除</button>'
+          +'<button class="xz-act xz-fav'+(_isfav?' on':'')+'" onclick="xzFav('+mi+')">'+(_isfav?'★ 已收藏':'☆ 收藏')+'</button>'+'<button class="xz-act xz-del" onclick="xzDelMsg('+mi+')">🗑 刪除</button>'
           +'</div></div></div>';
       }
     });
@@ -18684,10 +18708,11 @@ function renderChat(){
       msgsHtml+='<div class="xz-home-sep">· 前面的問答已保留 ·</div>';
       msgsHtml+=xzPicker("換個主題．回這裡繼續發問");
     }
+    }
     html+='<div class="xz-overlay">'
       +'<div class="xz-sheet">'
         +'<div class="xz-head"><div class="xz-head-l"><span class="xz-ava">✨</span><div><div class="xz-name">小智</div><div class="xz-role">屬靈學習小幫手 · 陪你對準耶穌</div></div></div>'
-        +'<button class="xz-x" onclick="xzClose()">✕</button></div>'
+        +'<div class="xz-head-r"><button class="xz-hbtn" onclick="xzToggleFavs()" aria-label="收藏清單">⭐</button><button class="xz-hbtn" onclick="xzClearAll()" aria-label="全部清空重新開始">🏠</button><button class="xz-x" onclick="xzClose()">✕</button></div></div>'
         +'<div class="xz-msgs" id="xz-msgs">'+msgsHtml+'</div>'
         +'<div class="xz-foot"><input id="xz-input" class="xz-input" type="text" placeholder="向小智提問…" onkeydown="if(event.key===\'Enter\')xzSend()"><button class="xz-send" onclick="xzSend()">送出</button></div>'
         +'<div class="xz-note">小智是 AI 學習小幫手，不能代替聖靈、神的話與真實的屬靈同伴 🙏</div>'
@@ -18785,7 +18810,31 @@ window.xzOpen=function(){chat.open=true;renderChat();xzScrollBottom();setTimeout
 window.xzClose=function(){chat.open=false;if(typeof spkStop==="function")spkStop();renderChat();};
 window.xzToggleCollapse=function(i){ if(chat.msgs[i]){ chat.msgs[i].collapsed=!chat.msgs[i].collapsed; renderChat(); } };
 window.xzDelMsg=function(i){ if(!chat.msgs[i])return; if(typeof spkStop==="function"&&spk&&spk.curId&&spk.curId.indexOf("msg")===0)spkStop(); if(!window.confirm("刪除這則對話？"))return; var from=i,cnt=1; if(i>0&&chat.msgs[i-1]&&chat.msgs[i-1].role==="user"){from=i-1;cnt=2;} chat.msgs.splice(from,cnt); renderChat(); };
-window.xzSend=function(){var i=document.getElementById("xz-input");if(!i)return;var t=(i.value||"").trim();if(!t||chat.busy)return;chat.msgs.push({role:"user",text:t});i.value="";renderChat();xzScrollBottom();xzCall();};
+window.xzSend=function(){var i=document.getElementById("xz-input");if(!i)return;var t=(i.value||"").trim();if(!t||chat.busy)return;chat.favView=false;chat.msgs.push({role:"user",text:t});i.value="";renderChat();xzScrollBottom();xzCall();};
+function xzFavSig(q,a){ return String(q||"").replace(/\s+/g,"").slice(0,80)+"\u27f6"+String(a||"").replace(/\s+/g,"").slice(0,120); }
+function xzIsFav(q,a){ var F=state.xzFavs||[],sig=xzFavSig(q,a); for(var k=0;k<F.length;k++){ if(xzFavSig(F[k].q,F[k].a)===sig) return true; } return false; }
+window.__xzFavText=function(i){ var f=(state.xzFavs||[])[i]; return f?String(f.a||""):""; };
+window.xzFav=function(mi){ var m=chat.msgs[mi]; if(!m)return; var q=(mi>0&&chat.msgs[mi-1]&&chat.msgs[mi-1].role==="user")?chat.msgs[mi-1].text:""; var a=m.text||""; if(!state.xzFavs)state.xzFavs=[]; var sig=xzFavSig(q,a),idx=-1; for(var k=0;k<state.xzFavs.length;k++){ if(xzFavSig(state.xzFavs[k].q,state.xzFavs[k].a)===sig){idx=k;break;} } if(idx>=0){ state.xzFavs.splice(idx,1); if(typeof uiToast==="function")uiToast("已移除收藏"); } else { state.xzFavs.unshift({q:q,a:a,t:Date.now()}); if(typeof uiToast==="function")uiToast("\u2b50 已收藏"); } saveState(); renderChat(); };
+window.xzFavRemove=function(idx){ if(!state.xzFavs)return; if(!window.confirm("\u5f9e\u6536\u85cf\u79fb\u9664\u9019\u5247\u554f\u7b54\uff1f"))return; state.xzFavs.splice(idx,1); saveState(); renderChat(); };
+window.xzToggleFavs=function(){ chat.favView=!chat.favView; renderChat(); var m=document.getElementById("xz-msgs"); if(m)m.scrollTop=0; };
+window.xzClearAll=function(){ if(chat.msgs.length && !window.confirm("\u8981\u6e05\u7a7a\u76ee\u524d\u6240\u6709\u554f\u7b54\u3001\u91cd\u65b0\u958b\u59cb\u55ce\uff1f\uff08\u5df2\u6536\u85cf\u7684\u4e0d\u53d7\u5f71\u97ff\uff09"))return; if(typeof spkStop==="function")spkStop(); chat.msgs=[]; chat.topic=-1; chat.favView=false; renderChat(); };
+function xzFavsHTML(){
+  var F=state.xzFavs||[];
+  var h='<div class="xz-favs-head"><button class="xz-back-chat" onclick="xzToggleFavs()">\u2039 \u8fd4\u56de\u5c0d\u8a71</button><div class="xz-favs-title">\u2b50 \u6211\u7684\u6536\u85cf\uff08'+F.length+'\uff09</div></div>';
+  if(!F.length){ h+='<div class="xz-favs-empty">\u9084\u6c92\u6709\u6536\u85cf\u3002<br>\u5728\u559c\u6b61\u7684\u56de\u7b54\u4e0b\u65b9\u9ede\u300c\u2606 \u6536\u85cf\u300d\uff0c\u65e5\u5f8c\u5c31\u80fd\u5728\u9019\u88e1\u7ffb\u95b1 \ud83d\ude4f</div>'; return h; }
+  F.forEach(function(f,idx){
+    var sid="msgfav"+idx;
+    h+='<div class="xz-fav-card">'
+      +(f.q?('<div class="xz-fav-q">'+esc(f.q)+'</div>'):'')
+      +'<div class="xz-fav-a">'+xzFmt(f.a)+'</div>'
+      +'<div class="xz-acts">'
+      +'<button class="xz-spk" data-spk="'+sid+'" data-spk-label="\u6717\u8b80" onclick="spkToggle(window.__xzFavText('+idx+'),\''+sid+'\')"><span class="spk-ic">\ud83d\udd0a</span> <span class="spk-tx">\u6717\u8b80</span></button>'
+      +'<button class="xz-act xz-del" onclick="xzFavRemove('+idx+')">\ud83d\uddd1 \u79fb\u9664</button>'
+      +'</div></div>';
+  });
+  return h;
+}
+
 window.xzQuick=function(idx){if(chat.busy)return;var t=xzQuicks()[idx];if(!t)return;chat.msgs.push({role:"user",text:t});renderChat();xzScrollBottom();xzCall();};
 window.xzTopic=function(ci){chat.topic=(chat.topic===ci?-1:ci);renderChat();var m=document.getElementById("xz-msgs");if(m&&chat.topic>=0){var qs=m.querySelector(".xz-topic-qs");if(qs)qs.scrollIntoView({block:"nearest",behavior:"smooth"});}};
 window.xzTopicAsk=function(ci,qi){if(chat.busy)return;var t=(XZ_TOPICS[ci]&&XZ_TOPICS[ci].qs[qi]);if(!t)return;chat.topic=-1;chat.msgs.push({role:"user",text:t});renderChat();xzScrollBottom();xzCall();};
