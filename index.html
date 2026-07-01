@@ -17813,7 +17813,7 @@ function bookUnitHTML(){
   var lk = U.start ? '<button class="bk-lessons-link" onclick="openLesson('+U.start+')">📖 讀本單元的晨讀（第 '+U.start+'–'+U.end+' 課）›</button>' : '';
   return '<div class="bk-reader">'
     +'<div class="bk-rtop"><button class="bk-back" onclick="openBook()">‹ 目錄</button>'
-      +'<div class="bk-rtop-r"><button class="rd-font" onclick="cycleFont()" aria-label="調整字級大小">A⁺</button><button class="bk-speak" id="bk-speak-btn" onclick="bookSpeak()">🔊 朗讀</button></div></div>'
+      +'<div class="bk-rtop-r"><button class="rd-font" onclick="cycleFont()" aria-label="調整字級大小">A⁺</button><button class="bk-speak" id="bk-speak-btn" data-spk="book'+state.bookUnit+'" data-spk-label="朗讀" onclick="bookSpeak()"><span class="spk-ic">🔊</span> <span class="spk-tx">朗讀</span></button></div></div>'
     +'<div class="bk-unit-eyebrow2">'+esc(U.eyebrow||"")+' · '+esc(u.num)+'</div>'
     +'<h2 class="bk-title">'+esc(U.title||u.title)+'</h2>'
     +verseHTML
@@ -18136,7 +18136,7 @@ window.spkPauseCurrent=spkPauseCurrent;
 window.spkResumeCurrent=spkResumeCurrent;
 /* ====== 停止（回到開頭）：朗讀進行中浮出的小膠囊，整段歸零、清除續聽點 ====== */
 function updateStopBar(){
-  var show = spk.active && spk.curId==="lesson" && state.view==="reader";
+  var show = spk.active && ((spk.curId==="lesson" && state.view==="reader") || (String(spk.curId).indexOf("book")===0 && state.view==="bookunit"));
   var bar=document.getElementById("spk-stopbar");
   if(!bar){
     if(!show) return;
