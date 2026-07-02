@@ -225,6 +225,18 @@
   .fontbtn.active{background:var(--mint);border-color:var(--mint);color:#fff;font-weight:700;}
   .rd-font{background:var(--mintWash);border:none;border-radius:10px;width:40px;height:40px;font-size:15px;font-weight:700;color:var(--mintDark);cursor:pointer;flex-shrink:0;}
   .vid-sec{margin:4px 0 20px;}
+  .vid-open{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1.5px solid var(--mint);border-radius:14px;padding:12px 15px;margin:2px 0 20px;cursor:pointer;font-family:inherit;}
+  .vid-open:active{background:var(--mintWash);}
+  .vid-open-ic{font-size:18px;}
+  .vid-open-tx{font-weight:800;color:var(--ink);font-size:15.5px;flex:1;text-align:left;}
+  .vid-open-ct{font-size:12.5px;color:var(--mintDark);font-weight:700;background:var(--mintWash);padding:3px 9px;border-radius:20px;}
+  .vid-open-ar{color:var(--mint);font-size:20px;font-weight:700;}
+  .vlist-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center;}
+  .vlist-sheet{width:100%;max-width:640px;background:var(--paper);border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;animation:vlistUp .22s ease;}
+  @keyframes vlistUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .vlist-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 11px;font-size:16px;font-weight:800;color:var(--ink);border-bottom:1px solid var(--line);}
+  .vlist-close{width:32px;height:32px;border-radius:50%;background:var(--mintWash);border:none;color:var(--inkSoft);font-size:15px;cursor:pointer;flex-shrink:0;}
+  .vlist-body{padding:14px 16px 26px;overflow-y:auto;}
   .vid-sec-h{font-size:13px;font-weight:800;color:var(--mintDark);letter-spacing:1px;margin-bottom:9px;}
   .vid-card{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:9px 11px;margin-bottom:9px;cursor:pointer;text-align:left;font-family:inherit;}
   .vid-card:active{background:var(--mintWash);}
@@ -16886,7 +16898,7 @@ var MEDIA = {
   57:{jiang:"AUqXiqZNTYk", fang:"ScqIkCO2Ddo", zhu:"YzAmLKw4cvs", ge:"R4Pu4zerOec"},
   58:{jiang:"M2eH545oP4w", fang:"mNKQeeDuAvM", zhu:"ba-m9ftc01Y", ge:"3rmYBFouYdY"},
   59:{jiang:"I4vLiG6zAjQ", fang:"nEkw6moUOtE", zhu:"No7F2_aflSo", ge:"80RbVWa6heE"},
-  60:{jiang:"yDHSxGew5C4", fang:"B0hMYtavD2M", zhu:"D1qglWwWCJ0", ge:"IDFhgLWSdK4"},
+  60:{jiang:"zSDglSLCWLQ", fang:"B0hMYtavD2M", zhu:"D1qglWwWCJ0", ge:"IDFhgLWSdK4"},
   61:{jiang:"cZluqwZH4Pc", fang:"SpOBgi3Be1M", zhu:"pE9hx8B6wk0", ge:"K81okOL3cL4"},
   62:{jiang:"dByxBRhN3-k", fang:"_-ym6XLcAuI", zhu:"NaUFQPf1WG0", ge:"kWBGOZQNymI"},
   63:{jiang:"oZywi6ovqvc", fang:"qX7ad7Uk3-E", zhu:"5BAgXGdWGrw", ge:"HVssufSMyj0"},
@@ -16953,9 +16965,9 @@ var MEDIA = {
   124:{jing:"dXgqufrNWJc", jiang:"lE9c75Hb1tE", fang:"UEn0VwMTWJU", zhen:"_PSbZIwk6ig"},
   125:{jing:"3pLCY2rLBX0", jiang:"TAJvkvoBYgE", fang:"xO3hoUETBS4", zhen:"XwaqdO1pPe8"},
   126:{jing:"YAP6sp8LRtk", jiang:"6oujiv9Rghk", fang:"byhF_zhX-Os", zhen:"Dwtfq3Cyfvo"},
-  127:{jing:"52nQ6lGrtGM", zhen:"I3D9Olx1JaA"},
-  128:{jing:"hK0fYZs0H8M", zhen:"T5SZHm-o8Ak"},
-  129:{jing:"mflxeLCRe2g", zhen:"Z58ghe-5Mkk"},
+  127:{jing:"52nQ6lGrtGM", jiang:"wRVjtfNIQE0", fang:"1HyuQ17P3vk", zhen:"I3D9Olx1JaA"},
+  128:{jing:"hK0fYZs0H8M", jiang:"xDGOIEJJHAg", fang:"dEyK7eAgcLM", zhen:"T5SZHm-o8Ak"},
+  129:{jing:"mflxeLCRe2g", jiang:"JncXtZjJg_M", fang:"3AQP__WkpBw", zhen:"Z58ghe-5Mkk"},
   130:{jing:"3xxxT4RaDUw", zhen:"A-Yx6XXYS4A"},
   131:{jing:"vqgMN5XRzd4", zhen:"rV_hnq0qjJo"},
   132:{jing:"RdMHTP2GeS4", zhen:"UcMDiJXji7w"},
@@ -16999,7 +17011,7 @@ var MEDIA = {
   170:{jing:"RW8ZPvasiXI", zhen:"VgEwE4CPuCM"},
   171:{jing:"mGlo4xfOPN0", zhen:"Y4GMKd1jKRk"}
 };
-function mediaBtnHTML(n){
+function mediaCards(n){
   var m=(typeof MEDIA!=="undefined")?MEDIA[n]:null; if(!m)return "";
   var cards="";
   MEDIA_CATS.forEach(function(c){
@@ -17010,9 +17022,29 @@ function mediaBtnHTML(n){
       +'<span class="vid-meta"><span class="vid-cat">'+c.ic+' '+c.label+'</span><span class="vid-hint">點一下 · 全螢幕觀看</span></span>'
       +'</button>';
   });
-  if(!cards)return "";
-  return '<div class="vid-sec"><div class="vid-sec-h">🎬 本課視頻</div>'+cards+'</div>';
+  return cards;
 }
+function mediaBtnHTML(n){
+  var m=(typeof MEDIA!=="undefined")?MEDIA[n]:null; if(!m)return "";
+  var cnt=0; MEDIA_CATS.forEach(function(c){ if(m[c.k])cnt++; });
+  if(!cnt)return "";
+  return '<button class="vid-open" onclick="openVideoList('+n+')"><span class="vid-open-ic">🎬</span>'
+    +'<span class="vid-open-tx">本課視頻</span><span class="vid-open-ct">'+cnt+' 部</span>'
+    +'<span class="vid-open-ar">›</span></button>';
+}
+window.openVideoList=function(n){
+  if(document.querySelector(".vlist-overlay"))return;
+  var cards=mediaCards(n); if(!cards)return;
+  var ov=document.createElement("div"); ov.className="vlist-overlay";
+  ov.innerHTML='<div class="vlist-sheet"><div class="vlist-head"><span>🎬 本課視頻</span>'
+    +'<button class="vlist-close" onclick="closeVideoList()" aria-label="關閉">✕</button></div>'
+    +'<div class="vlist-body">'+cards+'</div></div>';
+  ov.addEventListener("click",function(e){ if(e.target===ov) closeVideoList(); });
+  document.body.appendChild(ov);
+  try{ document.documentElement.style.overflow="hidden"; }catch(_e){}
+};
+window.closeVideoList=function(){ var o=document.querySelector(".vlist-overlay"); if(o)o.remove();
+  if(!document.querySelector(".vid-overlay")){ try{ document.documentElement.style.overflow=""; }catch(_e){} } };
 window.openVideo=function(vid,label){
   if(document.querySelector(".vid-overlay"))return;
   var ov=document.createElement("div"); ov.className="vid-overlay";
@@ -17023,7 +17055,8 @@ window.openVideo=function(vid,label){
   document.body.appendChild(ov);
   try{ document.documentElement.style.overflow="hidden"; }catch(_e){}
 };
-window.closeVideo=function(){ var o=document.querySelector(".vid-overlay"); if(o)o.remove(); try{ document.documentElement.style.overflow=""; }catch(_e){} };
+window.closeVideo=function(){ var o=document.querySelector(".vid-overlay"); if(o)o.remove();
+  if(!document.querySelector(".vlist-overlay")){ try{ document.documentElement.style.overflow=""; }catch(_e){} } };
 
 function paneHTML(l){
   if(state.tab==="read"){
