@@ -18612,80 +18612,52 @@ function spkPos(a){
     ms.setPositionState({duration:a.duration, position:Math.min(a.currentTime,a.duration), playbackRate:a.playbackRate||1});
   }catch(_){}
 }
-/* 背景連續播放（先播再補下載）：先抓第一小段就開口，其餘段幕後串成一首接續；鎖屏/背景不斷，像一首歌 */
+/* 背景連續播放：把整段（含前言）串成單一連續 MP3、一次播放 —— 零切換，鎖屏/切換 App 最穩、絕不漏段（前言必被念到）*/
 function yunPlayJoined(text, id, startIdx){
   var chunks=yunChunks(spkSanitize(text));
   if(!chunks.length){ yunStop(); return; }
   var start=(startIdx&&startIdx>0&&startIdx<chunks.length)?startIdx:0;
+  var slice=chunks.slice(start);
   spk.curId=id||""; spk.curText=text||"";
   spk.active=true; spk.paused=false; spk.mode="yun"; spk.joined=true; spk.idx=0;
   var my=++spk.token;
   if(typeof spkMediaSession==="function") spkMediaSession("play");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
-  var a=yunGetAudio();
-  var tailURL=null;      /* null=其餘段尚未串好；""=沒有其餘段或全失敗 */
-  var leadEnded=false;   /* 首段已播完、正等其餘段串好 */
+  if(typeof uiToast==="function") uiToast("背景連續播放：正在預備整段語音，好了就一次播到底、鎖屏也不中斷…");
+  var results=new Array(slice.length), done=0, started=0, running=0, CONC=5;
   function toBlob(url){ return fetch(url).then(function(r){return r.blob();}); }
-  function bindMedia(){
-    try{ var ms=navigator.mediaSession; if(ms){
-      ms.setActionHandler("seekforward", function(){ try{ a.currentTime=Math.min(a.duration||0, a.currentTime+15); spkPos(a);}catch(_){}});
-      ms.setActionHandler("seekbackward", function(){ try{ a.currentTime=Math.max(0, a.currentTime-15); spkPos(a);}catch(_){}});
-    }}catch(_){}
+  function pump(){
+    while(running<CONC && started<slice.length){
+      (function(ix){ running++;
+        yunFetch(slice[ix]).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
+          running--; done++;
+          if(my!==spk.token) return;
+          if(done>=slice.length) finish(); else pump();
+        });
+      })(started++);
+    }
   }
-  function playTail(){
+  function finish(){
     if(my!==spk.token) return;
-    if(tailURL===null){ leadEnded=true; return; }                 /* 還沒串好，等 buildTail 完成再叫我 */
-    if(!tailURL){ maybeClearResumeOnComplete(); yunStop(); return; } /* 沒有其餘段：整段結束 */
-    a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
-    a.src=tailURL;
+    var parts=results.filter(Boolean);
+    if(!parts.length){ spk.active=false; spkToggleNative(spk.curText||"", spk.curId); return; }
+    try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
+    var big=new Blob(parts, {type:"audio/mpeg"});
+    var url=URL.createObjectURL(big); spk.joinedURL=url;
+    var a=yunGetAudio(); a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
+    a.src=url;
     a.onended=function(){ if(my===spk.token){ maybeClearResumeOnComplete(); yunStop(); } };
     a.onerror=function(){ if(my===spk.token){ yunStop(); } };
     a.ontimeupdate=function(){ if(my===spk.token) spkPos(a); };
     a.onloadedmetadata=function(){ if(my===spk.token) spkPos(a); };
-    bindMedia();
+    try{ var ms=navigator.mediaSession; if(ms){
+      ms.setActionHandler("seekto", function(e){ try{ if(e.seekTime!=null){ a.currentTime=e.seekTime; spkPos(a);} }catch(_){}});
+      ms.setActionHandler("seekforward", function(){ try{ a.currentTime=Math.min(a.duration||0, a.currentTime+15); spkPos(a);}catch(_){}});
+      ms.setActionHandler("seekbackward", function(){ try{ a.currentTime=Math.max(0, a.currentTime-15); spkPos(a);}catch(_){}});
+    }}catch(_){}
     var p=a.play(); if(p&&p.catch) p.catch(function(){ if(my===spk.token) yunStop(); });
   }
-  function buildTail(){
-    var rest=chunks.slice(start+1);
-    if(!rest.length){ tailURL=""; if(leadEnded) playTail(); return; }
-    var blobs=new Array(rest.length), done=0, next=0, running=0, CONC=3;
-    function pump(){
-      while(running<CONC && next<rest.length){
-        (function(ix){ running++;
-          yunFetch(rest[ix]).then(toBlob).then(function(b){ blobs[ix]=b; }, function(){}).then(function(){
-            running--; done++;
-            if(my!==spk.token) return;
-            if(done>=rest.length){
-              var parts=blobs.filter(Boolean);
-              try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
-              if(!parts.length){ tailURL=""; }
-              else { try{ var big=new Blob(parts,{type:"audio/mpeg"}); tailURL=URL.createObjectURL(big); spk.joinedURL=tailURL; }catch(_){ tailURL=""; } }
-              if(leadEnded) playTail();
-            } else pump();
-          });
-        })(next++);
-      }
-    }
-    pump();
-  }
-  /* 先抓「第一小段」，一好就開口；同時幕後把其餘段串成一首連續音檔，邊念邊補下載 */
-  yunFetch(chunks[start]).then(function(url){
-    if(my!==spk.token) return;
-    buildTail();
-    a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
-    a.src=url;
-    a.onended=function(){ if(my===spk.token) playTail(); };
-    a.onerror=function(){ if(my===spk.token) playTail(); };
-    a.ontimeupdate=function(){ if(my===spk.token) spkPos(a); };
-    a.onloadedmetadata=function(){ if(my===spk.token) spkPos(a); };
-    bindMedia();
-    var p=a.play(); if(p&&p.catch) p.catch(function(){ if(my===spk.token) yunStop(); });
-  }).catch(function(){
-    if(my!==spk.token) return;
-    spk.active=false;
-    if(typeof uiToast==="function") uiToast("雲帆語音暫時連不上，改用裝置內建聲音");
-    spkToggleNative(spk.curText||"", spk.curId);
-  });
+  pump();
 }
 window.spkSetBg=function(on){ state.bgPlay=!!on; try{ saveState(); }catch(_){}
   if(typeof renderSpkSheet==="function") renderSpkSheet();
