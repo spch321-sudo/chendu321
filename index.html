@@ -18608,6 +18608,26 @@ function yunFetchRetry(piece, tries){
   });
 }
 
+var TTS_MIN_BYTES = 2500;   /* 小於此位元組數的音檔＝「空白/靜音」（正常語音遠大於此） */
+function yunSentences(s){
+  var enders="。！？；\n", out=[], buf="";
+  for(var i=0;i<s.length;i++){ buf+=s[i]; if(enders.indexOf(s[i])>=0){ out.push(buf); buf=""; } }
+  if(buf.replace(/\s/g,"")) out.push(buf);
+  return out.filter(function(x){ return x.replace(/[\s，。！？；：、,.!?;:]/g,"").length>0; });
+}
+function yunUrlToBlob(url){ return fetch(url).then(function(r){ return r.blob(); }); }
+/* 取某段的音檔陣列：正常為 1 個；若整段合成成空白，改「拆句逐句」重合成、略過仍空白的句子，避免播出一整段空白 */
+function yunChunkBlobs(piece){
+  return yunFetchRetry(piece, 4).then(yunUrlToBlob).then(function(b){
+    if(b && b.size>=TTS_MIN_BYTES) return [b];
+    var sents=yunSentences(piece);
+    if(sents.length<=1) return (b && b.size>0)?[b]:[];
+    return Promise.all(sents.map(function(st){
+      return yunFetchRetry(st,4).then(yunUrlToBlob).then(function(bb){ return (bb && bb.size>=TTS_MIN_BYTES)?bb:null; }, function(){ return null; });
+    })).then(function(arr){ return arr.filter(Boolean); });
+  });
+}
+
 function yunStop(){
   spk.token++; spk.active=false; spk.paused=false; spk.mode=""; spk.queue=[]; spk.idx=0; spk.curId="";
   spk.joined=false; try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
@@ -18637,7 +18657,7 @@ function yunPlayJoined(text, id, startIdx){
   function pump(){
     while(running<CONC && started<slice.length){
       (function(ix){ running++;
-        yunFetchRetry(slice[ix], 4).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
+        yunChunkBlobs(slice[ix]).then(function(arr){ results[ix]=arr; }, function(){ results[ix]=[]; }).then(function(){
           running--; done++;
           if(my!==spk.token) return;
           if(done>=slice.length) finish(); else pump();
@@ -18647,7 +18667,7 @@ function yunPlayJoined(text, id, startIdx){
   }
   function finish(){
     if(my!==spk.token) return;
-    var parts=results.filter(Boolean);
+    var parts=[]; for(var pi=0;pi<results.length;pi++){ if(results[pi] && results[pi].length) parts=parts.concat(results[pi]); }
     if(!parts.length){ spk.active=false; spkToggleNative(spk.curText||"", spk.curId); return; }
     try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
     var big=new Blob(parts, {type:"audio/mpeg"});
