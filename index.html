@@ -224,6 +224,14 @@
   .fontbtn{border:1.5px solid var(--line);background:var(--card);color:var(--inkSoft);border-radius:18px;padding:6px 15px;font-size:14px;cursor:pointer;}
   .fontbtn.active{background:var(--mint);border-color:var(--mint);color:#fff;font-weight:700;}
   .rd-font{background:var(--mintWash);border:none;border-radius:10px;width:40px;height:40px;font-size:15px;font-weight:700;color:var(--mintDark);cursor:pointer;flex-shrink:0;}
+  .bk-dl{margin:14px 20px 4px;}
+  .bk-dl-btn{width:100%;border:1.5px solid var(--gold);background:var(--goldWash);color:#8a6d1f;border-radius:14px;padding:12px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .bk-dl-sub{font-size:12px;color:var(--inkFaint);line-height:1.6;margin:7px 2px 0;text-align:center;}
+  .spk-bg{margin-top:10px;}
+  .spk-bg-row{display:flex;align-items:center;gap:12px;justify-content:space-between;cursor:pointer;}
+  .spk-bg-tx{font-size:14px;color:var(--ink);}
+  .spk-bg-hint{font-size:11px;color:var(--inkFaint);font-weight:400;}
+  .spk-bg-row input{width:20px;height:20px;accent-color:var(--mintDark);flex-shrink:0;}
   .vid-sec{margin:4px 0 20px;}
   .vid-open{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1.5px solid var(--mint);border-radius:14px;padding:12px 15px;margin:2px 0 20px;cursor:pointer;font-family:inherit;}
   .vid-open:active{background:var(--mintWash);}
@@ -16537,7 +16545,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe",voiceMig:0,voiceMig2:0};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,bgPlay:false,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe",voiceMig:0,voiceMig2:0};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16557,7 +16565,7 @@ function loadState(){
     if(d.notes&&typeof d.notes==="object") state.notes=d.notes;
     if(d.marks&&typeof d.marks==="object") state.marks=d.marks;
     if(d.bookMarks&&typeof d.bookMarks==="object") state.bookMarks=d.bookMarks;
-    if(d.xzFavs&&Array.isArray(d.xzFavs)) state.xzFavs=d.xzFavs;
+    if(d.xzFavs&&Array.isArray(d.xzFavs)) state.xzFavs=d.xzFavs; if(typeof d.bgPlay==="boolean") state.bgPlay=d.bgPlay;
     if(d.s321&&typeof d.s321==="object") state.s321=d.s321;
     if(d.xzPos&&typeof d.xzPos==="object") state.xzPos=d.xzPos;
     if(d.spkResume&&typeof d.spkResume==="object") state.spkResume=d.spkResume;
@@ -16584,7 +16592,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, contPos:state.contPos, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, xzFavs:state.xzFavs, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, xzFavs:state.xzFavs, bgPlay:state.bgPlay, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
     }));
   }catch(e){}
 }
@@ -17057,6 +17065,36 @@ window.openVideo=function(vid,label){
 };
 window.closeVideo=function(){ var o=document.querySelector(".vid-overlay"); if(o)o.remove();
   if(!document.querySelector(".vlist-overlay")){ try{ document.documentElement.style.overflow=""; }catch(_e){} } };
+
+window.spkPreloadBook = function(){
+  spk.voiceOverride = null;
+  var u = (BOOK||[])[state.bookUnit];
+  if(!u){ if(typeof uiToast==="function") uiToast("請先打開一個單元再下載"); return; }
+  if(!yunEnabled()){ if(typeof uiToast==="function") uiToast("目前使用裝置內建語音，本來就能離線，無需下載"); return; }
+  if(window.__spkPreloadBusy) return;
+  var chunks = yunChunks(spkSanitize(bookSpeakText(u)));
+  if(!chunks.length){ if(typeof uiToast==="function") uiToast("本單元沒有可下載的語音"); return; }
+  window.__spkPreloadBusy = true;
+  var total = chunks.length, ok = 0, fail = 0, started = 0, running = 0, CONC = 3;
+  function btn(){ return document.getElementById("bk-preload-btn"); }
+  function label(t){ var b = btn(); if(b) b.textContent = t; }
+  function disable(d){ var b = btn(); if(b) b.disabled = !!d; }
+  disable(true); label("下載中\u2026 0/" + total);
+  function pump(){
+    while(running < CONC && started < chunks.length){
+      var piece = chunks[started++]; running++;
+      yunFetch(piece).then(function(){ ok++; }, function(){ fail++; }).then(function(){
+        running--; label("下載中\u2026 " + (ok + fail) + "/" + total); pump();
+      });
+    }
+    if(running === 0 && started >= chunks.length){
+      window.__spkPreloadBusy = false; disable(false);
+      if(fail){ label("已下載 " + ok + "/" + total + " (tap again later to finish)"); if(typeof uiToast==="function") uiToast("Mostly downloaded \u2014 a few parts can be retried later"); }
+      else { label("\u2713 Whole chapter downloaded \u2014 plays offline"); if(typeof uiToast==="function") uiToast("Whole chapter downloaded \u2014 plays offline from now on"); }
+    }
+  }
+  pump();
+};
 
 function paneHTML(l){
   if(state.tab==="read"){
@@ -18085,7 +18123,7 @@ function bookUnitHTML(){
   return '<div class="bk-reader">'
     +'<div class="bk-rtop"><button class="bk-back" onclick="openBook()">‹ 目錄</button>'
       +'<div class="bk-rtop-r"><button class="rd-font" onclick="cycleFont()" aria-label="調整字級大小">A⁺</button><button class="bk-speak" id="bk-speak-btn" data-spk="book'+state.bookUnit+'" data-spk-label="朗讀" onclick="bookSpeak()"><span class="spk-ic">🔊</span> <span class="spk-tx">朗讀</span></button></div></div>'
-    +'<div class="bk-unit-eyebrow2">'+esc(U.eyebrow||"")+' · '+esc(u.num)+'</div>'
+    +((typeof yunEnabled==="function"&&yunEnabled())?'<div class="bk-dl"><button class="bk-dl-btn" id="bk-preload-btn" onclick="spkPreloadBook()">⬇ 預先下載本單元語音</button><div class="bk-dl-sub">下載後，本單元可離線聆聽，之後也不再耗用網路</div></div>':'')+'<div class="bk-unit-eyebrow2">'+esc(U.eyebrow||"")+' · '+esc(u.num)+'</div>'
     +'<h2 class="bk-title">'+esc(U.title||u.title)+'</h2>'
     +verseHTML
     +'<div class="bk-hint">💡 點一下句子可畫線；再點畫線的句子可寫筆記</div>'
@@ -18544,10 +18582,64 @@ function yunFetch(piece){
 }
 function yunStop(){
   spk.token++; spk.active=false; spk.paused=false; spk.mode=""; spk.queue=[]; spk.idx=0; spk.curId="";
+  spk.joined=false; try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
   if(typeof spkMediaSession==="function") spkMediaSession("stop");
   if(yun.audio){ try{ yun.audio.pause(); }catch(_){} yun.audio.onended=null; yun.audio.onerror=null; }
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
 }
+function spkPos(a){
+  try{ var ms=navigator.mediaSession; if(!ms||!ms.setPositionState||!isFinite(a.duration)||a.duration<=0) return;
+    ms.setPositionState({duration:a.duration, position:Math.min(a.currentTime,a.duration), playbackRate:a.playbackRate||1});
+  }catch(_){}
+}
+/* 背景連續播放：抓完整全部語音 → 串成單一 MP3 Blob → 一次播放（鎖屏/背景不斷，像一首歌）*/
+function yunPlayJoined(text, id){
+  var chunks=yunChunks(spkSanitize(text));
+  if(!chunks.length){ yunStop(); return; }
+  spk.curId=id||""; spk.curText=text||"";
+  spk.active=true; spk.paused=false; spk.mode="yun"; spk.joined=true;
+  var my=++spk.token;
+  if(typeof spkMediaSession==="function") spkMediaSession("play");
+  if(typeof updateSpeakButtons==="function") updateSpeakButtons();
+  if(typeof uiToast==="function") uiToast("背景連續播放：正在準備整段語音…");
+  var results=new Array(chunks.length), done=0, started=0, running=0, CONC=3;
+  function toBlob(url){ return fetch(url).then(function(r){return r.blob();}); }
+  function pump(){
+    while(running<CONC && started<chunks.length){
+      (function(ix){ running++;
+        yunFetch(chunks[ix]).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
+          running--; done++;
+          if(my!==spk.token) return;
+          if(done>=chunks.length) finish(); else pump();
+        });
+      })(started++);
+    }
+  }
+  function finish(){
+    if(my!==spk.token) return;
+    var parts=results.filter(Boolean);
+    if(!parts.length){ spk.active=false; spkToggleNative(spk.curText||"", spk.curId); return; }
+    try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
+    var big=new Blob(parts, {type:"audio/mpeg"});
+    var url=URL.createObjectURL(big); spk.joinedURL=url;
+    var a=yunGetAudio(); a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
+    a.src=url;
+    a.onended=function(){ if(my===spk.token){ maybeClearResumeOnComplete(); yunStop(); } };
+    a.onerror=function(){ if(my===spk.token){ yunStop(); } };
+    a.ontimeupdate=function(){ if(my===spk.token) spkPos(a); };
+    a.onloadedmetadata=function(){ if(my===spk.token) spkPos(a); };
+    try{ var ms=navigator.mediaSession; if(ms){
+      ms.setActionHandler("seekto", function(e){ try{ if(e.seekTime!=null){ a.currentTime=e.seekTime; spkPos(a);} }catch(_){}});
+      ms.setActionHandler("seekforward", function(){ try{ a.currentTime=Math.min(a.duration||0, a.currentTime+15); spkPos(a);}catch(_){}});
+      ms.setActionHandler("seekbackward", function(){ try{ a.currentTime=Math.max(0, a.currentTime-15); spkPos(a);}catch(_){}});
+    }}catch(_){}
+    var p=a.play(); if(p&&p.catch) p.catch(function(){ if(my===spk.token) yunStop(); });
+  }
+  pump();
+}
+window.spkSetBg=function(on){ state.bgPlay=!!on; try{ saveState(); }catch(_){}
+  if(typeof uiToast==="function") uiToast(on?"已開啟背景連續播放（串成一首）":"已關閉，恢復逐句播放"); };
+
 function yunToggle(text, id, startIdx){
   /* 正在念同一段 → 暫停／續播 */
   if(spk.active && spk.curId===id){
@@ -18556,6 +18648,7 @@ function yunToggle(text, id, startIdx){
   }
   spkStop();                 /* 先停掉任何在播的（含內建） */
   yunUnlock();               /* ← 在點擊手勢內解鎖 iOS 音訊 */
+  if(state.bgPlay){ yunPlayJoined(text, id); return; }
   spk.queue=yunChunks(spkSanitize(text));
   spk.curId=id||"";
   spk.curText=text||"";      /* 暫存全文：首段失敗迴退內建語音時用 */
@@ -18768,7 +18861,7 @@ function renderSpkSheet(){
       +'</div>'):"")
       +(yunEnabled()?('<div class="spk-sub" style="margin-top:6px">目前使用「'+((TTS_VOICES[state.ttsVoice||"yunfan"]||{}).label||"雲帆")+'」。下方清單僅在真人語音連不上時作為備援。</div>'):"")
       +'<div class="spk-list">'+rows+'</div>'
-      +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'
+      +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'+'<div class="spk-bg"><label class="spk-bg-row"><span class="spk-bg-tx"><b>🎵 背景連續播放</b><br><span class="spk-bg-hint">把整段串成一首連續音檔，鎖屏、切到別的 App 也不中斷</span></span><input type="checkbox" '+(state.bgPlay?'checked':'')+' onchange="spkSetBg(this.checked)"></label></div>'
       +((yunEnabled()&&state.lesson)?('<div class="spk-dl"><button class="spk-dl-btn" id="spk-preload-btn" onclick="spkPreloadLesson()">⬇ 預先下載這一課的語音</button><div class="spk-dl-sub">下載後，這一課的雲帆語音可離線聆聽，之後也不再耗用網路</div></div>'):"")
       +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
       +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲帆」？請依「雲帆語音設定指南」連接 Azure 語音服務。</div>')
