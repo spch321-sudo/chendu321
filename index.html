@@ -17091,7 +17091,7 @@ window.spkPreloadBook = function(){
   function pump(){
     while(running < CONC && started < chunks.length){
       var piece = chunks[started++]; running++;
-      yunFetch(piece).then(function(){ ok++; }, function(){ fail++; }).then(function(){
+      yunFetchRetry(piece, 4).then(function(){ ok++; }, function(){ fail++; }).then(function(){
         running--; label("下載中\u2026 " + (ok + fail) + "/" + total); pump();
       });
     }
@@ -18600,6 +18600,14 @@ function yunFetch(piece){
     });
   });
 }
+function yunFetchRetry(piece, tries){
+  tries = (typeof tries==="number") ? tries : 4;
+  return yunFetch(piece).catch(function(e){
+    if(tries>0){ return new Promise(function(r){ setTimeout(r, 450); }).then(function(){ return yunFetchRetry(piece, tries-1); }); }
+    throw e;
+  });
+}
+
 function yunStop(){
   spk.token++; spk.active=false; spk.paused=false; spk.mode=""; spk.queue=[]; spk.idx=0; spk.curId="";
   spk.joined=false; try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
@@ -18629,7 +18637,7 @@ function yunPlayJoined(text, id, startIdx){
   function pump(){
     while(running<CONC && started<slice.length){
       (function(ix){ running++;
-        yunFetch(slice[ix]).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
+        yunFetchRetry(slice[ix], 4).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
           running--; done++;
           if(my!==spk.token) return;
           if(done>=slice.length) finish(); else pump();
@@ -18691,7 +18699,7 @@ function yunRunFrom(startIdx){
     var first=(spk.idx===0);
     var piece=spk.queue[spk.idx++];
     persistSpkResume();   /* 每段即時記錄進度：鎖屏/切換/退出等任何中斷都能從此續播 */
-    yunFetch(piece).then(function(url){
+    yunFetchRetry(piece, 4).then(function(url){
       if(my!==spk.token) return;
       if(spk.idx<spk.queue.length){ yunFetch(spk.queue[spk.idx]).catch(function(){}); } /* 預抓下一段，換段更順 */
       var a=yunGetAudio(); a.onended=null; a.onerror=null;
@@ -18813,7 +18821,7 @@ window.spkPreloadLesson = function(){
   function pump(){
     while(running < CONC && started < chunks.length){
       var piece = chunks[started++]; running++;
-      yunFetch(piece).then(function(){ ok++; }, function(){ fail++; }).then(function(){
+      yunFetchRetry(piece, 4).then(function(){ ok++; }, function(){ fail++; }).then(function(){
         running--; label("下載中… " + (ok + fail) + "/" + total); pump();
       });
     }
