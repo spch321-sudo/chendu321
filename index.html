@@ -227,11 +227,14 @@
   .bk-dl{margin:14px 20px 4px;}
   .bk-dl-btn{width:100%;border:1.5px solid var(--gold);background:var(--goldWash);color:#8a6d1f;border-radius:14px;padding:12px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;}
   .bk-dl-sub{font-size:12px;color:var(--inkFaint);line-height:1.6;margin:7px 2px 0;text-align:center;}
-  .spk-bg{margin-top:10px;}
-  .spk-bg-row{display:flex;align-items:center;gap:12px;justify-content:space-between;cursor:pointer;}
-  .spk-bg-tx{font-size:14px;color:var(--ink);}
-  .spk-bg-hint{font-size:11px;color:var(--inkFaint);font-weight:400;}
-  .spk-bg-row input{width:20px;height:20px;accent-color:var(--mintDark);flex-shrink:0;}
+  .spk-bg{display:flex;align-items:center;gap:12px;margin:14px 0 2px;padding:12px 4px 2px;border-top:1px solid var(--line);}
+  .spk-bg-l{flex:1;}
+  .spk-bg-t{font-weight:700;color:var(--mintDark);font-size:14.5px;}
+  .spk-bg-d{font-size:12px;color:var(--inkFaint);line-height:1.55;margin-top:3px;}
+  .spk-sw{flex-shrink:0;width:50px;height:30px;border-radius:999px;border:none;background:#cdd6d2;position:relative;cursor:pointer;transition:background .18s;padding:0;-webkit-appearance:none;}
+  .spk-sw.on{background:var(--mintDeep);}
+  .spk-sw-dot{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .spk-sw.on .spk-sw-dot{transform:translateX(20px);}
   .vid-sec{margin:4px 0 20px;}
   .vid-open{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1.5px solid var(--mint);border-radius:14px;padding:12px 15px;margin:2px 0 20px;cursor:pointer;font-family:inherit;}
   .vid-open:active{background:var(--mintWash);}
@@ -18601,80 +18604,65 @@ function spkPos(a){
     ms.setPositionState({duration:a.duration, position:Math.min(a.currentTime,a.duration), playbackRate:a.playbackRate||1});
   }catch(_){}
 }
-/* 背景連續播放（漸進式串流）：只等第一小段抓好就立刻開念，之後邊念邊下載後面的批次。
-   批次由小而大（1→2→4→8→8…），第一聲幾乎秒開；換批仍用同一個 audio 元素，鎖屏／背景照樣連續。
-   每一小段抓過就永久存進 IndexedDB，第二次聽完全離線、瞬開。 */
+/* 背景連續播放：先把「整課」的語音全部抓齊 → 位元組串接成單一 MP3 Blob → 一次播放。
+   播放中不需要 JS 換段，所以鎖屏、切換 App、螢幕關掉都會像播一首歌一樣完整播完。
+   每一小段抓過就永久存進 IndexedDB，第二次聽是離線瞬開。 */
 function yunPlayJoined(text, id, startIdx){
   var chunks=yunChunks(spkSanitize(text));
   if(!chunks.length){ yunStop(); return; }
-  spk.curId=id||""; spk.curText=text||""; spk.queue=chunks;
+  var start=(startIdx>0 && startIdx<chunks.length)?startIdx:0;
+  var slice=chunks.slice(start);
+  spk.curId=id||""; spk.curText=text||""; spk.queue=chunks; spk.idx=start+1;
   spk.active=true; spk.paused=false; spk.mode="yun"; spk.joined=true;
   var my=++spk.token;
   if(typeof spkMediaSession==="function") spkMediaSession("play");
   if(typeof updateSpeakButtons==="function") updateSpeakButtons();
-  if(typeof uiToast==="function") uiToast("背景連續播放：立刻開念，其餘邊聽邊下載…");
+  if(typeof uiToast==="function") uiToast("背景連續播放：正在把整課串成一首，請稍候…");
 
-  var start=(startIdx>0 && startIdx<chunks.length)?startIdx:0;
-  /* 切成由小而大的批次：第一批只有 1 段 → 秒開；愈後面批次愈大 → 換批次數少、播放更順 */
-  var SIZES=[1,2,4,8], batches=[], pos=start, si=0, n, to;
-  while(pos<chunks.length){
-    n=SIZES[si<SIZES.length?si:SIZES.length-1]; si++;
-    to=(pos+n<chunks.length)?(pos+n):chunks.length;
-    batches.push({from:pos,to:to}); pos=to;
-  }
-  var jobs={};
+  var results=new Array(slice.length), done=0, started=0, running=0, CONC=6, lastPct=0;
   function toBlob(url){ return fetch(url).then(function(r){ return r.blob(); }); }
-  function fetchBatch(bi){
-    if(bi<0 || bi>=batches.length) return null;
-    if(jobs[bi]) return jobs[bi];
-    var b=batches[bi];
-    jobs[bi]=new Promise(function(resolve,reject){
-      var parts=new Array(b.to-b.from), left=b.to-b.from;
-      for(var i=b.from;i<b.to;i++){
-        (function(ix){
-          yunFetch(chunks[ix]).then(toBlob).then(function(blob){ parts[ix-b.from]=blob; }, function(){}).then(function(){
-            if(--left>0) return;
-            var ok=parts.filter(Boolean);
-            if(!ok.length){ reject(new Error("tts batch empty")); return; }
-            try{ resolve(URL.createObjectURL(new Blob(ok,{type:"audio/mpeg"}))); }catch(e){ reject(e); }
-          });
-        })(i);
-      }
-    });
-    return jobs[bi];
+  function tick(){
+    done++;
+    var pct=Math.floor(done/slice.length*100);
+    if(pct>=lastPct+25 && pct<100){ lastPct=pct; if(typeof uiToast==="function") uiToast("整段語音準備中… "+pct+"%"); }
   }
-  function playBatch(bi){
+  function pump(){
+    while(running<CONC && started<slice.length){
+      (function(ix){ running++;
+        yunFetch(slice[ix]).then(toBlob).then(function(b){ results[ix]=b; }, function(){}).then(function(){
+          running--; tick();
+          if(my!==spk.token) return;
+          if(done>=slice.length) finish(); else pump();
+        });
+      })(started++);
+    }
+  }
+  function finish(){
     if(my!==spk.token) return;
-    if(bi>=batches.length){ maybeClearResumeOnComplete(); yunStop(); return; }
-    spk.idx=batches[bi].from+1;
+    var parts=results.filter(Boolean);
+    if(!parts.length){ spk.active=false; spkToggleNative(spk.curText||"", spk.curId); return; }
+    try{ if(spk.joinedURL){ URL.revokeObjectURL(spk.joinedURL); spk.joinedURL=null; } }catch(_){}
+    var url=URL.createObjectURL(new Blob(parts, {type:"audio/mpeg"}));
+    spk.joinedURL=url;
     persistSpkResume();
-    fetchBatch(bi).then(function(url){
-      if(my!==spk.token){ try{ URL.revokeObjectURL(url); }catch(_){} return; }
-      var nx=fetchBatch(bi+1); if(nx && nx.catch) nx.catch(function(){});   /* 邊念邊下載：預抓下一批 */
-      var a=yunGetAudio(); a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
-      a.src=url;
-      try{ if(spk.joinedURL) URL.revokeObjectURL(spk.joinedURL); }catch(_){}
-      spk.joinedURL=url;
-      a.onended=function(){ if(my===spk.token) playBatch(bi+1); };
-      a.onerror=function(){ if(my===spk.token) playBatch(bi+1); };
-      a.ontimeupdate=function(){ if(my===spk.token) spkPos(a); };
-      a.onloadedmetadata=function(){ if(my===spk.token) spkPos(a); };
-      try{ var ms=navigator.mediaSession; if(ms){
-        ms.setActionHandler("seekto", function(e){ try{ if(e.seekTime!=null){ a.currentTime=e.seekTime; spkPos(a);} }catch(_){}});
-        ms.setActionHandler("seekforward", function(){ try{ a.currentTime=Math.min(a.duration||0, a.currentTime+15); spkPos(a);}catch(_){}});
-        ms.setActionHandler("seekbackward", function(){ try{ a.currentTime=Math.max(0, a.currentTime-15); spkPos(a);}catch(_){}});
-      }}catch(_){}
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(my===spk.token) yunStop(); });
-    }).catch(function(){
-      if(my!==spk.token) return;
-      if(bi===0){ spk.active=false; spkToggleNative(spk.curText||"", spk.curId); }
-      else playBatch(bi+1);
-    });
+    var a=yunGetAudio(); a.onended=null; a.onerror=null; a.ontimeupdate=null; a.onloadedmetadata=null;
+    a.src=url;
+    a.onended=function(){ if(my===spk.token){ maybeClearResumeOnComplete(); yunStop(); } };
+    a.onerror=function(){ if(my===spk.token){ yunStop(); } };
+    a.ontimeupdate=function(){ if(my===spk.token) spkPos(a); };
+    a.onloadedmetadata=function(){ if(my===spk.token) spkPos(a); };
+    try{ var ms=navigator.mediaSession; if(ms){
+      ms.setActionHandler("seekto", function(e){ try{ if(e.seekTime!=null){ a.currentTime=e.seekTime; spkPos(a);} }catch(_){}});
+      ms.setActionHandler("seekforward", function(){ try{ a.currentTime=Math.min(a.duration||0, a.currentTime+15); spkPos(a);}catch(_){}});
+      ms.setActionHandler("seekbackward", function(){ try{ a.currentTime=Math.max(0, a.currentTime-15); spkPos(a);}catch(_){}});
+    }}catch(_){}
+    var p=a.play(); if(p&&p.catch) p.catch(function(){ if(my===spk.token) yunStop(); });
   }
-  playBatch(0);
+  pump();
 }
 window.spkSetBg=function(on){ state.bgPlay=!!on; try{ saveState(); }catch(_){}
-  if(typeof uiToast==="function") uiToast(on?"已開啟背景連續播放（串成一首）":"已關閉，恢復逐句播放"); };
+  if(typeof uiToast==="function") uiToast(on?"已開啟背景連續播放 · 鎖屏也能一路聽完":"已關閉，恢復逐句播放");
+  if(typeof renderSpkSheet==="function") renderSpkSheet(); };
 
 function yunToggle(text, id, startIdx){
   /* 正在念同一段 → 暫停／續播 */
@@ -18898,7 +18886,7 @@ function renderSpkSheet(){
       +'</div>'):"")
       +(yunEnabled()?('<div class="spk-sub" style="margin-top:6px">目前使用「'+((TTS_VOICES[state.ttsVoice||"yunfan"]||{}).label||"雲帆")+'」。下方清單僅在真人語音連不上時作為備援。</div>'):"")
       +'<div class="spk-list">'+rows+'</div>'
-      +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'+'<div class="spk-bg"><label class="spk-bg-row"><span class="spk-bg-tx"><b>🎵 背景連續播放</b><br><span class="spk-bg-hint">把整段串成一首連續音檔，鎖屏、切到別的 App 也不中斷</span></span><input type="checkbox" '+(state.bgPlay?'checked':'')+' onchange="spkSetBg(this.checked)"></label></div>'
+      +'<div class="spk-rate"><span>語速</span><input type="range" min="0.6" max="1.3" step="0.02" value="'+rate+'" oninput="spkSetRate(this.value)"><span id="spk-rate-lbl">'+rate.toFixed(2)+'×</span></div>'+'<div class="spk-bg"><div class="spk-bg-l"><div class="spk-bg-t">背景連續播放</div><div class="spk-bg-d">把整課串成一首連續音檔 · 鎖屏、關螢幕、切到別的 App 都不中斷</div></div><button class="spk-sw'+(state.bgPlay?' on':'')+'" role="switch" aria-checked="'+(state.bgPlay?'true':'false')+'" aria-label="背景連續播放" onclick="spkSetBg(!state.bgPlay)"><span class="spk-sw-dot"></span></button></div>'
       +((yunEnabled()&&state.lesson)?('<div class="spk-dl"><button class="spk-dl-btn" id="spk-preload-btn" onclick="spkPreloadLesson()">⬇ 預先下載這一課的語音</button><div class="spk-dl-sub">下載後，這一課的雲帆語音可離線聆聽，之後也不再耗用網路</div></div>'):"")
       +'<div class="spk-acts"><button class="spk-try" onclick="spkPreview()">▶︎ 試聽</button><button class="spk-done" onclick="closeSpkSettings()">完成</button></div>'
       +(yun.ready?'':'<div class="spk-tip">想要更自然的真人男聲「雲帆」？請依「雲帆語音設定指南」連接 Azure 語音服務。</div>')
