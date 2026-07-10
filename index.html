@@ -16548,7 +16548,7 @@ function inline(text){
 function nl(s){return esc(s).replace(/\n/g,"<br>");}
 
 /* ============ STATE ============ */
-let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,bgPlay:false,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe",voiceMig:0,voiceMig2:0};
+let state={view:"home",lesson:null,tab:"read",deep:{},checked:{},openUnit:null,read:{},last:null,font:0,streak:0,lastDate:null,best:0,notes:{},marks:{},reviewN:null,reviewUnit:null,s321:{},strategyId:null,xzPos:null,bgPlay:true,bgOn1:0,s920:[],s920Help:false,s920cf:{event:"",done:[]},s235:{comp:[],fam:[],team:[]},sys:[],tmk:{},tnote:{},spkResume:{},contPos:null,noteOpen:{},ttsVoice:"yunjhe",voiceMig:0,voiceMig2:0};
 
 /* ---- 持久化（LINE/瀏覽器皆可；沙盒被擋時自動略過，不影響使用）---- */
 var LS_KEY="chendu321_v1";
@@ -16569,6 +16569,8 @@ function loadState(){
     if(d.marks&&typeof d.marks==="object") state.marks=d.marks;
     if(d.bookMarks&&typeof d.bookMarks==="object") state.bookMarks=d.bookMarks;
     if(d.xzFavs&&Array.isArray(d.xzFavs)) state.xzFavs=d.xzFavs; if(typeof d.bgPlay==="boolean") state.bgPlay=d.bgPlay;
+    if(typeof d.bgOn1==="number") state.bgOn1=d.bgOn1;
+    if(!state.bgOn1){ state.bgPlay=true; state.bgOn1=1; }   /* 一次性遷移：背景連續播放改為預設開啟 */
     if(d.s321&&typeof d.s321==="object") state.s321=d.s321;
     if(d.xzPos&&typeof d.xzPos==="object") state.xzPos=d.xzPos;
     if(d.spkResume&&typeof d.spkResume==="object") state.spkResume=d.spkResume;
@@ -16595,7 +16597,7 @@ function saveState(){
     localStorage.setItem(LS_KEY,JSON.stringify({
       checked:state.checked, read:state.read, last:state.last,
       openUnit:state.openUnit, contPos:state.contPos, font:state.font,
-      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, xzFavs:state.xzFavs, bgPlay:state.bgPlay, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
+      streak:state.streak, lastDate:state.lastDate, best:state.best, notes:state.notes, marks:state.marks, bookMarks:state.bookMarks, xzFavs:state.xzFavs, bgPlay:state.bgPlay, bgOn1:state.bgOn1, s321:state.s321, xzPos:state.xzPos, s920:state.s920, s920Help:state.s920Help, s920cf:state.s920cf, s235:state.s235, sys:state.sys, tmk:state.tmk, tnote:state.tnote, spkResume:state.spkResume, spkVoice:state.spkVoice, spkRate:state.spkRate, ttsEngine:state.ttsEngine, ttsVoice:state.ttsVoice, voiceMig:state.voiceMig, rateMig:state.rateMig, voiceMig2:state.voiceMig2
     }));
   }catch(e){}
 }
