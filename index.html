@@ -19927,6 +19927,85 @@ renderChat();
   var sf0 = window.setFont;
   if (typeof sf0 === 'function') window.setFont = function (n) { var r = sf0.apply(this, arguments); try { GXA.setFs([17, 19, 21][n || 0] || 17); } catch (e) {} return r; };
   try { if (state.view === 'home') render(); } catch (e) {}
+  /* ── 畫線默想（照 321互動聖經）：點一句就開面板；↑前一句／－／＋／整段；做成美圖、問小智、分享 ── */
+  if (typeof window.mkNote === 'function' && typeof window.mkTap === 'function') {
+    var MR = null;
+    var keyRe = /mkTap\((\d+),\s*'([^']+)'/;
+    var spanInfo = function (el) { var m = keyRe.exec(el.getAttribute('onclick') || ''); return m ? { n: +m[1], key: m[2] } : null; };
+    var paraSpans = function (n, pid) {
+      return Array.prototype.slice.call(document.querySelectorAll('.mk-s')).filter(function (e) { var i = spanInfo(e); return i && i.n === n && i.key.slice(0, i.key.lastIndexOf('#')) === pid; });
+    };
+    var marksOf = function (n) { return (state.marks && state.marks[n]) || {}; };
+    var isMk = function (n, key) { return Object.prototype.hasOwnProperty.call(marksOf(n), key); };
+    var spanText = function (e) { var c = e.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.mk-flag,sup'), function (x) { x.parentNode.removeChild(x); }); return c.textContent.replace(/\s+/g, EN ? ' ' : '').trim(); };
+    var rangeText = function () { var out = ''; for (var i = MR.a; i <= MR.b; i++) { var t = spanText(MR.els[i]); out += (out && EN ? ' ' : '') + t; } return out; };
+    var lessonRef = function () { var l = mkLessonByN(MR.n); var t = l ? String(l.title || '').split('\n').join(' ') : ''; return T2('晨讀321・第 ' + MR.n + ' 課〈' + t + '〉', '晨读321・第 ' + MR.n + ' 课〈' + t + '〉', '321 Morning Devotion · Lesson ' + MR.n + ' · ' + t); };
+    var selPaint = function (on) { if (!MR) return; MR.els.forEach(function (e, i) { e.style.boxShadow = on && i >= MR.a && i <= MR.b ? '0 0 0 2px rgba(196,154,60,.55)' : ''; e.style.background = on && i >= MR.a && i <= MR.b ? 'rgba(212,175,55,.22)' : ''; }); };
+    var close = function () { selPaint(false); MR = null; var w = document.getElementById('mark-sheet'); if (w) { w.style.display = 'none'; w.innerHTML = ''; } };
+    var grab = function () { var t = document.getElementById('mk-ta'); if (t && MR) MR.note = t.value.trim(); };
+    var storeRange = function () {
+      if (!state.marks) state.marks = {}; if (!state.marks[MR.n]) state.marks[MR.n] = {};
+      for (var i = MR.a; i <= MR.b; i++) { var ki = spanInfo(MR.els[i]).key; state.marks[MR.n][ki] = i === MR.a ? (MR.note || '') : (state.marks[MR.n][ki] && i !== MR.a ? state.marks[MR.n][ki] : ''); }
+      saveState();
+    };
+    var B = function (a, label, cls) { return '<button class="' + cls + '" data-gxa="' + a + '">' + label + '</button>'; };
+    var draw = function () {
+      var w = document.getElementById('mark-sheet'); if (!w || !MR) return;
+      var has = false; for (var i = MR.a; i <= MR.b; i++) if (isMk(MR.n, spanInfo(MR.els[i]).key)) has = true;
+      var rb = 'style="flex:1;border:1.5px solid #e2ece8;border-radius:12px;padding:10px 6px;font-size:14.5px;background:#fff;color:var(--mintDeep,#3E7766);cursor:pointer"';
+      w.innerHTML = '<div class="sheet-mask" data-gxa="x"></div><div class="sheet-card" style="max-height:88vh;overflow:auto">'
+        + '<div class="sheet-head">✍️ ' + T2('畫線默想', '画线默想', 'Highlight & reflect') + '</div>'
+        + '<div class="sheet-quote-wrap"><span class="sheet-quote">' + esc(rangeText()) + '</span></div>'
+        + '<div style="display:flex;gap:8px;margin:12px 0 10px">'
+        + '<button ' + rb + ' data-gxa="prev">' + T2('↑ 前一句', '↑ 前一句', '↑ Prev') + '</button><button ' + rb + ' data-gxa="less">－</button><button ' + rb + ' data-gxa="more">＋</button><button ' + rb + ' data-gxa="all">' + T2('整段', '整段', 'Paragraph') + '</button></div>'
+        + '<textarea id="mk-ta" class="sheet-ta" placeholder="' + T2('這句話帶給你什麼領受、感動，或聖靈的提醒？寫下來，把焦點對準耶穌……', '这句话带给你什么领受、感动，或圣灵的提醒？写下来，把焦点对准耶稣……', 'What does this stir in you? Write it down and fix your eyes on Jesus…') + '">' + esc(MR.note || '') + '</textarea>'
+        + '<div class="sheet-acts">' + B('save', T2('畫線並儲存領受', '画线并储存领受', 'Highlight & save'), 'sheet-save') + '</div>'
+        + '<div class="sheet-acts" style="margin-top:9px">'
+        + '<button class="sheet-save" style="background:#C49A3C" data-gxa="card">🖼 ' + T2('做成美圖', '做成美图', 'Make a card') + '</button>'
+        + '<button class="sheet-save" style="background:#2F5D50" data-gxa="ask">✨ ' + (EN ? 'Ask Sage AI' : '問小智'.replace('問', LG === 'zs' ? '问' : '問')) + '</button></div>'
+        + '<div class="sheet-acts2">' + B('share', '↗ ' + T2('分享', '分享', 'Share'), 'sheet-cancel')
+        + (has ? B('del', T2('移除畫線', '移除画线', 'Remove'), 'sheet-del') : '') + B('x', T2('取消', '取消', 'Cancel'), 'sheet-cancel') + '</div></div>';
+      w.style.display = 'block'; selPaint(true);
+      Array.prototype.forEach.call(w.querySelectorAll('[data-gxa]'), function (b) { b.onclick = function () { act(b.getAttribute('data-gxa')); }; });
+    };
+    var act = function (a) {
+      if (!MR) return; grab();
+      var t = rangeText(), ref = lessonRef(), n = MR.note;
+      if (a === 'x') return close();
+      if (a === 'prev') { if (MR.a > 0) MR.a--; return draw(); }
+      if (a === 'more') { if (MR.b < MR.els.length - 1) MR.b++; return draw(); }
+      if (a === 'less') { if (MR.b > MR.a) MR.b--; return draw(); }
+      if (a === 'all') { MR.a = 0; MR.b = MR.els.length - 1; return draw(); }
+      if (a === 'save') { storeRange(); close(); return rerenderKeepScroll(); }
+      if (a === 'del') { for (var i = MR.a; i <= MR.b; i++) { var ki = spanInfo(MR.els[i]).key; if (state.marks && state.marks[MR.n]) delete state.marks[MR.n][ki]; } if (state.marks && state.marks[MR.n] && !Object.keys(state.marks[MR.n]).length) delete state.marks[MR.n]; saveState(); close(); return rerenderKeepScroll(); }
+      if (a === 'card') { storeRange(); close(); rerenderKeepScroll(); try { GXS.open({ text: t, ref: ref, note: n }); } catch (e) {} return; }
+      if (a === 'ask') {
+        storeRange(); close(); rerenderKeepScroll();
+        var q = EN ? 'I read this in ' + ref + ':\n“' + t + '”\n' + (n ? 'My reflection: ' + n + '\n' : '') + 'Please help me understand it and live it out.'
+          : T2('我讀到', '我读到', '') + ref + T2('這一句：\n「', '这一句：\n「', '') + t + '」\n' + (n ? T2('我的領受：', '我的领受：', '') + n + '\n' : '') + T2('請幫我更明白這句話，並幫助我活出來。', '请帮我更明白这句话，并帮助我活出来。', '');
+        try { SAGE321.open(); SAGE321.send(q); } catch (e) {} return;
+      }
+      if (a === 'share') {
+        var sh = (EN ? '“' + t + '”' : '「' + t + '」') + '\n— ' + ref + (n ? '\n\n' + n : '');
+        if (navigator.share) { navigator.share({ text: sh }).catch(function () {}); }
+        else { try { navigator.clipboard.writeText(sh); } catch (e) {} }
+      }
+    };
+    var openAt = function (n, key) {
+      var pid = key.slice(0, key.lastIndexOf('#')), els = paraSpans(n, pid), i = -1;
+      for (var j = 0; j < els.length; j++) if (spanInfo(els[j]).key === key) { i = j; break; }
+      if (i < 0) return false;
+      var a = i, b = i;
+      if (isMk(n, key)) { while (a > 0 && isMk(n, spanInfo(els[a - 1]).key)) a--; while (b < els.length - 1 && isMk(n, spanInfo(els[b + 1]).key)) b++; }
+      selPaint(false);
+      MR = { n: n, els: els, a: a, b: b, note: String(marksOf(n)[spanInfo(els[a]).key] || '') };
+      draw(); return true;
+    };
+    var mn0 = window.mkNote;
+    window.mkNote = function (n, key) { if (!openAt(n, key)) return mn0.apply(this, arguments); };
+    window.mkTap = function (n, key, el) { if (!openAt(n, key)) { window.mkNote(n, key); } };
+    window.mkSheetClose = function () { close(); };
+  }
 })();
 
 </script>
@@ -24066,6 +24145,158 @@ var PRON321 = (function () {
 })();
 
 
+/* ═══ GXHL · 課程內容「點句子 → 畫線／前後句／默想／做成美圖／問小智」（照《321互動聖經》畫線默想）
+   給主程式本身沒有畫線功能的 App 用：GXA.hl.attach(root, {sel, key, ref, title})
+   ═══ */
+const GXHL = (function () {
+  const KEY = 'gxa_hl_' + (C().slug || 'app');
+  let DB; try { DB = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { DB = {}; }
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {} };
+  const COLORS = ['y', 'g', 'b', 'p'];
+  const EN = () => LANG === 'en';
+  const SKIP = 'sup,label,button,textarea,input,select,.lbl,.gxhl-skip';
+  let cur = null;   // {root, box, list, a, b, opt}
+  function split(t) {
+    const re = EN() ? /[^.!?;]+[.!?;]+["”’)]*\s*|[^.!?;]+$/g : /[^。！？；!?]+[。！？；!?]+[」』”’）)]*(?:\s*[（(][^（）()]{1,24}[）)])?|[^。！？；!?]+$/g;
+    return String(t).match(re) || [t];
+  }
+  function wrapBox(box, bi) {
+    if (box.getAttribute('data-gxb') != null) return;
+    box.setAttribute('data-gxb', bi);
+    const tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null);
+    const nodes = []; let n;
+    while ((n = tw.nextNode())) {
+      if (!n.nodeValue.trim()) continue;
+      let p = n.parentNode, skip = false;
+      while (p && p !== box) { if (p.matches && (p.matches(SKIP) || (box.__skip && p.matches(box.__skip)))) { skip = true; break; } p = p.parentNode; }
+      if (!skip) nodes.push(n);
+    }
+    let si = 0;
+    nodes.forEach(tn => {
+      const f = document.createDocumentFragment();
+      split(tn.nodeValue).forEach(part => {
+        if (!part.trim()) { f.appendChild(document.createTextNode(part)); return; }
+        const s = document.createElement('span'); s.className = 'gxs-s'; s.setAttribute('data-gxs', si++); s.textContent = part; f.appendChild(s);
+      });
+      tn.parentNode.replaceChild(f, tn);
+    });
+  }
+  function sents(box) { return Array.prototype.slice.call(box.querySelectorAll('.gxs-s')); }
+  function k(opt, bi, si) { return opt.key + '|' + bi + '|' + si; }
+  function paint(root, opt) {
+    root.querySelectorAll('[data-gxb]').forEach(box => {
+      const bi = box.getAttribute('data-gxb');
+      sents(box).forEach(s => {
+        const h = DB[k(opt, bi, s.getAttribute('data-gxs'))];
+        s.className = 'gxs-s' + (h ? ' gxhl-' + (h.c || 'y') : '') + (h && h.n ? ' gxhl-n' : '');
+      });
+    });
+  }
+  function attach(root, opt) {
+    if (!root || !opt) return;
+    const boxes = root.querySelectorAll(opt.sel);
+    let bi = 0;
+    boxes.forEach(b => { if (opt.skip) b.__skip = opt.skip; wrapBox(b, bi++); });
+    root.__gxhl = opt;
+    paint(root, opt);
+    if (!root.__gxhlOn) {
+      root.__gxhlOn = 1;
+      root.addEventListener('click', e => {
+        const s = e.target.closest && e.target.closest('.gxs-s');
+        if (!s || !root.__gxhl) return;
+        try { const sel = window.getSelection && window.getSelection(); if (sel && String(sel).length > 1) return; } catch (x) {}
+        open(root, s);
+      });
+    }
+  }
+  function txtOf(list, a, b) {
+    return list.slice(a, b + 1).map(s => s.textContent).reduce((acc, t) => {
+      if (!acc) return t.trim();
+      return /[A-Za-z0-9,.;:!?"”’)]$/.test(acc) && /^[A-Za-z0-9"“‘(]/.test(t.trim()) ? acc + ' ' + t.trim() : acc + t.trim();
+    }, '');
+  }
+  function open(root, s) {
+    const box = s.closest('[data-gxb]'), list = sents(box), i = list.indexOf(s), opt = root.__gxhl;
+    /* 已畫過的一段：整段一起選起來 */
+    let a = i, b = i;
+    const bi = box.getAttribute('data-gxb'), h0 = DB[k(opt, bi, i)];
+    if (h0 && h0.g) { const g = h0.g.split('-').map(Number); a = g[0]; b = g[1]; }
+    cur = { root, box, list, a, b, opt, bi, c: (h0 && h0.c) || 'y', n: (h0 && h0.n) || '' };
+    draw();
+  }
+  function mark() { cur.list.forEach((s, j) => s.classList.toggle('gxs-sel', j >= cur.a && j <= cur.b)); }
+  function draw() {
+    const r = GXA_root(); let m = document.getElementById('gxhlsh');
+    if (!m) { m = document.createElement('div'); m.id = 'gxhlsh'; m.className = 'gxhlmask'; r.appendChild(m); m.addEventListener('click', e => { if (e.target === m) close(); }); }
+    const t = txtOf(cur.list, cur.a, cur.b), has = !!DB[k(cur.opt, cur.bi, cur.a)];
+    const L = (zh, en) => toSC(T(zh, en));
+    m.innerHTML = `<div class="gxhlcard"><div class="gxhlhd"><b>${esc0(L('畫線默想', 'Highlight & reflect'))}</b><button class="gxhlx" data-a="x">✕</button></div>
+      <blockquote class="gxhlq">${esc0(t)}</blockquote>
+      <div class="gxhlrow"><button data-a="prev">${esc0(L('↑ 前一句', '↑ Previous'))}</button><button data-a="less">－</button><button data-a="more">＋</button><button data-a="all">${esc0(L('整段', 'Whole paragraph'))}</button></div>
+      <div class="gxhlrow">${COLORS.map(c => `<button class="gxsw gxhl-${c}${cur.c === c ? ' on' : ''}" data-a="c" data-c="${c}" aria-label="${c}"></button>`).join('')}
+        ${has ? `<button data-a="del">${esc0(L('取消畫線', 'Remove'))}</button>` : ''}</div>
+      <textarea id="gxhlnote" rows="2" placeholder="${esc0(L('寫下你的默想（可留空）', 'Your reflection (optional)'))}">${esc0(cur.n)}</textarea>
+      <div class="gxhlacts"><button class="pri" data-a="save">${esc0(L('畫線', 'Highlight'))}</button><button class="gold" data-a="card">🖼 ${esc0(L('做成美圖', 'Make a card'))}</button></div>
+      <div class="gxhlacts"><button data-a="ask">✨ ${esc0(L('問小智', 'Ask Xiaozhi'))}</button><button data-a="copy">⧉ ${esc0(L('複製', 'Copy'))}</button><button data-a="share">↗ ${esc0(L('分享', 'Share'))}</button></div></div>`;
+    m.classList.add('on'); mark();
+    m.querySelectorAll('[data-a]').forEach(bt => bt.onclick = () => act(bt.getAttribute('data-a'), bt));
+  }
+  function refOf() { try { return cur.opt.refOf ? cur.opt.refOf(cur.box) : (cur.opt.ref || ''); } catch (e) { return cur.opt.ref || ''; } }
+  function grab() { const ta = document.getElementById('gxhlnote'); if (ta) cur.n = ta.value.trim(); }
+  function store() {
+    for (let j = 0; j < cur.list.length; j++) { const kk = k(cur.opt, cur.bi, j), h = DB[kk]; if (h && h.g) { const g = h.g.split('-').map(Number); if (!(g[1] < cur.a || g[0] > cur.b)) delete DB[kk]; } }
+    const t = txtOf(cur.list, cur.a, cur.b);
+    for (let j = cur.a; j <= cur.b; j++) DB[k(cur.opt, cur.bi, j)] = { c: cur.c, n: j === cur.a ? cur.n : '', g: cur.a + '-' + cur.b, t: j === cur.a ? t : '', ref: refOf(), ts: Date.now() };
+    keep(); paint(cur.root, cur.opt);
+  }
+  function close() { const m = document.getElementById('gxhlsh'); if (m) m.classList.remove('on'); if (cur) cur.list.forEach(s => s.classList.remove('gxs-sel')); cur = null; }
+  function act(a, bt) {
+    if (!cur) return;
+    grab();
+    const t = txtOf(cur.list, cur.a, cur.b), ref = refOf();
+    if (a === 'x') return close();
+    if (a === 'prev') { if (cur.a > 0) cur.a--; return draw(); }
+    if (a === 'more') { if (cur.b < cur.list.length - 1) cur.b++; return draw(); }
+    if (a === 'less') { if (cur.b > cur.a) cur.b--; return draw(); }
+    if (a === 'all') { cur.a = 0; cur.b = cur.list.length - 1; return draw(); }
+    if (a === 'c') { cur.c = bt.getAttribute('data-c'); store(); return draw(); }
+    if (a === 'del') { for (let j = cur.a; j <= cur.b; j++) delete DB[k(cur.opt, cur.bi, j)]; keep(); paint(cur.root, cur.opt); toast(T('已取消畫線', 'Removed')); return close(); }
+    if (a === 'save') { store(); toast(T('已畫線', 'Highlighted')); return close(); }
+    if (a === 'card') { store(); const n = cur.n; close(); try { GXS.open({ text: t, ref, note: n }); } catch (e) {} return; }
+    if (a === 'ask') {
+      const n = cur.n; close();
+      const q = T('我讀到這一句：\n「' + t + '」' + (ref ? '（' + ref + '）' : '') + '\n' + (n ? '我的默想：' + n + '\n' : '') + '請幫我更明白這句話，並幫助我活出來。',
+        'I read this:\n“' + t + '”' + (ref ? ' (' + ref + ')' : '') + '\n' + (n ? 'My reflection: ' + n + '\n' : '') + 'Please help me understand it and live it out.');
+      try { SAGE321.open(); SAGE321.send(q); } catch (e) {}
+      return;
+    }
+    if (a === 'copy' || a === 'share') {
+      const s = (EN() ? '“' + t + '”' : '「' + t + '」') + (ref ? '\n— ' + ref : '') + (cur.n ? '\n\n' + cur.n : '');
+      if (a === 'share' && navigator.share) { navigator.share({ text: s }).catch(() => {}); return; }
+      try { navigator.clipboard.writeText(s); toast(T('已複製', 'Copied')); } catch (e) {}
+    }
+  }
+  const CSS = `.gxs-s{cursor:pointer;border-radius:3px;transition:background .15s}
+.gxs-s.gxs-sel{background:rgba(196,154,60,.32)!important;box-shadow:0 0 0 2px rgba(196,154,60,.35)}
+.gxhl-y{background:rgba(255,214,90,.45)}.gxhl-g{background:rgba(120,200,140,.38)}.gxhl-b{background:rgba(110,170,240,.36)}.gxhl-p{background:rgba(240,140,180,.36)}
+.gxs-s.gxhl-n{text-decoration:underline dotted rgba(150,110,40,.8);text-underline-offset:4px}
+.gxhlmask{position:fixed;inset:0;z-index:305;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center}
+.gxhlmask.on{display:flex}
+.gxhlcard{background:var(--card,#fff);color:var(--ink,#222);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2);max-height:85vh;overflow:auto;font-size:16px}
+.gxhlhd{display:flex;align-items:center;margin-bottom:6px}.gxhlhd b{flex:1;font-size:17px}
+.gxhlx{border:0;background:none;font-size:20px;color:inherit;cursor:pointer}
+.gxhlq{margin:6px 0 10px;padding:8px 12px;border-left:3px solid #C49A3C;background:rgba(196,154,60,.1);border-radius:6px;line-height:1.7;max-height:30vh;overflow:auto}
+.gxhlrow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;align-items:center}
+.gxhlrow button,.gxhlacts button{border:1px solid var(--line,#ddd);background:var(--paper,#fafafa);color:inherit;border-radius:10px;padding:8px 12px;font-size:15px;cursor:pointer}
+.gxhlrow .gxsw{width:34px;height:34px;padding:0;border-radius:50%}.gxhlrow .gxsw.gxhl-y{background:#FFD65A}.gxhlrow .gxsw.gxhl-g{background:#78C88C}.gxhlrow .gxsw.gxhl-b{background:#6EAAF0}.gxhlrow .gxsw.gxhl-p{background:#F08CB4}.gxhlrow .gxsw.on{outline:3px solid #C49A3C;outline-offset:2px}
+#gxhlnote{width:100%;box-sizing:border-box;border:1px solid var(--line,#ddd);border-radius:10px;padding:8px 10px;font:inherit;font-size:16px;background:var(--paper,#fff);color:inherit;margin:4px 0}
+.gxhlacts{display:flex;gap:8px;margin-top:8px}.gxhlacts button{flex:1}
+.gxhlacts .pri{background:#2F5D50;color:#fff;border-color:#2F5D50}.gxhlacts .gold{background:#C49A3C;color:#fff;border-color:#C49A3C}`;
+  (function () { if (document.getElementById('gxhlcss')) return; const st = document.createElement('style'); st.id = 'gxhlcss'; st.textContent = CSS; document.head.appendChild(st); })();
+  return { attach, paint, close, db: () => DB };
+})();
+
+
   /* ── 樣式：主程式樣式隔離，全部在 .gxroot 底下 ── */
   (function css() {
     if (document.getElementById('gxacss')) return;
@@ -24082,6 +24313,8 @@ html.gxa-lock,html.gxa-lock body{overflow:hidden}
 .gxroot .gxa-toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#1F2A26;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:400;max-width:86vw;text-align:center}
 .gxroot .gxa-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .gxroot .gxz{z-index:300}
+.gxroot .xzm,.gxroot .xzhi,.gxroot .xzsv{font-size:calc(var(--fs,17px)*.94)}
+.gxroot .xzin,.gxroot #gxxzin{font-size:max(16px,calc(var(--fs,17px)*.94))}
 body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxaov.on) .xz-fab,body:has(#gxaov.on) #fab,body:has(#gxaroot #gxs.on) .xz-fab,body:has(#gxaroot #gxs.on) #fab{display:none!important}.gxroot #gxs,.gxroot .gxsmask{z-index:310}
 .gxroot .chn{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--paper);font-size:17px}
 .gxroot .chrow .s{display:block;font-size:calc(var(--fs)*.76);color:var(--dusk);margin-top:2px}
@@ -24093,6 +24326,7 @@ body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxa
   try { window.PRON321 = PRON321; } catch (e) {}
   const GXA = {
     go, close: closeOv, render, S, save, toast, toSC, refreshD, root: ROOT, T, lang: LANG,
+    hl: GXHL,
     hub: () => go('hub'),
     play: () => go('tools', 0, 'play'),
     works: () => go('me', 0, 'works'),
