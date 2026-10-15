@@ -19870,7 +19870,7 @@ renderChat();
     name: T2('晨讀321', '晨读321', '321 Morning Devotion'), nameEn: '321 Morning Devotion',
     slug: (location.pathname.split('/').filter(Boolean)[0] || ('chendu321' + (LG === 'zh' ? '' : '-' + LG))),
     lang: function () { return LG; },
-    svc: function () { return { xz: XZ_ENDPOINT, model: (typeof XZ_MODEL !== 'undefined' && XZ_MODEL) || 'claude-sonnet-4-6' }; },
+    svc: function () { return { xz: XZ_ENDPOINT, model: (typeof XZ_MODEL !== 'undefined' && XZ_MODEL) || 'claude-sonnet-4-6', sendModel: true, maxTokens: 1000 }; },
     lessons: function () { gxList = lessons(); return gxList; },
     current: function () {
       var n = (state.lesson && state.lesson.n) || state.last || 0;
@@ -20870,7 +20870,7 @@ var SAGE321 = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: ctrl ? ctrl.signal : undefined,
-      body: JSON.stringify({ model: C.model, max_tokens: C.maxTokens, system: sys, messages: msgs })
+      body: JSON.stringify(C.sendModel ? { model: C.model, max_tokens: C.maxTokens, system: sys, messages: msgs } : { system: sys, messages: msgs })
     }).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
@@ -21275,7 +21275,7 @@ var GX = (function () {
       try {
         const r = await fetch(SVC.xz, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: SVC.model, max_tokens: maxT || 1600, system: sys, messages: [{ role: 'user', content: ask }] }),
+          body: JSON.stringify(SVC.sendModel ? { model: SVC.model, max_tokens: SVC.maxTokens || 1000, system: sys, messages: [{ role: 'user', content: ask }] } : { system: sys, messages: [{ role: 'user', content: ask }] }),
           signal: ac ? ac.signal : undefined
         });
         if (!r.ok) throw new Error('http ' + r.status);
@@ -24343,7 +24343,7 @@ body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxa
       o = o || {};
       const base = o.quicks || (() => []);
       const cfg = Object.assign({
-        worker: SVC.xz, model: SVC.model,
+        worker: SVC.xz, model: SVC.model, sendModel: !!SVC.sendModel, maxTokens: SVC.maxTokens || 1000,
         name: T('小智', 'Xiaozhi'), tagline: T('陪讀 · 解經 · 禱告', 'Read · Reflect · Pray'),
         sysExtra: () => GX.sysExtra(), followups: () => GX.followups(), controls: () => GX.ctl(),
         onCard: (t, q) => GXS.fromAnswer(t, q),
