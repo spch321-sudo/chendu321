@@ -20006,6 +20006,80 @@ renderChat();
     window.mkTap = function (n, key, el) { if (!openAt(n, key)) { window.mkNote(n, key); } };
     window.mkSheetClose = function () { close(); };
   }
+  /* 英文版原本少了 spkPos（背景連續播放時會報錯），補上 */
+  if (typeof window.spkPos !== 'function') window.spkPos = function (a) { try { var ms = navigator.mediaSession; if (!ms || !ms.setPositionState || !isFinite(a.duration) || a.duration <= 0) return; ms.setPositionState({ duration: a.duration, position: Math.min(a.currentTime, a.duration), playbackRate: a.playbackRate || 1 }); } catch (_) {} };
+  /* ── 朗讀逐句跟讀：念到哪一句，課文裡那一句就標起來（照 321互動聖經） ── */
+  (function () {
+    if (typeof spk === 'undefined') return;
+    var st = document.createElement('style');
+    st.textContent = '.mk-s.rd-now{background:rgba(232,196,90,.42)!important;border-radius:4px;box-shadow:0 0 0 2px rgba(232,196,90,.42);transition:background .15s}';
+    document.head.appendChild(st);
+    var hold = 0;
+    ['wheel', 'touchstart', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, function () { hold = Date.now() + 5000; }, { passive: true }); });
+    var NORM = /[^0-9A-Za-z㐀-鿿]/g;
+    var norm = function (t) { return String(t || '').replace(NORM, '').toLowerCase(); };
+    var MAP = null, mapKey = '', cur = null, nT = { i: -1, t: 0 };
+    function spans() { return Array.prototype.slice.call(document.querySelectorAll('.mk-s')); }
+    function grams(n) { if (n.length < 6) return n ? [n] : []; return [n.slice(0, 6), n.slice(Math.floor(n.length / 2) - 3, Math.floor(n.length / 2) + 3), n.slice(-6)]; }
+    function build(els) {
+      var q = spk.queue || [], G = q.join(''), sents = [], buf = '', off = 0, start = 0;
+      var EN = /[。！？；!?;\n]/;
+      for (var i = 0; i < G.length; i++) { buf += G[i]; if (EN.test(G[i])) { sents.push({ a: start, b: i + 1, n: norm(buf) }); start = i + 1; buf = ''; } }
+      if (buf) sents.push({ a: start, b: G.length, n: norm(buf) });
+      var en = els.map(function (e) { var c = e.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.mk-flag,sup'), function (x) { x.parentNode.removeChild(x); }); return norm(c.textContent); });
+      var bg = function (t) { var o = {}; for (var i = 0; i + 1 < t.length; i++) o[t.substr(i, 2)] = 1; return o; };
+      var eb = en.map(bg), ecount = eb.map(function (o) { return Object.keys(o).length; });
+      var score = function (sb, sc, j) { var h = 0, o = eb[j]; for (var k in sb) if (o[k]) h++; var m = Math.min(sc, ecount[j]); return m ? h / m : 0; };
+      var p = 0;
+      sents.forEach(function (s) {
+        if (s.n.length < 4) return;
+        var sb = bg(s.n), sc = Object.keys(sb).length, best = -1, bs = 0;
+        for (var j = p; j < Math.min(en.length, p + 60); j++) {
+          if (ecount[j] < 2) continue;
+          var v = score(sb, sc, j);
+          if (v >= 0.6) { best = j; bs = v; break; }
+          if (v > bs) { bs = v; best = j; }
+        }
+        if (best >= 0 && bs >= 0.45) { s.el = els[best]; p = best; }
+      });
+      var cum = [], c = 0; q.forEach(function (x) { cum.push(c); c += x.length; });
+      return { sents: sents, cum: cum, total: c };
+    }
+    function charPos() {
+      var q = spk.queue || []; if (!q.length) return -1;
+      var a = (window.yun && yun.audio) ? yun.audio : null;
+      var i = Math.max(0, (spk.idx || 1) - 1);
+      if (spk.mode === 'yun' && a) {
+        if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
+        if (spk.joined) {
+          var full = spk.joinedURL && (a.currentSrc || a.src) === spk.joinedURL;
+          var len = 0; if (full) { for (var k = i; k < q.length; k++) len += q[k].length; } else len = q[i].length;
+          return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * len;
+        }
+        return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * q[i].length;
+      }
+      if (nT.i !== i) { nT.i = i; nT.t = Date.now(); }
+      var cps = /[A-Za-z]{3}/.test(q[i] || '') ? 14 : 4.6 * (typeof state.spkRate === 'number' ? state.spkRate : 1);
+      return (MAP.cum[i] || 0) + Math.min(q[i].length, (Date.now() - nT.t) / 1000 * cps);
+    }
+    function clear() { if (cur) { cur.classList.remove('rd-now'); cur = null; } }
+    setInterval(function () {
+      try {
+        if (!spk.active || spk.curId !== 'lesson' || state.view !== 'reader') { clear(); return; }
+        if (spk.paused) return;
+        var els = spans(); if (!els.length) { clear(); return; }
+        var key = (state.lesson && state.lesson.n) + '|' + els.length + '|' + (spk.queue || []).length + '|' + spk.token + '|' + (state.tab || '');
+        if (key !== mapKey || !MAP) { MAP = build(els); mapKey = key; }
+        var pos = charPos(); if (pos < 0) return;
+        var el = null;
+        for (var i = 0; i < MAP.sents.length; i++) { var s = MAP.sents[i]; if (pos >= s.a && pos < s.b) { el = s.el || null; break; } }
+        if (el === cur) return;
+        clear(); if (!el || !el.isConnected) return;
+        el.classList.add('rd-now'); cur = el;
+        if (Date.now() > hold) { var r = el.getBoundingClientRect(); if (r.top < 120 || r.bottom > innerHeight - 140) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      } catch (e) {}
+    }, 250);
+  })();
 })();
 
 </script>
