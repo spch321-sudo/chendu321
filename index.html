@@ -20008,6 +20008,102 @@ renderChat();
   }
   /* 英文版原本少了 spkPos（背景連續播放時會報錯），補上 */
   if (typeof window.spkPos !== 'function') window.spkPos = function (a) { try { var ms = navigator.mediaSession; if (!ms || !ms.setPositionState || !isFinite(a.duration) || a.duration <= 0) return; ms.setPositionState({ duration: a.duration, position: Math.min(a.currentTime, a.duration), playbackRate: a.playbackRate || 1 }); } catch (_) {} };
+  /* ── 背景連續播放修正：第一段念完、整首還沒下載好時，不再停住、也不再從頭重念——
+        先一段一段接著念，整首好了就在段落交界換成整首，從同一個位置接下去 ── */
+  if (typeof window.yunPlayJoined === 'function' && typeof yunFetchRaw === 'function') {
+    window.yunPlayJoined = function (text, id, startIdx) {
+      var chunks = yunChunks(spkSanitize(text));
+      if (!chunks.length) { yunStop(); return; }
+      var start = (startIdx > 0 && startIdx < chunks.length) ? startIdx : 0;
+      var slice = chunks.slice(start);
+      spk.curId = id || ''; spk.curText = text || ''; spk.queue = chunks; spk.idx = start + 1;
+      spk.active = true; spk.paused = false; spk.mode = 'yun'; spk.joined = true;
+      spk.joinStart = start; spk.joinPiece = 0; spk.joinFull = false;
+      var my = ++spk.token;
+      if (typeof spkMediaSession === 'function') spkMediaSession('play');
+      if (typeof updateSpeakButtons === 'function') updateSpeakButtons();
+      persistSpkResume();
+      var a = yunGetAudio();
+      var full = null, swapped = false, played = 0, pieceURL = null, k = 0;
+      var pos = function () { try { window.spkPos(a); } catch (_) {} };
+      try {
+        var ms = navigator.mediaSession;
+        if (ms) {
+          ms.setActionHandler('seekforward', function () { try { a.currentTime = Math.min(a.duration || 0, a.currentTime + 15); } catch (_) {} });
+          ms.setActionHandler('seekbackward', function () { try { a.currentTime = Math.max(0, a.currentTime - 15); } catch (_) {} });
+          try { ms.setActionHandler('seekto', function (e) { try { if (e.seekTime != null) a.currentTime = e.seekTime; } catch (_) {} }); } catch (_) {}
+        }
+      } catch (_) {}
+      function swapToFull(at) {
+        if (my !== spk.token || swapped || !full) return;
+        swapped = true; spk.joinFull = true;
+        var fullURL; try { fullURL = URL.createObjectURL(full); } catch (_) { swapped = false; spk.joinFull = false; return; }
+        try { if (spk.joinedURL) URL.revokeObjectURL(spk.joinedURL); } catch (_) {}
+        spk.joinedURL = fullURL;
+        a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
+        a.loop = false; a.src = fullURL;
+        try { if (pieceURL) { URL.revokeObjectURL(pieceURL); pieceURL = null; } } catch (_) {}
+        a.onloadedmetadata = function () { if (my !== spk.token) return; try { if (at > 0 && isFinite(a.duration) && at < a.duration) a.currentTime = at; } catch (_) {} pos(); };
+        a.ontimeupdate = function () { if (my === spk.token) pos(); };
+        a.onended = function () { if (my === spk.token) { maybeClearResumeOnComplete(); yunStop(); } };
+        a.onerror = function () { if (my === spk.token) yunStop(); };
+        var p = a.play(); if (p && p.catch) p.catch(function () {});
+      }
+      function next() {
+        if (my !== spk.token) return;
+        if (full) { swapToFull(played); return; }
+        k++;
+        if (k >= slice.length) { maybeClearResumeOnComplete(); yunStop(); return; }
+        playPiece(k);
+      }
+      function playPiece(i) {
+        Promise.resolve(yunFetchRaw(slice[i])).then(function (b) {
+          if (my !== spk.token || swapped) return;
+          if (full) { swapToFull(played); return; }
+          var u; try { u = URL.createObjectURL(b); } catch (_) { return; }
+          try { if (pieceURL) URL.revokeObjectURL(pieceURL); } catch (_) {}
+          pieceURL = u; spk.joinPiece = i; spk.idx = start + i + 1;
+          a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
+          a.loop = false; a.src = u;
+          a.ontimeupdate = function () { if (my === spk.token) pos(); };
+          a.onloadedmetadata = function () { if (my === spk.token) pos(); };
+          a.onended = function () { if (my !== spk.token) return; var d = a.duration; if (isFinite(d) && d > 0) played += d; next(); };
+          a.onerror = function () { if (my === spk.token) next(); };
+          var p = a.play();
+          if (p && p.catch) p.catch(function () { if (my === spk.token && i === 0) yunStop(); });
+        }, function () {
+          if (my !== spk.token) return;
+          if (i === 0) {
+            spk.active = false;
+            if (typeof uiToast === 'function') uiToast(T2('雲端語音連不上，改用裝置內建聲音（若沒聲音請再按一次朗讀）', '云端语音连不上，改用装置内建声音（若没声音请再按一次朗读）', 'Cloud voice unavailable — using the device voice (tap Read again if silent).'));
+            spkToggleNative(spk.curText || '', spk.curId);
+          } else next();
+        });
+      }
+      function buildFull() {
+        var res = new Array(slice.length), done = 0, nx = 0, running = 0, CONC = 8, failed = false;
+        (function pump() {
+          while (running < CONC && nx < slice.length) {
+            (function (i) {
+              running++;
+              Promise.resolve(yunFetchRaw(slice[i])).then(function (b) { res[i] = b; }, function () { failed = true; }).then(function () {
+                running--; done++;
+                if (my !== spk.token) return;
+                if (done >= slice.length) {
+                  if (!failed && res.filter(Boolean).length === slice.length) { try { full = new Blob(res, { type: 'audio/mpeg' }); } catch (_) {} }
+                  return;
+                }
+                pump();
+              });
+            })(nx++);
+          }
+        })();
+      }
+      if (typeof uiToast === 'function') uiToast(T2('開始朗讀…', '开始朗读…', 'Reading…'));
+      playPiece(0);
+      if (slice.length > 1) buildFull();
+    };
+  }
   /* ── 朗讀逐句跟讀：念到哪一句，課文裡那一句就標起來（照 321互動聖經） ── */
   (function () {
     if (typeof spk === 'undefined') return;
@@ -20052,9 +20148,10 @@ renderChat();
       if (spk.mode === 'yun' && a) {
         if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
         if (spk.joined) {
-          var full = spk.joinedURL && (a.currentSrc || a.src) === spk.joinedURL;
-          var len = 0; if (full) { for (var k = i; k < q.length; k++) len += q[k].length; } else len = q[i].length;
-          return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * len;
+          var st0 = spk.joinStart || 0;
+          if (spk.joinFull) { var len = 0; for (var k = st0; k < q.length; k++) len += q[k].length; return (MAP.cum[st0] || 0) + Math.min(1, a.currentTime / a.duration) * len; }
+          var pi = st0 + (spk.joinPiece || 0);
+          return (MAP.cum[pi] || 0) + Math.min(1, a.currentTime / a.duration) * (q[pi] || '').length;
         }
         return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * q[i].length;
       }
