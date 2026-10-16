@@ -20008,67 +20008,66 @@ renderChat();
   }
   /* 英文版原本少了 spkPos（背景連續播放時會報錯），補上 */
   if (typeof window.spkPos !== 'function') window.spkPos = function (a) { try { var ms = navigator.mediaSession; if (!ms || !ms.setPositionState || !isFinite(a.duration) || a.duration <= 0) return; ms.setPositionState({ duration: a.duration, position: Math.min(a.currentTime, a.duration), playbackRate: a.playbackRate || 1 }); } catch (_) {} };
-  /* ── 背景連續播放修正：第一段念完、整首還沒下載好時，不再停住、也不再從頭重念——
-        先一段一段接著念，整首好了就在段落交界換成整首，從同一個位置接下去 ── */
-  if (typeof window.yunPlayJoined === 'function' && typeof yunFetchRaw === 'function') {
+  /* ── 背景連續播放（v2）：一段一段接著念，不停頓；剩下的段落都下載好了，就把「剩下的」接成一首從頭播放。
+        不在接起來的大檔裡跳時間（iPhone 對串接的 MP3 跳時間不準，會跳過內容） ── */
+  var FR = (typeof yunFetchRaw === 'function') ? yunFetchRaw : ((typeof yunFetchBlob === 'function') ? yunFetchBlob : null);
+  if (typeof window.yunPlayJoined === 'function' && FR) {
     window.yunPlayJoined = function (text, id, startIdx) {
       var chunks = yunChunks(spkSanitize(text));
       if (!chunks.length) { yunStop(); return; }
       var start = (startIdx > 0 && startIdx < chunks.length) ? startIdx : 0;
-      var slice = chunks.slice(start);
+      var slice = chunks.slice(start), N = slice.length;
       spk.curId = id || ''; spk.curText = text || ''; spk.queue = chunks; spk.idx = start + 1;
       spk.active = true; spk.paused = false; spk.mode = 'yun'; spk.joined = true;
-      spk.joinStart = start; spk.joinPiece = 0; spk.joinFull = false;
+      spk.joinStart = start; spk.joinPiece = 0; spk.joinFull = false; spk.joinFrom = 0; spk.joinDurs = [];
       var my = ++spk.token;
       if (typeof spkMediaSession === 'function') spkMediaSession('play');
       if (typeof updateSpeakButtons === 'function') updateSpeakButtons();
       persistSpkResume();
-      var a = yunGetAudio();
-      var full = null, swapped = false, played = 0, pieceURL = null, k = 0;
+      var a = yunGetAudio(), res = new Array(N), url = null, k = 0, done = false;
       var pos = function () { try { window.spkPos(a); } catch (_) {} };
-      try {
-        var ms = navigator.mediaSession;
-        if (ms) {
-          ms.setActionHandler('seekforward', function () { try { a.currentTime = Math.min(a.duration || 0, a.currentTime + 15); } catch (_) {} });
-          ms.setActionHandler('seekbackward', function () { try { a.currentTime = Math.max(0, a.currentTime - 15); } catch (_) {} });
-          try { ms.setActionHandler('seekto', function (e) { try { if (e.seekTime != null) a.currentTime = e.seekTime; } catch (_) {} }); } catch (_) {}
-        }
-      } catch (_) {}
-      function swapToFull(at) {
-        if (my !== spk.token || swapped || !full) return;
-        swapped = true; spk.joinFull = true;
-        var fullURL; try { fullURL = URL.createObjectURL(full); } catch (_) { swapped = false; spk.joinFull = false; return; }
-        try { if (spk.joinedURL) URL.revokeObjectURL(spk.joinedURL); } catch (_) {}
-        spk.joinedURL = fullURL;
+      function measure(i) {
+        if (spk.joinDurs[i] || !res[i]) return;
+        try { var t = new Audio(), u = URL.createObjectURL(res[i]); t.preload = 'metadata'; t.onloadedmetadata = function () { if (isFinite(t.duration) && t.duration > 0) spk.joinDurs[i] = t.duration; try { URL.revokeObjectURL(u); } catch (_) {} }; t.src = u; } catch (_) {}
+      }
+      function setSrc(blob) {
+        try { if (url) URL.revokeObjectURL(url); } catch (_) {}
+        url = URL.createObjectURL(blob); spk.joinedURL = url;
         a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
-        a.loop = false; a.src = fullURL;
-        try { if (pieceURL) { URL.revokeObjectURL(pieceURL); pieceURL = null; } } catch (_) {}
-        a.onloadedmetadata = function () { if (my !== spk.token) return; try { if (at > 0 && isFinite(a.duration) && at < a.duration) a.currentTime = at; } catch (_) {} pos(); };
-        a.ontimeupdate = function () { if (my === spk.token) pos(); };
-        a.onended = function () { if (my === spk.token) { maybeClearResumeOnComplete(); yunStop(); } };
-        a.onerror = function () { if (my === spk.token) yunStop(); };
-        var p = a.play(); if (p && p.catch) p.catch(function () {});
+        a.loop = false; a.src = url;
+        a.ontimeupdate = function () { if (my === spk.token) { pos(); track(); } };
+        a.onloadedmetadata = function () { if (my === spk.token) pos(); };
       }
-      function next() {
+      function track() {   /* 記住念到第幾段，暫停／中斷後可從這一段續播 */
+        if (!spk.joinFull) { spk.idx = start + spk.joinPiece + 1; return; }
+        var t = a.currentTime || 0, i = spk.joinFrom;
+        while (i < N - 1 && spk.joinDurs[i] && t >= spk.joinDurs[i]) { t -= spk.joinDurs[i]; i++; }
+        spk.idx = start + i + 1;
+      }
+      function finish() { if (done) return; done = true; maybeClearResumeOnComplete(); yunStop(); }
+      function allFrom(i) { for (var x = i; x < N; x++) if (!res[x]) return false; return true; }
+      function playFrom(i) {
         if (my !== spk.token) return;
-        if (full) { swapToFull(played); return; }
-        k++;
-        if (k >= slice.length) { maybeClearResumeOnComplete(); yunStop(); return; }
-        playPiece(k);
-      }
-      function playPiece(i) {
-        Promise.resolve(yunFetchRaw(slice[i])).then(function (b) {
-          if (my !== spk.token || swapped) return;
-          if (full) { swapToFull(played); return; }
-          var u; try { u = URL.createObjectURL(b); } catch (_) { return; }
-          try { if (pieceURL) URL.revokeObjectURL(pieceURL); } catch (_) {}
-          pieceURL = u; spk.joinPiece = i; spk.idx = start + i + 1;
-          a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
-          a.loop = false; a.src = u;
-          a.ontimeupdate = function () { if (my === spk.token) pos(); };
-          a.onloadedmetadata = function () { if (my === spk.token) pos(); };
-          a.onended = function () { if (my !== spk.token) return; var d = a.duration; if (isFinite(d) && d > 0) played += d; next(); };
-          a.onerror = function () { if (my === spk.token) next(); };
+        if (i >= N) { finish(); return; }
+        if (i > 0 && allFrom(i) && N - i > 1) {
+          var rest; try { rest = new Blob(res.slice(i), { type: 'audio/mpeg' }); } catch (_) { rest = null; }
+          if (rest) {
+            spk.joinFull = true; spk.joinFrom = i; spk.joinPiece = i;
+            for (var m = i; m < N; m++) measure(m);
+            setSrc(rest);
+            a.onended = function () { if (my === spk.token) finish(); };
+            a.onerror = function () { if (my === spk.token) finish(); };
+            var p0 = a.play(); if (p0 && p0.catch) p0.catch(function () {});
+            return;
+          }
+        }
+        k = i; spk.joinPiece = i;
+        Promise.resolve(res[i] || FR(slice[i])).then(function (b) {
+          if (my !== spk.token || spk.joinFull) return;
+          res[i] = b; measure(i);
+          setSrc(b);
+          a.onended = function () { if (my !== spk.token) return; if (isFinite(a.duration) && a.duration > 0) spk.joinDurs[i] = a.duration; playFrom(i + 1); };
+          a.onerror = function () { if (my === spk.token) playFrom(i + 1); };
           var p = a.play();
           if (p && p.catch) p.catch(function () { if (my === spk.token && i === 0) yunStop(); });
         }, function () {
@@ -20077,61 +20076,70 @@ renderChat();
             spk.active = false;
             if (typeof uiToast === 'function') uiToast(T2('雲端語音連不上，改用裝置內建聲音（若沒聲音請再按一次朗讀）', '云端语音连不上，改用装置内建声音（若没声音请再按一次朗读）', 'Cloud voice unavailable — using the device voice (tap Read again if silent).'));
             spkToggleNative(spk.curText || '', spk.curId);
-          } else next();
+          } else playFrom(i + 1);
         });
       }
-      function buildFull() {
-        var res = new Array(slice.length), done = 0, nx = 0, running = 0, CONC = 8, failed = false;
-        (function pump() {
-          while (running < CONC && nx < slice.length) {
+      /* 背景同時把每一段抓下來（存進手機，之後秒開） */
+      (function pump() {
+        var nx = 1, running = 0, CONC = 6;
+        (function go() {
+          while (running < CONC && nx < N) {
             (function (i) {
               running++;
-              Promise.resolve(yunFetchRaw(slice[i])).then(function (b) { res[i] = b; }, function () { failed = true; }).then(function () {
-                running--; done++;
-                if (my !== spk.token) return;
-                if (done >= slice.length) {
-                  if (!failed && res.filter(Boolean).length === slice.length) { try { full = new Blob(res, { type: 'audio/mpeg' }); } catch (_) {} }
-                  return;
-                }
-                pump();
-              });
+              Promise.resolve(FR(slice[i])).then(function (b) { res[i] = b; }, function () {}).then(function () { running--; if (my === spk.token) go(); });
             })(nx++);
           }
         })();
-      }
+      })();
       if (typeof uiToast === 'function') uiToast(T2('開始朗讀…', '开始朗读…', 'Reading…'));
-      playPiece(0);
-      if (slice.length > 1) buildFull();
+      playFrom(0);
     };
   }
-  /* ── 朗讀逐句跟讀：念到哪一句，課文裡那一句就標起來（照 321互動聖經） ── */
+
+  /* ── 朗讀逐句跟讀（v2）：一句一句標；念到「想更深」就自動打開；念到對焦、盼望、靜默、操練、宣告、分享時自動切到那一頁 ── */
   (function () {
     if (typeof spk === 'undefined') return;
     var st = document.createElement('style');
-    st.textContent = '.mk-s.rd-now{background:rgba(232,196,90,.42)!important;border-radius:4px;box-shadow:0 0 0 2px rgba(232,196,90,.42);transition:background .15s}';
+    st.textContent = '.mk-s.rd-now{background:rgba(232,196,90,.45)!important;border-radius:4px;box-shadow:0 0 0 2px rgba(232,196,90,.45);transition:background .15s}';
     document.head.appendChild(st);
-    var hold = 0;
+    var hold = 0, userTab = 0;
     ['wheel', 'touchstart', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, function () { hold = Date.now() + 5000; }, { passive: true }); });
+    var st0 = window.setTab;
+    if (typeof st0 === 'function') window.setTab = function (t) { if (!window.__gxAutoTab) userTab = Date.now(); return st0.apply(this, arguments); };
     var NORM = /[^0-9A-Za-z㐀-鿿]/g;
     var norm = function (t) { return String(t || '').replace(NORM, '').toLowerCase(); };
-    var MAP = null, mapKey = '', cur = null, nT = { i: -1, t: 0 };
-    function spans() { return Array.prototype.slice.call(document.querySelectorAll('.mk-s')); }
-    function grams(n) { if (n.length < 6) return n ? [n] : []; return [n.slice(0, 6), n.slice(Math.floor(n.length / 2) - 3, Math.floor(n.length / 2) + 3), n.slice(-6)]; }
+    var FIELDS = [['greet', 'read'], ['title', 'read'], ['verse', 'read'], ['bigidea', 'read'], ['lead', 'read'], ['sections', 'read'], ['focus', 'focus'], ['hope', 'hope'], ['still', 'still'], ['steps', 'steps'], ['declare', 'declare'], ['share', 'share']];
+    var SECT = null, sectKey = '', MAP = null, mapKey = '', cur = null, nT = { i: -1, t: 0 }, lastSec = '';
+    var G = function (txt) { return yunChunks(spkSanitize(txt)).join(''); };
+    function sections() {   /* 每一部分在朗讀稿裡從第幾個字開始 */
+      var l = state.lesson, out = [{ tab: 'read', at: 0 }];
+      for (var fi = 6; fi < FIELDS.length; fi++) {
+        var f = FIELDS[fi]; if (!l[f[0]] || (Array.isArray(l[f[0]]) && !l[f[0]].length)) continue;
+        var part = {}; for (var k in l) part[k] = l[k];
+        for (var x = fi; x < FIELDS.length; x++) delete part[FIELDS[x][0]];
+        out.push({ tab: f[1], at: G(xzLessonFullText(part, true)).length });
+      }
+      return out;
+    }
+    function secAt(pos) { var t = 'read'; for (var i = 0; i < SECT.length; i++) if (pos >= SECT[i].at) t = SECT[i].tab; return t; }
     function build(els) {
-      var q = spk.queue || [], G = q.join(''), sents = [], buf = '', off = 0, start = 0;
-      var EN = /[。！？；!?;\n]/;
-      for (var i = 0; i < G.length; i++) { buf += G[i]; if (EN.test(G[i])) { sents.push({ a: start, b: i + 1, n: norm(buf) }); start = i + 1; buf = ''; } }
-      if (buf) sents.push({ a: start, b: G.length, n: norm(buf) });
-      var en = els.map(function (e) { var c = e.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.mk-flag,sup'), function (x) { x.parentNode.removeChild(x); }); return norm(c.textContent); });
-      var bg = function (t) { var o = {}; for (var i = 0; i + 1 < t.length; i++) o[t.substr(i, 2)] = 1; return o; };
-      var eb = en.map(bg), ecount = eb.map(function (o) { return Object.keys(o).length; });
-      var score = function (sb, sc, j) { var h = 0, o = eb[j]; for (var k in sb) if (o[k]) h++; var m = Math.min(sc, ecount[j]); return m ? h / m : 0; };
-      var p = 0;
+      var q = spk.queue || [], Gs = q.join(''), sents = [], buf = '', start = 0, EN = /[。！？；!?;\n]/;
+      for (var i = 0; i < Gs.length; i++) { buf += Gs[i]; if (EN.test(Gs[i]) || (Gs[i] === '.' && (i + 1 >= Gs.length || /[\s"”’)]/.test(Gs[i + 1])))) { sents.push({ a: start, b: i + 1, n: norm(buf), r: buf }); start = i + 1; buf = ''; } }
+      if (buf) sents.push({ a: start, b: Gs.length, n: norm(buf), r: buf });
+      var raw = els.map(function (e) { var c = e.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.mk-flag,sup'), function (x) { x.parentNode.removeChild(x); }); return c.textContent; });
+      var en = raw.map(norm);
+      var bg = function (t, r) { var o = {}; if (/[a-z]{3}/i.test(t) && !/[\u3400-\u9fff]/.test(t)) { String(r || t).toLowerCase().split(/[^a-z0-9’']+/).forEach(function (w) { if (w.length >= 3) o[w] = 1; }); return o; } for (var i = 0; i + 1 < t.length; i++) o[t.substr(i, 2)] = 1; return o; };
+      var eb = en.map(function (t, i) { return bg(t, raw[i]); }), ec = eb.map(function (o) { return Object.keys(o).length; });
+      var LAT = !/[\u3400-\u9fff]/.test(Gs.slice(0, 400));
+      var score = function (sb, sc, j) { var h = 0, o = eb[j]; for (var k in sb) if (o[k]) h++; var m = LAT ? Math.max(sc, ec[j]) : Math.min(sc, ec[j]); return m ? h / m : 0; };
+      window.__gxMapDbg = function () { return sents.filter(function (x) { return x.el; }).map(function (x) { return x.r.slice(0, 30) + ' => ' + x.el.textContent.slice(0, 30); }); };
+      var tab = state.tab || 'read', p = 0;
       sents.forEach(function (s) {
-        if (s.n.length < 4) return;
-        var sb = bg(s.n), sc = Object.keys(sb).length, best = -1, bs = 0;
+        if (s.n.length < 4 || (SECT && secAt(s.a) !== tab)) return;
+        var sb = bg(s.n, s.r), sc = Object.keys(sb).length, best = -1, bs = 0;
+        if (sc < 2) return;
         for (var j = p; j < Math.min(en.length, p + 60); j++) {
-          if (ecount[j] < 2) continue;
+          if (ec[j] < 2) continue;
           var v = score(sb, sc, j);
           if (v >= 0.6) { best = j; bs = v; break; }
           if (v > bs) { bs = v; best = j; }
@@ -20139,20 +20147,28 @@ renderChat();
         if (best >= 0 && bs >= 0.45) { s.el = els[best]; p = best; }
       });
       var cum = [], c = 0; q.forEach(function (x) { cum.push(c); c += x.length; });
-      return { sents: sents, cum: cum, total: c };
+      return { sents: sents, cum: cum };
     }
     function charPos() {
       var q = spk.queue || []; if (!q.length) return -1;
       var a = (window.yun && yun.audio) ? yun.audio : null;
       var i = Math.max(0, (spk.idx || 1) - 1);
       if (spk.mode === 'yun' && a) {
-        if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
         if (spk.joined) {
-          var st0 = spk.joinStart || 0;
-          if (spk.joinFull) { var len = 0; for (var k = st0; k < q.length; k++) len += q[k].length; return (MAP.cum[st0] || 0) + Math.min(1, a.currentTime / a.duration) * len; }
-          var pi = st0 + (spk.joinPiece || 0);
+          var s0 = spk.joinStart || 0;
+          if (spk.joinFull) {
+            var t = a.currentTime || 0, k = spk.joinFrom || 0, D = spk.joinDurs || [];
+            var spc = 0, n = 0; for (var x = 0; x < D.length; x++) if (D[x]) { spc += D[x] / Math.max(1, q[s0 + x].length); n++; }
+            spc = n ? spc / n : 0.22;
+            while (s0 + k < q.length - 1) { var d = D[k] || q[s0 + k].length * spc; if (t < d) break; t -= d; k++; }
+            var dd = D[k] || q[s0 + k].length * spc;
+            return (MAP.cum[s0 + k] || 0) + Math.min(1, t / dd) * q[s0 + k].length;
+          }
+          var pi = s0 + (spk.joinPiece || 0);
+          if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[pi] || 0;
           return (MAP.cum[pi] || 0) + Math.min(1, a.currentTime / a.duration) * (q[pi] || '').length;
         }
+        if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
         return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * q[i].length;
       }
       if (nT.i !== i) { nT.i = i; nT.t = Date.now(); }
@@ -20162,20 +20178,52 @@ renderChat();
     function clear() { if (cur) { cur.classList.remove('rd-now'); cur = null; } }
     setInterval(function () {
       try {
-        if (!spk.active || spk.curId !== 'lesson' || state.view !== 'reader') { clear(); return; }
+        if (!spk.active || spk.curId !== 'lesson' || state.view !== 'reader') { clear(); lastSec = ''; return; }
         if (spk.paused) return;
-        var els = spans(); if (!els.length) { clear(); return; }
-        var key = (state.lesson && state.lesson.n) + '|' + els.length + '|' + (spk.queue || []).length + '|' + spk.token + '|' + (state.tab || '');
-        if (key !== mapKey || !MAP) { MAP = build(els); mapKey = key; }
+        var sk = (state.lesson && state.lesson.n) + '|' + (spk.queue || []).length;
+        if (sk !== sectKey) { SECT = sections(); sectKey = sk; }
+        var q = spk.queue || [], c0 = 0; MAP = MAP || { cum: [] };
+        if (!MAP.cum.length || mapKey.indexOf(sk) !== 0) { MAP = { cum: [] }; q.forEach(function (x) { MAP.cum.push(c0); c0 += x.length; }); }
         var pos = charPos(); if (pos < 0) return;
-        var el = null;
-        for (var i = 0; i < MAP.sents.length; i++) { var s = MAP.sents[i]; if (pos >= s.a && pos < s.b) { el = s.el || null; break; } }
-        if (el === cur) return;
-        clear(); if (!el || !el.isConnected) return;
+        /* 自動切到念到的那一頁（你剛自己切過頁就先不搶） */
+        var sec = secAt(pos);
+        if (sec !== lastSec) {
+          lastSec = sec;
+          if (sec !== state.tab && Date.now() - userTab > 8000 && typeof st0 === 'function') {
+            window.__gxAutoTab = 1; try { st0(sec); } finally { window.__gxAutoTab = 0; }
+            clear(); hold = 0;
+          }
+        }
+        var els = Array.prototype.slice.call(document.querySelectorAll('.mk-s')); if (!els.length) return;
+        var key = sk + '|' + els.length + '|' + spk.token + '|' + (state.tab || '');
+        if (key !== mapKey || !MAP.sents) { MAP = build(els); mapKey = key; }
+        var el = null, i;
+        for (i = 0; i < MAP.sents.length; i++) { var s = MAP.sents[i]; if (pos >= s.a && pos < s.b) { el = s.el || null; break; } }
+        if (!el) return;            /* 這一句畫面上沒有（例如引導語）：保留上一句的標示 */
+        if (el === cur && el.isConnected) return;
+        clear(); if (!el.isConnected) return;
+        /* 念到「想更深」就自動打開 */
+        var body = el.closest && el.closest('.deep-body');
+        if (body && !body.classList.contains('open') && typeof window.toggleDeep === 'function') { var kk = (body.id || '').replace('dbody-', ''); if (kk) window.toggleDeep(kk); }
         el.classList.add('rd-now'); cur = el;
         if (Date.now() > hold) { var r = el.getBoundingClientRect(); if (r.top < 120 || r.bottom > innerHeight - 140) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
       } catch (e) {}
     }, 250);
+  })();
+
+  /* ── 自動更新：回到 App、每 30 分鐘檢查一次；有新版就在沒有朗讀、錄音時自動換新版 ── */
+  (function () {
+    if (!('serviceWorker' in navigator) || location.protocol.indexOf('http') !== 0) return;
+    var pending = false;
+    var busy = function () { try { return (spk && spk.active && !spk.paused) || !!document.querySelector('#gxaroot #gxs.on') || (window.MX && MX.busy && MX.busy()); } catch (e) { return false; } };
+    function tryReload() { if (!pending) return; if (busy()) { setTimeout(tryReload, 15000); return; } location.reload(); }
+    function check() { try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update().catch(function () {}); }); } catch (e) {} }
+    try { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {}); } catch (e) {}
+    navigator.serviceWorker.addEventListener('message', function (ev) { if (ev && ev.data && ev.data.type === 'update-available') { pending = true; setTimeout(tryReload, 1500); } });
+    var had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (!had) { had = true; return; } pending = true; setTimeout(tryReload, 1500); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); else if (pending && !busy()) location.reload(); });
+    setTimeout(check, 4000); setInterval(check, 30 * 60 * 1000);
   })();
 })();
 
