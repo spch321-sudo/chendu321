@@ -20015,6 +20015,8 @@ renderChat();
     window.yunPlayJoined = function (text, id, startIdx) {
       var chunks = yunChunks(spkSanitize(text));
       if (!chunks.length) { yunStop(); return; }
+      /* 課文：問候、經文、本課核心＋前言併成第一段一起念（前言強制念出，不會被跳過） */
+      if (id === 'lesson' && chunks.length > 2 && chunks[0].length + chunks[1].length <= 360) chunks = [chunks[0] + chunks[1]].concat(chunks.slice(2));
       var start = (startIdx > 0 && startIdx < chunks.length) ? startIdx : 0;
       var slice = chunks.slice(start), N = slice.length;
       spk.curId = id || ''; spk.curText = text || ''; spk.queue = chunks; spk.idx = start + 1;
@@ -20030,8 +20032,10 @@ renderChat();
         if (spk.joinDurs[i] || !res[i]) return;
         try { var t = new Audio(), u = URL.createObjectURL(res[i]); t.preload = 'metadata'; t.onloadedmetadata = function () { if (isFinite(t.duration) && t.duration > 0) spk.joinDurs[i] = t.duration; try { URL.revokeObjectURL(u); } catch (_) {} }; t.src = u; } catch (_) {}
       }
+      var tried = {};
       function setSrc(blob) {
-        try { if (url) URL.revokeObjectURL(url); } catch (_) {}
+        /* 舊的網址晚幾秒才釋放：iPhone 換音檔時若立刻釋放，會對舊檔丟出「錯誤」，被誤當成這一段壞掉而跳過（前言就是這樣被跳掉的） */
+        var old = url; if (old) setTimeout(function () { try { URL.revokeObjectURL(old); } catch (_) {} }, 8000);
         url = URL.createObjectURL(blob); spk.joinedURL = url;
         a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
         a.loop = false; a.src = url;
@@ -20056,27 +20060,53 @@ renderChat();
             for (var m = i; m < N; m++) measure(m);
             setSrc(rest);
             a.onended = function () { if (my === spk.token) finish(); };
-            a.onerror = function () { if (my === spk.token) finish(); };
+            var ju = url;
+            a.onerror = function () {
+              if (my !== spk.token || url !== ju || !a.error) return;      /* 不是這個檔的錯誤：不理 */
+              if (!tried['j' + i]) { tried['j' + i] = 1; spk.joinFull = false; playOne(i); return; }
+              finish();
+            };
             var p0 = a.play(); if (p0 && p0.catch) p0.catch(function () {});
             return;
           }
         }
+        playOne(i);
+      }
+      /* 一段一段念：每一段（尤其第二段「前言」）一定要念完才往下；出錯先重抓重念一次，不輕易跳過 */
+      function playOne(i) {
+        if (my !== spk.token) return;
         k = i; spk.joinPiece = i;
         Promise.resolve(res[i] || FR(slice[i])).then(function (b) {
           if (my !== spk.token || spk.joinFull) return;
           res[i] = b; measure(i);
           setSrc(b);
-          a.onended = function () { if (my !== spk.token) return; if (isFinite(a.duration) && a.duration > 0) spk.joinDurs[i] = a.duration; playFrom(i + 1); };
-          a.onerror = function () { if (my === spk.token) playFrom(i + 1); };
+          var pu = url, t0 = Date.now();
+          a.onended = function () {
+            if (my !== spk.token || url !== pu) return;
+            /* 剛開始就說「播完了」是假的結束（iPhone 換檔時偶發），重念這一段 */
+            if ((a.currentTime || 0) < 0.8 && Date.now() - t0 < 1500 && !tried['e' + i]) { tried['e' + i] = 1; try { a.currentTime = 0; } catch (_) {} var q = a.play(); if (q && q.catch) q.catch(function () {}); return; }
+            if (isFinite(a.duration) && a.duration > 0) spk.joinDurs[i] = a.duration;
+            playFrom(i + 1);
+          };
+          a.onerror = function () {
+            if (my !== spk.token || url !== pu || !a.error) return;        /* 舊檔或換檔造成的錯誤：不理 */
+            if (!tried[i]) { tried[i] = 1; res[i] = null; playOne(i); return; }
+            playFrom(i + 1);
+          };
           var p = a.play();
-          if (p && p.catch) p.catch(function () { if (my === spk.token && i === 0) yunStop(); });
+          if (p && p.catch) p.catch(function (e) {
+            if (my !== spk.token || url !== pu) return;
+            if (e && e.name === 'AbortError') return;                    /* 換檔中斷，不是失敗 */
+            if (i === 0) yunStop();
+          });
         }, function () {
           if (my !== spk.token) return;
           if (i === 0) {
             spk.active = false;
             if (typeof uiToast === 'function') uiToast(T2('雲端語音連不上，改用裝置內建聲音（若沒聲音請再按一次朗讀）', '云端语音连不上，改用装置内建声音（若没声音请再按一次朗读）', 'Cloud voice unavailable — using the device voice (tap Read again if silent).'));
             spkToggleNative(spk.curText || '', spk.curId);
-          } else playFrom(i + 1);
+          } else if (!tried['f' + i]) { tried['f' + i] = 1; setTimeout(function () { playOne(i); }, 800); }
+          else playFrom(i + 1);
         });
       }
       /* 背景同時把每一段抓下來（存進手機，之後秒開） */
@@ -24272,6 +24302,7 @@ var PRON321 = (function () {
      先保護副詞（疊字＋地、完全地、普遍地、如此地、實在地…），再換名詞，最後還原。 */
   var KEEP = R('(完全|安全|健全|周全|齊全|齐全|保全|成全|十全|偉大|伟大|廣大|广大|強大|强大|巨大|盛大|重大|莫大|極大|极大|寬大|宽大|遠大|远大|高大|浩大|龐大|庞大|普遍|如此|彼此|因此|從此|从此|就此|藉此|借此|由此|至此|為此|为此|自在|實在|实在|存在|所在|自然|公平|和平|太平|水平|神聖|神圣|幸福|永遠|永远|適當|适当|恰當|恰当|妥當|妥当|正當|正当|相當|相当|完美|優美|优美|甜美|格外|意外|額外|额外|另外|([㐀-鿿])\\2)地');
   var DI = [
+    [R('地(?=理(?![解會会睬])|圖|图|點(?![出頭头燃亮])|点(?![出头燃亮])|址|球|極|极|獄|狱|震|勢|势|區(?![分別])|区(?![分别])|方(?![式法向])|位(?![於于])|步|面(?![對对前向])|域|帶(?![到領著來走給回進])|带(?![到领着来走给回进])|形(?![容])|基|殼|壳|層|层|質|质|貌|標|标)'), '帝'],
     [R('地(?=上(?:萬|万|眾|众|列|君|的|人|各|一切|所有|全|諸|诸|百姓|國|国))'), '帝'],
     [R('([在到於于從从落倒向降臨临滿满撒])地(?=[上下裡里中面])'), '$1帝'],
     [R('(全|遍|大|天|此|這|这|那|本|各|之|土|陸|陆|聖|圣|美|福|田|旱|荒|乾|干|死|餘|余|境|領|领|異|异|兩|两|當|当|空|平)地(?![方步位點点圖图理址區区])'), '$1帝']
