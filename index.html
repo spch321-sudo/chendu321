@@ -20225,6 +20225,59 @@ renderChat();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); else if (pending && !busy()) location.reload(); });
     setTimeout(check, 4000); setInterval(check, 30 * 60 * 1000);
   })();
+
+  /* ── 多音字：所有送去朗讀的文字（雲端整段串播、逐段、預先下載、裝置語音）都經過 spkSanitize，
+        在這裡套 321 App 最新的發音規則（PRON321：以詞定音、地 dì 名詞送「帝」…），畫面文字不變 ── */
+  if (typeof spkSanitize === 'function' && !spkSanitize.__pron) {
+    var ss0 = spkSanitize;
+    spkSanitize = function (t) {
+      var r = ss0.apply(this, arguments);
+      try { if (!EN && window.PRON321) r = PRON321.fix(r, LG === 'zs' ? 'cn' : 'tw', ttsVoiceName()); } catch (e) {}
+      return r;
+    };
+    spkSanitize.__pron = 1; try { window.spkSanitize = spkSanitize; } catch (e) {}
+  }
+  /* ── 續播：只在 3 小時內接續；接續時出現「⏮ 從頭讀」，一按就從問候、本課核心、前言整課重念 ── */
+  (function () {
+    var KEY = 'gx_spkAt', HOLD = 3 * 3600 * 1000;
+    function at() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
+    function setAt(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+    if (typeof persistSpkResume === 'function') {
+      var ps0 = persistSpkResume;
+      persistSpkResume = function () {
+        var r = ps0.apply(this, arguments);
+        try { if (spk.curId === 'lesson' && state.lesson && state.spkResume && state.spkResume[state.lesson.n] != null) { var o = at(); o[state.lesson.n] = Date.now(); setAt(o); } } catch (e) {}
+        return r;
+      };
+    }
+    function chip(n) {
+      var old = document.getElementById('gxRestart'); if (old) old.remove();
+      var b = document.createElement('button'); b.id = 'gxRestart';
+      b.textContent = T2('⏮ 從頭讀', '⏮ 从头读', '⏮ From the start');
+      b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:99999;padding:10px 18px;border-radius:22px;border:0;background:#8a5a2b;color:#fff;font-size:16px;box-shadow:0 4px 14px rgba(0,0,0,.25)';
+      b.onclick = function () {
+        b.remove();
+        try { spkStop(); } catch (e) {}
+        try { delete state.spkResume[n]; saveState(); } catch (e) {}
+        setTimeout(function () { try { window.spkReadLesson(); } catch (e) {} }, 120);
+      };
+      document.body.appendChild(b);
+      setTimeout(function () { try { b.remove(); } catch (e) {} }, 9000);
+    }
+    var rl0 = window.spkReadLesson;
+    if (typeof rl0 === 'function') window.spkReadLesson = function () {
+      var l = state.lesson, starting = l && !(spk.active && spk.curId === 'lesson'), resumed = false;
+      try {
+        if (starting && state.spkResume && state.spkResume[l.n]) {
+          var t = at()[l.n] || 0;
+          if (Date.now() - t > HOLD) { delete state.spkResume[l.n]; } else resumed = true;
+        }
+      } catch (e) {}
+      var r = rl0.apply(this, arguments);
+      if (resumed) chip(l.n);
+      return r;
+    };
+  })();
 })();
 
 </script>
@@ -24214,11 +24267,27 @@ var PRON321 = (function () {
     for (var i = 0; i < list.length; i++) s = s.replace(list[i][0], list[i][1]);
     return s;
   }
+  /* 地 dì（名詞）／˙ㄉㄜ（副詞助詞）——晨讀等講義正文「誠實地、單純地」這類副詞極多，
+     所以不採整字 dì，只在名詞語境送同音「帝」：地上萬民、在地上、全地、遍地、此地、大地…
+     先保護副詞（疊字＋地、完全地、普遍地、如此地、實在地…），再換名詞，最後還原。 */
+  var KEEP = R('(完全|安全|健全|周全|齊全|齐全|保全|成全|十全|偉大|伟大|廣大|广大|強大|强大|巨大|盛大|重大|莫大|極大|极大|寬大|宽大|遠大|远大|高大|浩大|龐大|庞大|普遍|如此|彼此|因此|從此|从此|就此|藉此|借此|由此|至此|為此|为此|自在|實在|实在|存在|所在|自然|公平|和平|太平|水平|神聖|神圣|幸福|永遠|永远|適當|适当|恰當|恰当|妥當|妥当|正當|正当|相當|相当|完美|優美|优美|甜美|格外|意外|額外|额外|另外|([㐀-鿿])\\2)地');
+  var DI = [
+    [R('地(?=上(?:萬|万|眾|众|列|君|的|人|各|一切|所有|全|諸|诸|百姓|國|国))'), '帝'],
+    [R('([在到於于從从落倒向降臨临滿满撒])地(?=[上下裡里中面])'), '$1帝'],
+    [R('(全|遍|大|天|此|這|这|那|本|各|之|土|陸|陆|聖|圣|美|福|田|旱|荒|乾|干|死|餘|余|境|領|领|異|异|兩|两|當|当|空|平)地(?![方步位點点圖图理址區区])'), '$1帝']
+  ];
+  function di(s) {
+    if (s.indexOf('地') < 0) return s;
+    s = s.replace(KEEP, function (m) { return m.slice(0, -1) + '\u0001'; });
+    s = run(DI, s);
+    return s.replace(/\u0001/g, '地');
+  }
   /* std：'tw'（臺灣國語）或 'cn'（普通話）；voice：語音名稱（zh-TW-… / zh-CN-…）或語系 */
   function fix(s, std, voice) {
     s = String(s == null ? '' : s);
     if (!/[㐀-鿿]/.test(s)) return s;            // 英文不動
     s = run(SHARED, s);
+    s = di(s);
     var v = String(voice || '');
     var vTW = /zh[-_]TW|zh[-_]HK/i.test(v), vCN = /zh[-_]CN|cmn/i.test(v);
     if (std === 'tw' && vCN) s = run(TW, s);
@@ -24248,7 +24317,7 @@ var PRON321 = (function () {
     if (std === 'cn' && /zh[-_]TW|zh[-_]HK/i.test(v)) return run(CN, s);
     return s;
   }
-  return { fix: fix, fixDiff: fixDiff, hookNative: hookNative, SHARED: SHARED, TW: TW, CN: CN };
+  return { di: di, fix: fix, fixDiff: fixDiff, hookNative: hookNative, SHARED: SHARED, TW: TW, CN: CN };
 })();
 
 
