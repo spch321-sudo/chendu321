@@ -20011,6 +20011,95 @@ renderChat();
   /* ── 背景連續播放（v2）：一段一段接著念，不停頓；剩下的段落都下載好了，就把「剩下的」接成一首從頭播放。
         不在接起來的大檔裡跳時間（iPhone 對串接的 MP3 跳時間不準，會跳過內容） ── */
   var FR = (typeof yunFetchRaw === 'function') ? yunFetchRaw : ((typeof yunFetchBlob === 'function') ? yunFetchBlob : null);
+
+  /* ── 雲端語音每一段都要「真的有聲音」：檢查音檔；壞的（空檔、錯誤頁、被截斷）就丟掉快取、重抓；
+        還是不行就把這段拆成一句一句抓，只跳過真的念不出來的那一句。並記錄在 gx_ttslog 方便追查 ── */
+  var TX = (function () {
+    function VOICE() { try { return (typeof ttsVoiceName === 'function') ? ttsVoiceName() : (spk.voiceOverride || state.azVoice || TTS_VOICE); } catch (e) { return ''; } }
+    function key(piece) { return VOICE() + '|' + yunRateAttr() + '|' + TTS_SIL_SENTENCE + '|' + TTS_SIL_COMMA + '|' + TTS_SIL_ENUM + '|' + piece; }
+    function log(o) { try { var L = JSON.parse(localStorage.getItem('gx_ttslog') || '[]'); o.t = new Date().toISOString().slice(5, 19); L.push(o); localStorage.setItem('gx_ttslog', JSON.stringify(L.slice(-30))); } catch (e) {} }
+    function del(k) { try { ttsDBopen(function (db) { if (!db) return; try { db.transaction('audio', 'readwrite').objectStore('audio').delete(k); } catch (e) {} }); } catch (e) {} }
+    function net(piece) {
+      return fetch(TTS_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice: VOICE(), rate: yunRateAttr(), sil: TTS_SIL_SENTENCE, silc: TTS_SIL_COMMA, sile: TTS_SIL_ENUM, text: piece }) })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
+    }
+    function good(b, piece) {
+      if (!b || !b.size) return Promise.resolve(false);
+      var min = Math.max(1500, String(piece).replace(/\s/g, '').length * (/[A-Za-z]{3}/.test(piece) ? 60 : 280));
+      if (b.size < min) return Promise.resolve(false);
+      return (b.slice(0, 4).arrayBuffer ? b.slice(0, 4).arrayBuffer() : new Response(b.slice(0, 4)).arrayBuffer()).then(function (ab) {
+        var u = new Uint8Array(ab);
+        return (u[0] === 0xFF && (u[1] & 0xE0) === 0xE0) || (u[0] === 0x49 && u[1] === 0x44 && u[2] === 0x33);
+      }, function () { return true; });
+    }
+    function sentences(piece) { return String(piece).match(/[^。！？!?；;]+[。！？!?；;]*/g) || [piece]; }
+    function bySentence(piece, tag) {
+      var ss = sentences(piece).filter(function (x) { return x.trim(); });
+      return Promise.all(ss.map(function (x) {
+        var alt = x.replace(/——|—|…/g, '，').replace(/[「」『』（）()]/g, '');
+        return net(x).then(function (b) { return good(b, x).then(function (ok) { if (ok) return b; throw 0; }); })
+          .catch(function () { return net(alt).then(function (b) { return good(b, alt).then(function (ok) { if (ok) return b; throw 0; }); }); })
+          .catch(function () { log({ k: 'skip', tag: tag, s: x.slice(0, 40) }); return null; });
+      })).then(function (bs) {
+        bs = bs.filter(Boolean); if (!bs.length) throw new Error('all failed');
+        var B = new Blob(bs, { type: 'audio/mpeg' });
+        try { ttsCachePut(key(piece), B); } catch (e) {}
+        return B;
+      });
+    }
+    /* 取得一段語音：快取 → 檢查 → 壞了丟掉重抓 → 再壞就逐句 */
+    function get(piece, tag, fresh) {
+      var k = key(piece);
+      var first = fresh ? Promise.reject(0) : Promise.resolve(FR(piece));
+      return first.then(function (b) { return good(b, piece).then(function (ok) { if (ok) return b; log({ k: 'bad', tag: tag, n: b && b.size }); throw 0; }); })
+        .catch(function () {
+          del(k);
+          return net(piece).then(function (b) { return good(b, piece).then(function (ok) { if (ok) { try { ttsCachePut(k, b); } catch (e) {} return b; } log({ k: 'badnet', tag: tag, n: b && b.size }); throw 0; }); });
+        })
+        .catch(function (e) { log({ k: 'split', tag: tag }); return bySentence(piece, tag); });
+    }
+    /* ── 聲音裡的停頓：把每段語音解碼，找出真正停下來的地方，用來對準標點，讓標示跟聲音同步 ── */
+    var AC = null;
+    function ctx() { try { if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); } } catch (e) {} return AC; }
+    function mp3dur(ab) {   /* 用 MP3 影格數算出「播放器實際播放的長度」（串接後也準） */
+      var u = new Uint8Array(ab), i = 0, n = u.length, t = 0;
+      if (u[0] === 0x49 && u[1] === 0x44 && u[2] === 0x33) i = 10 + ((u[6] & 127) << 21 | (u[7] & 127) << 14 | (u[8] & 127) << 7 | (u[9] & 127));
+      var BR = { 1: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320], 2: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160] };
+      var SR = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] };
+      while (i + 4 < n) {
+        if (u[i] !== 0xFF || (u[i + 1] & 0xE0) !== 0xE0) { i++; continue; }
+        var ver = (u[i + 1] >> 3) & 3, lay = (u[i + 1] >> 1) & 3, bri = u[i + 2] >> 4, sri = (u[i + 2] >> 2) & 3, pad = (u[i + 2] >> 1) & 1;
+        if (ver === 1 || lay !== 1 || bri === 0 || bri === 15 || sri === 3) { i++; continue; }
+        var br = (ver === 3 ? BR[1] : BR[2])[bri] * 1000, sr = SR[ver][sri], spf = ver === 3 ? 1152 : 576;
+        var len = Math.floor((ver === 3 ? 144 : 72) * br / sr) + pad; if (len < 4) { i++; continue; }
+        t += spf / sr; i += len;
+      }
+      return t;
+    }
+    function analyze(b, cb) {
+      new Response(b).arrayBuffer().then(function (ab) {
+        var dur = mp3dur(ab), c = ctx();
+        if (!c) return cb({ dur: dur, pauses: null });
+        var done = function (buf) {
+          try {
+            var d = buf.getChannelData(0), sr = buf.sampleRate, W = Math.round(sr * 0.01), F = Math.floor(d.length / W), r = new Float32Array(F), mx = 0;
+            for (var f = 0; f < F; f++) { var s2 = 0; for (var j = f * W; j < f * W + W; j++) s2 += d[j] * d[j]; r[f] = Math.sqrt(s2 / W); if (r[f] > mx) mx = r[f]; }
+            var th = mx * 0.07, P = [], st = -1;
+            for (var g = 0; g <= F; g++) {
+              var sil = g < F && r[g] < th;
+              if (sil && st < 0) st = g;
+              if (!sil && st >= 0) { if (g - st >= 14 && st > 5 && g < F) P.push([st / 100, g / 100]); st = -1; }
+            }
+            var k = (dur > 0 && buf.duration > 0) ? dur / buf.duration : 1;
+            cb({ dur: dur || buf.duration, pauses: P.map(function (p) { return [p[0] * k, p[1] * k]; }) });
+          } catch (e) { cb({ dur: dur, pauses: null }); }
+        };
+        try { var pr = c.decodeAudioData(ab.slice(0), done, function () { cb({ dur: dur, pauses: null }); }); if (pr && pr.catch) pr.catch(function () {}); } catch (e) { cb({ dur: dur, pauses: null }); }
+      }, function () { cb(null); });
+    }
+    return { get: get, analyze: analyze, log: log };
+  })();
   if (typeof window.yunPlayJoined === 'function' && FR) {
     window.yunPlayJoined = function (text, id, startIdx, noMerge) {
       var chunks = yunChunks(spkSanitize(text));
@@ -20024,7 +20113,7 @@ renderChat();
       var slice = chunks.slice(start), N = slice.length;
       spk.curId = id || ''; spk.curText = text || ''; spk.queue = chunks; spk.idx = start + 1;
       spk.active = true; spk.paused = false; spk.mode = 'yun'; spk.joined = true;
-      spk.joinStart = start; spk.joinPiece = 0; spk.joinFull = false; spk.joinFrom = 0; spk.joinDurs = [];
+      spk.joinStart = start; spk.joinPiece = 0; spk.joinFull = false; spk.joinFrom = 0; spk.joinDurs = []; spk.joinInfo = [];
       var my = ++spk.token;
       if (typeof spkMediaSession === 'function') spkMediaSession('play');
       if (typeof updateSpeakButtons === 'function') updateSpeakButtons();
@@ -20032,6 +20121,7 @@ renderChat();
       var a = yunGetAudio(), res = new Array(N), url = null, k = 0, done = false;
       var pos = function () { try { window.spkPos(a); } catch (_) {} };
       function measure(i) {
+        if (res[i] && !spk.joinInfo[i]) { spk.joinInfo[i] = { pending: 1 }; TX.analyze(res[i], function (inf) { if (my === spk.token) spk.joinInfo[i] = inf || {}; if (inf && inf.dur > 0) spk.joinDurs[i] = inf.dur; }); }
         if (spk.joinDurs[i] || !res[i]) return;
         try { var t = new Audio(), u = URL.createObjectURL(res[i]); t.preload = 'metadata'; t.onloadedmetadata = function () { if (isFinite(t.duration) && t.duration > 0) spk.joinDurs[i] = t.duration; try { URL.revokeObjectURL(u); } catch (_) {} }; t.src = u; } catch (_) {}
       }
@@ -20079,7 +20169,7 @@ renderChat();
       function playOne(i) {
         if (my !== spk.token) return;
         k = i; spk.joinPiece = i;
-        Promise.resolve(res[i] || FR(slice[i])).then(function (b) {
+        Promise.resolve(res[i] || TX.get(slice[i], 'p' + (start + i), tried['x' + i])).then(function (b) {
           if (my !== spk.token || spk.joinFull) return;
           res[i] = b; measure(i);
           setSrc(b);
@@ -20093,7 +20183,7 @@ renderChat();
           };
           a.onerror = function () {
             if (my !== spk.token || url !== pu || !a.error) return;        /* 舊檔或換檔造成的錯誤：不理 */
-            if (!tried[i]) { tried[i] = 1; res[i] = null; playOne(i); return; }
+            if (!tried[i]) { tried[i] = 1; tried['x' + i] = 1; res[i] = null; TX.log({ k: 'playerr', tag: 'p' + (start + i), c: a.error && a.error.code }); playOne(i); return; }
             playFrom(i + 1);
           };
           var p = a.play();
@@ -20121,7 +20211,7 @@ renderChat();
           while (running < CONC && nx < N) {
             (function (i) {
               running++;
-              Promise.resolve(FR(slice[i])).then(function (b) { res[i] = b; }, function () {}).then(function () { running--; if (my === spk.token) go(); });
+              Promise.resolve(TX.get(slice[i], 'p' + (start + i))).then(function (b) { res[i] = b; measure(i); }, function () {}).then(function () { running--; if (my === spk.token) go(); });
             })(nx++);
           }
         })();
@@ -20135,7 +20225,7 @@ renderChat();
   (function () {
     if (typeof spk === 'undefined') return;
     var st = document.createElement('style');
-    st.textContent = '.mk-s.rd-now{background:rgba(232,196,90,.45)!important;border-radius:4px;box-shadow:0 0 0 2px rgba(232,196,90,.45);transition:background .15s}';
+    st.textContent = '.deep-btn.rd-now{background:rgba(232,196,90,.45)!important;border-radius:8px}.mk-s.rd-now{background:rgba(232,196,90,.45)!important;border-radius:4px;box-shadow:0 0 0 2px rgba(232,196,90,.45);transition:background .15s}';
     document.head.appendChild(st);
     var hold = 0, userTab = 0;
     ['wheel', 'touchstart', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, function () { hold = Date.now() + 5000; }, { passive: true }); });
@@ -20159,7 +20249,11 @@ renderChat();
     function secAt(pos) { var t = 'read'; for (var i = 0; i < SECT.length; i++) if (pos >= SECT[i].at) t = SECT[i].tab; return t; }
     function build(els) {
       var q = spk.queue || [], Gs = q.join(''), sents = [], buf = '', start = 0, EN = /[。！？；!?;\n]/;
-      for (var i = 0; i < Gs.length; i++) { buf += Gs[i]; if (EN.test(Gs[i]) || (Gs[i] === '.' && (i + 1 >= Gs.length || /[\s"”’)]/.test(Gs[i + 1])))) { sents.push({ a: start, b: i + 1, n: norm(buf), r: buf }); start = i + 1; buf = ''; } }
+      var CJK = /[\u3400-\u9fff]/.test(Gs.slice(0, 400));
+      for (var i = 0; i < Gs.length; i++) { buf += Gs[i];
+        /* 中文：段落之間接起來的空白也是一句的結尾（例如「兩條道路：」後面接下一段，不能併成一句） */
+        var paraEnd = CJK && /[ \u3000]/.test(Gs[i]) && i > 0 && !/[A-Za-z0-9 ]/.test(Gs[i - 1]);
+        if (paraEnd || EN.test(Gs[i]) || (Gs[i] === '.' && (i + 1 >= Gs.length || /[\s"”’)]/.test(Gs[i + 1])))) { sents.push({ a: start, b: i + 1, n: norm(buf), r: buf }); start = i + 1; buf = ''; } }
       if (buf) sents.push({ a: start, b: Gs.length, n: norm(buf), r: buf });
       var raw = els.map(function (e) { var c = e.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.mk-flag,sup'), function (x) { x.parentNode.removeChild(x); }); return c.textContent; });
       var en = raw.map(norm);
@@ -20181,39 +20275,75 @@ renderChat();
         }
         if (best >= 0 && bs >= 0.45) { s.el = els[best]; p = best; }
       });
+      /* 「我們再想得更深一點」這種引導語：直接標到下一句（想更深的題目） */
+      for (var z = sents.length - 2; z >= 0; z--) if (!sents[z].el && /想得更深|想得更深|go deeper|dig deeper/i.test(sents[z].r) && sents[z + 1].el) sents[z].el = sents[z + 1].el;
       var cum = [], c = 0; q.forEach(function (x) { cum.push(c); c += x.length; });
       return { sents: sents, cum: cum };
     }
     /* 依實際語音長度，把時間換成字的位置：每個字一樣長，標點另加停頓（照送給語音的停頓毫秒） */
     var TW = {};
-    function pieceAt(txt, t, dur) {
-      var L = txt.length; if (!L) return 0;
-      if (!(dur > 0) || !isFinite(dur)) return 0;
-      var k = txt + '|' + Math.round(dur * 10), c = TW[k];
-      if (!c) {
-        var sS = (typeof TTS_SIL_SENTENCE === 'number' ? TTS_SIL_SENTENCE : 140) / 1000 + 0.12,
-            sC = (typeof TTS_SIL_COMMA === 'number' ? TTS_SIL_COMMA : 140) / 1000 + 0.05,
-            sE = (typeof TTS_SIL_ENUM === 'number' ? TTS_SIL_ENUM : 260) / 1000;
-        var w = new Array(L), P = 0, n = 0, lat = /[A-Za-z0-9]/;
-        for (var j = 0; j < L; j++) {
-          var ch = txt[j], pz = 0, cw = 1;
-          if ('。！？!?；;'.indexOf(ch) >= 0 || (ch === '.' && txt[j + 1] === ' ')) { pz = sS; cw = 0; }
-          else if ('，,：:'.indexOf(ch) >= 0) { pz = sC; cw = 0; }
-          else if (ch === '、') { pz = sE; cw = 0; }
-          else if (/[\s「」『』（）()《》“”"'—…\-]/.test(ch)) cw = 0;
-          else if (lat.test(ch)) cw = 0.32;
-          w[j] = [cw, pz]; P += pz; n += cw;
-        }
-        var lead = 0.06, cd = Math.max(0.04, (dur - lead - P) / Math.max(1, n)), acc = lead;
-        if ((dur - lead - P) / Math.max(1, n) < 0.04) { var sc = Math.max(0.1, (dur - lead) / (P + n * 0.04)); P *= sc; cd = 0.04 * sc; for (var z = 0; z < L; z++) w[z][1] *= sc; }
-        c = new Array(L + 1); c[0] = acc;
-        for (var y = 0; y < L; y++) { acc += w[y][0] * cd; c[y + 1] = acc; acc += w[y][1]; }
-        TW[k] = c;
-        var ks = Object.keys(TW); if (ks.length > 60) delete TW[ks[0]];
+    function model(txt, dur) {
+      var L = txt.length, k = txt + '|' + Math.round(dur * 100), c = TW[k];
+      if (c) return c;
+      var sS = 0.6, sC = 0.5, sE = 0.45;
+      var w = new Array(L), P = 0, n = 0, lat = /[A-Za-z0-9]/;
+      for (var j = 0; j < L; j++) {
+        var ch = txt[j], pz = 0, cw = 1;
+        if ('。！？!?；;'.indexOf(ch) >= 0 || (ch === '.' && txt[j + 1] === ' ')) { pz = sS; cw = 0; }
+        else if ('，,：:'.indexOf(ch) >= 0) { pz = sC; cw = 0; }
+        else if (ch === '、') { pz = sE; cw = 0; }
+        else if (/[\s「」『』（）()《》“”"'—…\-]/.test(ch)) cw = 0;
+        else if (lat.test(ch)) cw = 0.32;
+        w[j] = [cw, pz]; P += pz; n += cw;
       }
+      var lead = 0.08, sp = dur - lead - P, cd = sp / Math.max(1, n);
+      if (cd < 0.12) { var sc = Math.max(0.05, (dur - lead) / (P + n * 0.12)); for (var z = 0; z < L; z++) w[z][1] *= sc * 1; cd = 0.12 * sc; }
+      c = new Array(L + 1); var acc = lead; c[0] = acc;
+      for (var y = 0; y < L; y++) { acc += w[y][0] * cd; c[y + 1] = acc; acc += w[y][1]; }
+      c.w = w; TW[k] = c;
+      var ks = Object.keys(TW); if (ks.length > 80) delete TW[ks[0]];
+      return c;
+    }
+    var AN = {};
+    /* 把聲音裡實際的停頓，一個一個對到文字的標點，得到「時間↔字」的錨點 */
+    function anchors(txt, dur, pauses) {
+      var k = txt + '|' + Math.round(dur * 100) + '|' + pauses.length;
+      if (AN[k]) return AN[k];
+      var c = model(txt, dur), L = txt.length, PU = [];
+      for (var j = 0; j < L; j++) if (c.w[j][1] > 0 || txt[j] === '—' && txt[j - 1] !== '—') PU.push(j);
+      /* 動態規劃對齊：停頓 ↔ 標點，順序不變；可略過沒停頓的標點、或不是標點造成的停頓 */
+      var n = PU.length, m = pauses.length, INF = 1e9, SKP = 0.35, SKQ = 1.2;
+      var E = PU.map(function (j) { return c[j]; });
+      var D = [], Bk = [];
+      for (var x = 0; x <= n; x++) { D.push(new Float64Array(m + 1).fill(INF)); Bk.push(new Int8Array(m + 1)); }
+      D[0][0] = 0;
+      for (x = 0; x <= n; x++) for (var y = 0; y <= m; y++) {
+        var v = D[x][y]; if (v >= INF) continue;
+        if (x < n && v + SKP < D[x + 1][y]) { D[x + 1][y] = v + SKP; Bk[x + 1][y] = 1; }
+        if (y < m && v + SKQ < D[x][y + 1]) { D[x][y + 1] = v + SKQ; Bk[x][y + 1] = 2; }
+        if (x < n && y < m) { var cst = v + Math.min(3, Math.abs(E[x] - pauses[y][0]) / 1.5); if (cst < D[x + 1][y + 1]) { D[x + 1][y + 1] = cst; Bk[x + 1][y + 1] = 3; } }
+      }
+      var A = [[0, 0]], pairs = []; x = n; y = m;
+      while (x > 0 || y > 0) { var bk = Bk[x][y]; if (bk === 3) { pairs.push([PU[x - 1], pauses[y - 1]]); x--; y--; } else if (bk === 1) x--; else if (bk === 2) y--; else break; }
+      pairs.reverse().forEach(function (pr) { A.push([pr[1][0], pr[0] + 0.6]); A.push([pr[1][1], pr[0] + 1]); });
+      A.push([dur, L]);
+      var B = [A[0]]; for (var z = 1; z < A.length; z++) if (A[z][0] > B[B.length - 1][0] && A[z][1] >= B[B.length - 1][1]) B.push(A[z]);
+      AN[k] = B; var ks = Object.keys(AN); if (ks.length > 80) delete AN[ks[0]];
+      return B;
+    }
+    function pieceAt(txt, t, dur, info) {
+      var L = txt.length; if (!L) return 0;
+      if (info && info.dur > 0) dur = info.dur;
+      if (!(dur > 0) || !isFinite(dur)) return 0;
+      if (info && info.pauses && info.pauses.length) {
+        var A = anchors(txt, dur, info.pauses);
+        for (var i = 1; i < A.length; i++) if (t < A[i][0]) { var a0 = A[i - 1], a1 = A[i]; return Math.min(L, a0[1] + (t - a0[0]) / Math.max(0.001, a1[0] - a0[0]) * (a1[1] - a0[1])); }
+        return L;
+      }
+      var c = model(txt, dur);
       if (t <= c[0]) return 0;
       var lo = 0, hi = L;
-      while (lo < hi) { var m = (lo + hi + 1) >> 1; if (c[m] <= t) lo = m; else hi = m - 1; }
+      while (lo < hi) { var mm = (lo + hi + 1) >> 1; if (c[mm] <= t) lo = mm; else hi = mm - 1; }
       return Math.min(L, lo + 0.5);
     }
     function charPos() {
@@ -20227,13 +20357,14 @@ renderChat();
             var t = a.currentTime || 0, k = spk.joinFrom || 0, D = spk.joinDurs || [];
             var spc = 0, n = 0; for (var x = 0; x < D.length; x++) if (D[x]) { spc += D[x] / Math.max(1, q[s0 + x].length); n++; }
             spc = n ? spc / n : 0.22;
-            while (s0 + k < q.length - 1) { var d = D[k] || q[s0 + k].length * spc; if (t < d) break; t -= d; k++; }
-            var dd = D[k] || q[s0 + k].length * spc;
-            return (MAP.cum[s0 + k] || 0) + (D[k] ? pieceAt(q[s0 + k], t, dd) : Math.min(1, t / dd) * q[s0 + k].length);
+            var IF = spk.joinInfo || [];
+            while (s0 + k < q.length - 1) { var d = (IF[k] && IF[k].dur) || D[k] || q[s0 + k].length * spc; if (t < d) break; t -= d; k++; }
+            var dd = (IF[k] && IF[k].dur) || D[k] || q[s0 + k].length * spc;
+            return (MAP.cum[s0 + k] || 0) + ((D[k] || (IF[k] && IF[k].dur)) ? pieceAt(q[s0 + k], t, dd, IF[k]) : Math.min(1, t / dd) * q[s0 + k].length);
           }
           var pi = s0 + (spk.joinPiece || 0);
           if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[pi] || 0;
-          return (MAP.cum[pi] || 0) + pieceAt(q[pi] || '', a.currentTime, a.duration);
+          return (MAP.cum[pi] || 0) + pieceAt(q[pi] || '', a.currentTime, a.duration, (spk.joinInfo || [])[spk.joinPiece || 0]);
         }
         if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
         return (MAP.cum[i] || 0) + pieceAt(q[i], a.currentTime, a.duration);
@@ -20261,7 +20392,7 @@ renderChat();
             clear(); hold = 0;
           }
         }
-        var els = Array.prototype.slice.call(document.querySelectorAll('.mk-s')); if (!els.length) return;
+        var els = Array.prototype.slice.call(document.querySelectorAll('.mk-s, .deep-btn')); if (!els.length) return;
         var key = sk + '|' + els.length + '|' + spk.token + '|' + (state.tab || '');
         if (key !== mapKey || !MAP.sents) { MAP = build(els); mapKey = key; }
         var el = null, i;
@@ -21434,7 +21565,7 @@ var SAGE321 = (function () {
       el.id = C.el; el.className = 'gxz';
       GXA_root().appendChild(el);
     }
-    el.className = ('xz ' + (XZ.open ? 'on' : '')).replace(/\s+$/, '');
+    el.className = ('gxz ' + (XZ.open ? 'on' : '')).replace(/\s+$/, '');
     if (!XZ.open) return;
     var oldB = document.getElementById('gxxzb'), oldTop = oldB ? oldB.scrollTop : 0;
     var inp = document.getElementById('gxxzin'), typed = inp ? inp.value : '';
@@ -23924,7 +24055,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
       ${bgmBlob ? `<p class="gxlab">${esc(T('音量', 'Volume'))}</p>${chips([[0.12, T('小聲', 'Soft')], [0.22, T('適中', 'Medium')], [0.38, T('明顯', 'Strong')]], g.vol, 'vol')}` : ''}
       <p class="gxlab">🎙 ${esc(T('錄製', 'Record'))}</p>
       ${chips([['a', T('🎙 只有聲音', '🎙 Voice only')], ['c', T('🖼 卡片畫面', '🖼 Card video')], ['s', T('📷 自拍畫面', '📷 Selfie video')]], recMode, 'rmode')}
-      <div id="gxsSelfWrap" style="${recMode === 's' ? '' : 'display:none'}"><video id="gxsSelf" muted playsinline autoplay style="width:150px;height:150px;border-radius:50%;object-fit:cover;transform:scaleX(-1);display:block;margin:8px auto;background:#000;border:3px solid var(--brass)"></video></div>
+      <div id="gxsSelfWrap" style="${recMode === 's' ? '' : 'display:none'}"><div style="width:156px;height:156px;margin:8px auto;border-radius:50%;overflow:hidden;border:3px solid var(--brass);background:#000;-webkit-mask-image:-webkit-radial-gradient(white,black);isolation:isolate;position:relative"><video id="gxsSelf" muted playsinline autoplay style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;-webkit-transform:scaleX(-1);transform:scaleX(-1)"></video></div></div>
       <div class="gxrec"><span id="gxsRecSt">${on ? '<span class="recdot"></span>' + esc(recLabel) : esc(T('準備好了就按開始', 'Ready when you are'))}</span><b id="gxsRecTm">${mmss(recSec)}</b></div>
       <button class="btn ${on ? 'danger' : 'pri'}" style="width:100%" data-k="rec">${on ? esc(T('■ 停止並完成', '■ Stop and finish')) : esc(T('● 開始錄製', '● Start recording'))}</button>
       ${bgmBlob ? `<p class="gxlab">${esc(T('不錄音，只配音樂', 'Music only, no voice'))}</p>
@@ -24682,7 +24813,7 @@ html.gxa-lock,html.gxa-lock body{overflow:hidden}
 .gxroot .gxz{z-index:300}
 .gxroot .xzm,.gxroot .xzhi,.gxroot .xzsv{font-size:calc(var(--fs,17px)*.94)}
 .gxroot .xzin,.gxroot #gxxzin{font-size:max(16px,calc(var(--fs,17px)*.94))}
-body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxaov.on) .xz-fab,body:has(#gxaov.on) #fab,body:has(#gxaroot #gxs.on) .xz-fab,body:has(#gxaroot #gxs.on) #fab{display:none!important}.gxroot #gxs,.gxroot .gxsmask{z-index:310}
+body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxaov.on) .xz-fab,body:has(#gxaov.on) #fab,body:has(#gxaroot #gxs.on) .xz-fab,body:has(#gxaroot #gxs.on) #fab{display:none!important}.gxroot #gxs,.gxroot .gxsmask{z-index:310}#gxaroot #gxsSub,#gxaroot #gxsRv{z-index:330!important}
 .gxroot .chn{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--paper);font-size:17px}
 .gxroot .chrow .s{display:block;font-size:calc(var(--fs)*.76);color:var(--dusk);margin-top:2px}
 `;
