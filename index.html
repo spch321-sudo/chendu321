@@ -20012,11 +20012,14 @@ renderChat();
         不在接起來的大檔裡跳時間（iPhone 對串接的 MP3 跳時間不準，會跳過內容） ── */
   var FR = (typeof yunFetchRaw === 'function') ? yunFetchRaw : ((typeof yunFetchBlob === 'function') ? yunFetchBlob : null);
   if (typeof window.yunPlayJoined === 'function' && FR) {
-    window.yunPlayJoined = function (text, id, startIdx) {
+    window.yunPlayJoined = function (text, id, startIdx, noMerge) {
       var chunks = yunChunks(spkSanitize(text));
       if (!chunks.length) { yunStop(); return; }
       /* 課文：問候、經文、本課核心＋前言併成第一段一起念（前言強制念出，不會被跳過） */
-      if (id === 'lesson' && chunks.length > 2 && chunks[0].length + chunks[1].length <= 360) chunks = [chunks[0] + chunks[1]].concat(chunks.slice(2));
+      var merged = false;
+      var NM = 0; try { NM = +localStorage.getItem('gx_nomerge') || 0; } catch (e) {}
+      if (!noMerge && !NM && id === 'lesson' && chunks.length > 2 && chunks[0].length + chunks[1].length <= 320) merged = true;
+      if (merged) chunks = [chunks[0] + chunks[1]].concat(chunks.slice(2));
       var start = (startIdx > 0 && startIdx < chunks.length) ? startIdx : 0;
       var slice = chunks.slice(start), N = slice.length;
       spk.curId = id || ''; spk.curText = text || ''; spk.queue = chunks; spk.idx = start + 1;
@@ -20101,6 +20104,8 @@ renderChat();
           });
         }, function () {
           if (my !== spk.token) return;
+          if (i === 0 && merged && start === 0) { try { localStorage.setItem('gx_nomerge', '1'); } catch (e) {} window.yunPlayJoined(text, id, 0, true); return; }   /* 合併段抓不到：改回分開的兩段（問候＋核心、前言）再試 */
+          if (i === 0 && !tried.f0) { tried.f0 = 1; setTimeout(function () { playOne(0); }, 900); return; }
           if (i === 0) {
             spk.active = false;
             if (typeof uiToast === 'function') uiToast(T2('雲端語音連不上，改用裝置內建聲音（若沒聲音請再按一次朗讀）', '云端语音连不上，改用装置内建声音（若没声音请再按一次朗读）', 'Cloud voice unavailable — using the device voice (tap Read again if silent).'));
@@ -20179,6 +20184,38 @@ renderChat();
       var cum = [], c = 0; q.forEach(function (x) { cum.push(c); c += x.length; });
       return { sents: sents, cum: cum };
     }
+    /* 依實際語音長度，把時間換成字的位置：每個字一樣長，標點另加停頓（照送給語音的停頓毫秒） */
+    var TW = {};
+    function pieceAt(txt, t, dur) {
+      var L = txt.length; if (!L) return 0;
+      if (!(dur > 0) || !isFinite(dur)) return 0;
+      var k = txt + '|' + Math.round(dur * 10), c = TW[k];
+      if (!c) {
+        var sS = (typeof TTS_SIL_SENTENCE === 'number' ? TTS_SIL_SENTENCE : 140) / 1000 + 0.12,
+            sC = (typeof TTS_SIL_COMMA === 'number' ? TTS_SIL_COMMA : 140) / 1000 + 0.05,
+            sE = (typeof TTS_SIL_ENUM === 'number' ? TTS_SIL_ENUM : 260) / 1000;
+        var w = new Array(L), P = 0, n = 0, lat = /[A-Za-z0-9]/;
+        for (var j = 0; j < L; j++) {
+          var ch = txt[j], pz = 0, cw = 1;
+          if ('。！？!?；;'.indexOf(ch) >= 0 || (ch === '.' && txt[j + 1] === ' ')) { pz = sS; cw = 0; }
+          else if ('，,：:'.indexOf(ch) >= 0) { pz = sC; cw = 0; }
+          else if (ch === '、') { pz = sE; cw = 0; }
+          else if (/[\s「」『』（）()《》“”"'—…\-]/.test(ch)) cw = 0;
+          else if (lat.test(ch)) cw = 0.32;
+          w[j] = [cw, pz]; P += pz; n += cw;
+        }
+        var lead = 0.06, cd = Math.max(0.04, (dur - lead - P) / Math.max(1, n)), acc = lead;
+        if ((dur - lead - P) / Math.max(1, n) < 0.04) { var sc = Math.max(0.1, (dur - lead) / (P + n * 0.04)); P *= sc; cd = 0.04 * sc; for (var z = 0; z < L; z++) w[z][1] *= sc; }
+        c = new Array(L + 1); c[0] = acc;
+        for (var y = 0; y < L; y++) { acc += w[y][0] * cd; c[y + 1] = acc; acc += w[y][1]; }
+        TW[k] = c;
+        var ks = Object.keys(TW); if (ks.length > 60) delete TW[ks[0]];
+      }
+      if (t <= c[0]) return 0;
+      var lo = 0, hi = L;
+      while (lo < hi) { var m = (lo + hi + 1) >> 1; if (c[m] <= t) lo = m; else hi = m - 1; }
+      return Math.min(L, lo + 0.5);
+    }
     function charPos() {
       var q = spk.queue || []; if (!q.length) return -1;
       var a = (window.yun && yun.audio) ? yun.audio : null;
@@ -20192,14 +20229,14 @@ renderChat();
             spc = n ? spc / n : 0.22;
             while (s0 + k < q.length - 1) { var d = D[k] || q[s0 + k].length * spc; if (t < d) break; t -= d; k++; }
             var dd = D[k] || q[s0 + k].length * spc;
-            return (MAP.cum[s0 + k] || 0) + Math.min(1, t / dd) * q[s0 + k].length;
+            return (MAP.cum[s0 + k] || 0) + (D[k] ? pieceAt(q[s0 + k], t, dd) : Math.min(1, t / dd) * q[s0 + k].length);
           }
           var pi = s0 + (spk.joinPiece || 0);
           if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[pi] || 0;
-          return (MAP.cum[pi] || 0) + Math.min(1, a.currentTime / a.duration) * (q[pi] || '').length;
+          return (MAP.cum[pi] || 0) + pieceAt(q[pi] || '', a.currentTime, a.duration);
         }
         if (!(a.duration > 0) || !isFinite(a.duration)) return MAP.cum[i] || 0;
-        return (MAP.cum[i] || 0) + Math.min(1, a.currentTime / a.duration) * q[i].length;
+        return (MAP.cum[i] || 0) + pieceAt(q[i], a.currentTime, a.duration);
       }
       if (nT.i !== i) { nT.i = i; nT.t = Date.now(); }
       var cps = /[A-Za-z]{3}/.test(q[i] || '') ? 14 : 4.6 * (typeof state.spkRate === 'number' ? state.spkRate : 1);
@@ -20236,9 +20273,20 @@ renderChat();
         var body = el.closest && el.closest('.deep-body');
         if (body && !body.classList.contains('open') && typeof window.toggleDeep === 'function') { var kk = (body.id || '').replace('dbody-', ''); if (kk) window.toggleDeep(kk); }
         el.classList.add('rd-now'); cur = el;
-        if (Date.now() > hold) { var r = el.getBoundingClientRect(); if (r.top < 120 || r.bottom > innerHeight - 140) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        if (Date.now() > hold) follow(el);
       } catch (e) {}
-    }, 250);
+    }, 100);
+    /* 標示的句子快到畫面下方（約六成高）之前，就先把它捲到可視範圍的中間；不等到底才動 */
+    function follow(el) {
+      var r = el.getBoundingClientRect(), H = innerHeight, bot = H;
+      try { var bars = document.querySelectorAll('.reader-bar, .rd-bar, .bottom-bar, nav, .spk-bar, .toolbar'); for (var b = 0; b < bars.length; b++) { var br = bars[b].getBoundingClientRect(), cs = getComputedStyle(bars[b]); if ((cs.position === 'fixed' || cs.position === 'sticky') && br.top > H * 0.5 && br.top < bot) bot = br.top; } } catch (e) {}
+      var top = 70, vis = bot - top, mid = top + vis * 0.42;
+      if (r.bottom > top + vis * 0.66 || r.top < top + 10) {
+        var dy = (r.top + r.height / 2) - mid;
+        if (r.height > vis * 0.6) dy = r.top - (top + vis * 0.12);
+        if (Math.abs(dy) > 8) window.scrollBy({ top: dy, behavior: 'smooth' });
+      }
+    }
   })();
 
   /* ── 自動更新：回到 App、每 30 分鐘檢查一次；有新版就在沒有朗讀、錄音時自動換新版 ── */
