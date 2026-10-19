@@ -22489,9 +22489,9 @@ var GXS = (function () {
   let hymns = null, bgmBlob = null, bgmName = '', bgmCredit = '', hymnEl = null, hymnPrev = null;
   const songBase = {};
 
-  const SERIF = () => isSC() ? '"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",Georgia,serif'
+  const SERIF0 = () => isSC() ? '"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",Georgia,serif'
     : (EN ? 'Georgia,"Times New Roman",serif' : '"Noto Serif TC","Songti TC","STSong","PMingLiU",Georgia,serif');
-  const SANS = () => isSC() ? '"Noto Sans SC","PingFang SC","Microsoft YaHei","Heiti SC",sans-serif'
+  const SANS0 = () => isSC() ? '"Noto Sans SC","PingFang SC","Microsoft YaHei","Heiti SC",sans-serif'
     : (EN ? '-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif' : '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif');
 
   /* ── 畫卡片 ─────────────────────────────────────────────────── */
@@ -22691,7 +22691,7 @@ var GXS = (function () {
     origDX = Math.max(x1c / W, Math.min(x2c / W, origDX));
     origDY = Math.max(-(ty - mg) / H, Math.min((H - mg - (ty + total)) / H, origDY));
     const dark = lum > .55;
-    const ink = dark ? '#2a2118' : '#ffffff', sub = dark ? 'rgba(42,33,24,.92)' : 'rgba(255,255,255,.95)';
+    const inkC0 = inkVal(), ink = inkC0 || (dark ? '#2a2118' : '#ffffff'), sub = inkC0 || (dark ? 'rgba(42,33,24,.92)' : 'rgba(255,255,255,.95)');
     ctx.save(); ctx.translate(origDX * W, origDY * H);
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     ctx.shadowColor = dark ? 'rgba(255,255,255,.65)' : 'rgba(0,0,0,.55)'; ctx.shadowBlur = Math.round(10 * S2);
@@ -22716,7 +22716,7 @@ var GXS = (function () {
   function drawCard(cv, W, H) {
     if (isFull()) return drawFull(cv, W, H);
     const ctx = cv.getContext('2d'); cv.width = W; cv.height = H;
-    const Tp = TPL[st().tpl];
+    const Tp = inkT(TPL[st().tpl]);
     const Sm = Math.min(W, H), F = Sm / 1080, pad = Math.round(Sm * .085), iw = W - pad * 2;
     const wide = W > H * 1.2;
     let colW = wide ? Math.min(iw, Math.round(H * 1.5)) : iw;
@@ -23262,6 +23262,305 @@ var GXS = (function () {
     q1('#pxMore', b).onclick = () => run(false);
     if (pxS.items.length) draw(); else run(true);
   }
+  /* ══ v1.3（2026-10-19）：AI 生圖、AI 配樂、內建字體與文字顏色、相機打不開的說明
+     照《321互動聖經》v2.19–v2.20；沒有 AI 影片（主耀已要求刪除）。
+     離開 App 去第三方工具的流程，一律先存「經文＋狀態」到 localStorage（key 含書卷代號），回來自動接回。 ══ */
+  const TS = (zh, en) => sc(T(zh, en));
+  const BKEY = String((window.GX_BOOK && window.GX_BOOK.slug) || (location.pathname.split('/')[1] || 'bk'));
+  const RKEY = k => 'gx_' + k + '_resume_' + BKEY;
+  const lsPut = (k, o) => { try { localStorage.setItem(RKEY(k), JSON.stringify(o)); } catch (e) {} };
+  const lsTake = k => { let o = null; try { o = JSON.parse(localStorage.getItem(RKEY(k)) || 'null'); localStorage.removeItem(RKEY(k)); } catch (e) {} return o; };
+  const itemSnap = () => item ? { t: item.t, ref: item.ref, n0: item.n0, plain: item.plain } : null;
+  const isFramed = () => { try { return window.top !== window.self; } catch (e) { return true; } };
+  const inAppBrowser = () => /Line\/|FBAN|FBAV|Instagram|MicroMessenger|Messenger|Telegram|MQQBrowser|Snapchat|TikTok|WhatsApp/i.test(navigator.userAgent || '');
+  const copyText = async (ta) => {
+    try { await navigator.clipboard.writeText(ta.value); }
+    catch (e) { try { ta.focus(); ta.select(); document.execCommand('copy'); } catch (_) {} }
+  };
+  const copyQuiet = (txt) => { try { const q = navigator.clipboard.writeText(txt); if (q && q.catch) q.catch(() => {}); } catch (e) {} };
+  const E2 = a => esc(sc(L2(a)));
+  const chipRow2 = (id, arr, cur) => `<div class="gxchips" id="${id}">` + arr.map(x => `<button data-v="${x[0]}" class="${x[0] === cur ? 'on' : ''}">${E2(x[1])}</button>`).join('') + '</div>';
+  const toolLinks = (arr, attr) => arr.map(x => `<a class="btn" ${attr}="1" style="display:block;margin-top:6px;text-align:left;text-decoration:none" target="_blank" rel="noopener" href="${x[0]}">${esc(x[1])}<span class="xs muted" style="margin-left:8px">${esc(sc(L2(x[2])))}</span></a>`).join('');
+
+  /* ── AI 生圖 ── */
+  const AIG_STYLES = [
+    ['sc', ['風景', 'Landscape'], 'majestic natural landscape, golden hour light, soft clouds, serene and peaceful'],
+    ['wc', ['水彩', 'Watercolor'], 'soft watercolor painting, gentle pastel colors, dreamy and hopeful'],
+    ['oil', ['油畫', 'Oil painting'], 'classic oil painting, rich warm colors, reverent atmosphere'],
+    ['lt', ['光影', 'Heavenly light'], 'rays of heavenly light breaking through clouds, cinematic, glowing, holy atmosphere'],
+    ['nt', ['星空', 'Starry night'], 'peaceful starry night sky, deep blue and gold, calm and awe-inspiring'],
+    ['fl', ['花草', 'Flowers'], 'lush flowers and green pastures, morning dew, soft sunlight, gentle and fresh']
+  ];
+  const AIG_SHAPES = [['p', ['直式 9:16', 'Portrait 9:16'], 576, 1024, '9:16'], ['w', ['橫式 16:9', 'Landscape 16:9'], 1024, 576, '16:9'], ['s', ['方形', 'Square'], 1024, 1024, '1:1']];
+  const AIG_TOOLS = () => [
+    ['https://gemini.google.com/app', 'Google Gemini', ['免費、需 Google 帳號', 'Free, Google account']],
+    ['https://chatgpt.com/', 'ChatGPT', ['免費版有每日張數限制、需登入', 'Free tier has a daily limit, sign-in']],
+    ['https://www.doubao.com/chat/', T('豆包 Doubao', 'Doubao (豆包)'), ['免費、中文提示詞很好用（中國大陸常用）', 'Free; works well with Chinese prompts']],
+    ['https://pollinations.ai/', 'Pollinations', ['免費、免註冊', 'Free, no sign-up']]
+  ];
+  let aigSt = 'sc', aigSh = 'p', aigNote = '', aigPr0 = '';
+  function aigPrompt() {
+    const s = AIG_STYLES.find(x => x[0] === aigSt) || AIG_STYLES[0];
+    const sh = AIG_SHAPES.find(x => x[0] === aigSh) || AIG_SHAPES[0];
+    const verse = item ? String(item.t || '').replace(/\s+/g, ' ').trim().slice(0, 160) : '';
+    const theme = (aigNote || '').trim();
+    return 'A beautiful, uplifting Christian inspirational background image, ' + s[2] + '. '
+      + (theme ? 'Scene: ' + theme + '. ' : '')
+      + (verse ? 'Mood inspired by this Bible verse: "' + verse + '". ' : '')
+      + 'No text, no letters, no words, no watermark, no people\'s faces; leave calm open space for verse text. Aspect ratio ' + sh[4] + ', high quality.';
+  }
+  function aiSave(pr) { lsPut('ai', { ts: Date.now(), item: itemSnap(), note, st: aigSt, sh: aigSh, sc: aigNote, pr: pr || '' }); }
+  function fileToPhoto(f) {
+    const r = new FileReader();
+    r.onload = async () => {
+      try { const im = await loadImg(String(r.result), false); setPhoto(im, ''); plSave(im, ''); paint(); say(T('已選好這張相片', 'Photo selected')); }
+      catch (e) { say(T('這張相片讀不出來', 'Could not read this photo')); }
+    };
+    r.readAsDataURL(f);
+  }
+  function openAiGen() {
+    if (!item) return;
+    const b = sub(TS('✨ 用 AI 生成美圖', '✨ Make a picture with AI'), `
+      <p class="xs muted" style="line-height:1.6;margin:0 0 6px">${esc(TS('不用找圖：用文字描述想要的畫面，免費 AI 工具幫你畫。已依這節經文寫好提示詞，可以直接用，也可以改。', 'No need to search: describe the scene and a free AI tool draws it. A prompt based on this verse is ready — use it or edit it.'))}</p>
+      <p class="gxlab">${esc(TS('畫風', 'Style'))}</p>${chipRow2('aigSt', AIG_STYLES, aigSt)}
+      <p class="gxlab">${esc(TS('尺寸', 'Shape'))}</p>${chipRow2('aigSh', AIG_SHAPES, aigSh)}
+      <p class="gxlab">${esc(TS('想要的畫面（選填，可用中文或英文）', 'Scene you want (optional)'))}</p>
+      <input id="aigScene" placeholder="${esc(TS('例如：清晨的湖邊、牧羊人與羊群、橄欖樹下的光', 'e.g. a quiet lake at dawn, a shepherd and sheep'))}" value="${esc(aigNote)}">
+      <p class="gxlab">${esc(TS('提示詞（可修改）', 'Prompt (editable)'))}</p>
+      <textarea id="aigPr" rows="8" style="font-size:13px;line-height:1.5"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="aigGen">${esc(TS('⚡ 在 App 內直接生成（免費）', '⚡ Generate here (free)'))}</button><button class="btn" id="aigCopy">${esc(TS('📋 複製提示詞', '📋 Copy prompt'))}</button></div>
+      <p class="xs muted" id="aigMsg" style="min-height:18px;margin:8px 0 0"></p>
+      <p class="gxlab">${esc(TS('或到這些免費工具貼上提示詞（點進去會自動複製）', 'Or paste it into these free tools (tapping copies the prompt)'))}</p>
+      ${toolLinks(AIG_TOOLS(), 'data-aitool')}
+      <label class="btn pri" style="display:block;cursor:pointer;margin-top:12px;text-align:center">${esc(TS('🖼 圖畫好了：從相簿選這張圖', '🖼 Picture ready: choose it from Photos'))}<input type="file" accept="image/*" hidden id="aigBack"></label>
+      <p class="xs muted" style="line-height:1.6;margin:10px 0 0">${esc(TS('生成後把圖存到相簿，再回到這裡按上面的按鈕選它就能用。AI 生成的圖每次都不同；圖上不要有字，經文由 App 排上去。', 'Save the result to your album, then choose it with the button above. Each result is different. The picture has no text — the app adds the verse.'))}</p>`);
+    const pr = q1('#aigPr', b), msg = q1('#aigMsg', b);
+    let edited = false;
+    const fill = () => { if (!edited) pr.value = aigPrompt(); };
+    fill(); if (aigPr0) { pr.value = aigPr0; edited = true; aigPr0 = ''; }
+    pr.oninput = () => { edited = true; };
+    const chipsBind = (id, set) => qa('#' + id + ' button', b).forEach(x => x.onclick = () => {
+      set(x.getAttribute('data-v')); edited = false; fill();
+      qa('#' + id + ' button', b).forEach(o => o.classList.toggle('on', o === x));
+    });
+    chipsBind('aigSt', v => { aigSt = v; }); chipsBind('aigSh', v => { aigSh = v; });
+    const scn = q1('#aigScene', b); scn.oninput = () => { aigNote = scn.value; edited = false; fill(); };
+    q1('#aigCopy', b).onclick = async () => { await copyText(pr); aiSave(pr.value); msg.textContent = TS('已複製，到下面任一工具貼上就能生成', 'Copied — paste it into any tool below'); };
+    qa('a[data-aitool]', b).forEach(a => a.addEventListener('click', () => { aiSave(pr.value); copyQuiet(pr.value); }));
+    const back = q1('#aigBack', b);
+    back.onchange = () => { const f = back.files && back.files[0]; if (!f) return; closeSub(); fileToPhoto(f); };
+    let working = false;
+    q1('#aigGen', b).onclick = async () => {
+      if (working) return; working = true;
+      const sh = AIG_SHAPES.find(x => x[0] === aigSh) || AIG_SHAPES[0];
+      const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(pr.value) + '?width=' + sh[2] + '&height=' + sh[3]
+        + '&nologo=true&model=flux&seed=' + Math.floor(Math.random() * 1e6);
+      msg.textContent = TS('AI 正在畫圖，約 10–40 秒，請稍候…', 'Drawing… about 10–40 seconds');
+      try {
+        const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 90000);
+        const r = await fetch(url, { mode: 'cors', signal: ctl.signal }); clearTimeout(tm);
+        if (!r.ok) throw new Error('http ' + r.status);
+        const blob = await r.blob();
+        if (!/^image\//.test(blob.type)) throw new Error('type');
+        const obj = URL.createObjectURL(blob);
+        const im = await loadImg(obj, false);
+        setTimeout(() => { try { URL.revokeObjectURL(obj); } catch (e) {} }, 30000);
+        setPhoto(im, 'AI'); plSave(im, 'AI');
+        closeSub(); paint(); say(TS('已放進美圖', 'Added to your picture'));
+      } catch (e) { msg.textContent = TS('這次沒有生成成功（免費服務有時很忙）。可以再按一次，或複製提示詞到下面的工具。', 'Could not generate this time (the free service is sometimes busy). Try again, or copy the prompt into a tool below.'); }
+      working = false;
+    };
+  }
+
+  /* ── AI 配樂 ── */
+  const AIM_STYLES = [
+    ['pi', ['鋼琴', 'Piano'], 'solo piano, soft and warm, gentle arpeggios'],
+    ['st', ['弦樂', 'Strings'], 'warm string ensemble with soft piano, cinematic and tender'],
+    ['gt', ['木吉他', 'Guitar'], 'fingerstyle acoustic guitar with light ambient pads'],
+    ['am', ['空靈', 'Ambient'], 'ethereal ambient pads, slow evolving texture, spacious reverb'],
+    ['wh', ['敬拜', 'Worship'], 'contemporary worship instrumental, piano, soft drums, warm synth pad, building gently'],
+    ['hy', ['聖詩', 'Hymn'], 'reverent hymn-like instrumental, pipe organ and strings, unhurried']
+  ];
+  const AIM_MOODS = [
+    ['pe', ['平安', 'Peace'], 'peaceful and calm'], ['hp', ['盼望', 'Hope'], 'hopeful and uplifting'], ['jy', ['喜樂', 'Joy'], 'joyful and bright'],
+    ['cm', ['安慰', 'Comfort'], 'tender and comforting'], ['md', ['默想', 'Meditative'], 'quiet and meditative'], ['pr', ['讚美', 'Praise'], 'grateful and celebratory']
+  ];
+  const AIM_LENS = [['30', ['約 30 秒', '~30 sec'], 'about 30 seconds'], ['60', ['約 1 分鐘', '~1 min'], 'about 1 minute'], ['120', ['約 2 分鐘', '~2 min'], 'about 2 minutes']];
+  const AIM_TOOLS = () => [
+    ['https://suno.com/', 'Suno', ['每天有免費額度、可下載 MP3（免費方案多半限非商業）', 'Daily free credits, MP3 download (free plan is usually non-commercial)']],
+    ['https://labs.google/fx/tools/music-fx', 'Google MusicFX', ['免費、需 Google 帳號、英文提示詞、約 70 秒', 'Free, Google account, English prompts, ~70 s']],
+    ['https://stableaudio.com/', 'Stable Audio', ['有免費額度、可下載、適合純音樂', 'Free credits, download, good for instrumentals']]
+  ];
+  let aimSt = 'pi', aimMd = 'pe', aimLn = '60', aimNote = '', aimPr0 = '';
+  function aimPrompt() {
+    const s = AIM_STYLES.find(x => x[0] === aimSt) || AIM_STYLES[0];
+    const m = AIM_MOODS.find(x => x[0] === aimMd) || AIM_MOODS[0];
+    const l = AIM_LENS.find(x => x[0] === aimLn) || AIM_LENS[1];
+    const verse = item ? String(item.t || '').replace(/\s+/g, ' ').trim().slice(0, 100) : '';
+    const theme = (aimNote || '').trim();
+    return 'Instrumental only, no vocals, no lyrics. Gentle Christian worship background music, ' + s[2] + '. Mood: ' + m[2] + '. '
+      + (theme ? 'Imagery: ' + theme + '. ' : '')
+      + (verse ? 'Inspired by this Bible verse: "' + verse + '". ' : '')
+      + 'Slow to medium tempo, soft intro and gentle ending, easy to loop, ' + l[2] + '.';
+  }
+  function aimSave(pr) { lsPut('mu', { ts: Date.now(), item: itemSnap(), note, st: aimSt, md: aimMd, ln: aimLn, sc: aimNote, pr: pr || '' }); }
+  function openAiMusic() {
+    if (!item) return;
+    const b = sub(TS('🎼 用 AI 生成配樂', '🎼 Make music with AI'), `
+      <p class="xs muted" style="line-height:1.6;margin:0 0 6px">${esc(TS('不用找音樂：選曲風與心情，App 依這節經文寫好提示詞，貼到免費 AI 音樂工具，幾十秒就生成一首純音樂。', 'No need to hunt for music: pick a style and mood, the app writes a prompt from this verse; paste it into a free AI music tool and get an instrumental in under a minute.'))}</p>
+      <p class="gxlab">${esc(TS('曲風', 'Style'))}</p>${chipRow2('aimSt', AIM_STYLES, aimSt)}
+      <p class="gxlab">${esc(TS('心情', 'Mood'))}</p>${chipRow2('aimMd', AIM_MOODS, aimMd)}
+      <p class="gxlab">${esc(TS('長度', 'Length'))}</p>${chipRow2('aimLn', AIM_LENS, aimLn)}
+      <p class="gxlab">${esc(TS('想要的畫面或感覺（選填，中英文都可以）', 'Imagery or feeling (optional)'))}</p>
+      <input id="aimScene" placeholder="${esc(TS('例如：清晨的湖邊、慢慢升起的陽光', 'e.g. a quiet lake at dawn, slowly rising sunlight'))}" value="${esc(aimNote)}">
+      <p class="gxlab">${esc(TS('提示詞（可修改，英文效果最好）', 'Prompt (editable)'))}</p>
+      <textarea id="aimPr" rows="7" style="font-size:13px;line-height:1.5"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="aimCopy">${esc(TS('📋 複製提示詞', '📋 Copy prompt'))}</button></div>
+      <p class="xs muted" id="aimMsg" style="min-height:18px;margin:8px 0 0"></p>
+      <p class="gxlab">${esc(TS('到這些免費工具貼上提示詞（點進去會自動複製）', 'Paste it into these free tools (tapping copies the prompt)'))}</p>
+      ${toolLinks(AIM_TOOLS(), 'data-aimtool')}
+      <label class="btn pri" style="display:block;cursor:pointer;margin-top:12px;text-align:center">${esc(TS('🎵 音樂做好了：從檔案選這首', '🎵 Music ready: choose the file'))}<input type="file" accept="audio/*,.mp3,.m4a,.wav" hidden id="aimBack"></label>
+      <p class="xs muted" style="line-height:1.6;margin:10px 0 0">${esc(TS('在工具裡把音樂下載（MP3），存到「檔案」，回到這裡按上面的按鈕選它，就會成為這張美圖的配樂，錄影時自動混進去。各工具的免費額度與使用條款會變動；AI 生成的音樂若要公開發布或商用，請先看該工具的條款。', 'Download the MP3 in the tool, save it to Files, then choose it with the button above; it becomes the background music when you record. Free quotas and terms change — check each tool’s terms before publishing or commercial use.'))}</p>`);
+    const pr = q1('#aimPr', b), msg = q1('#aimMsg', b);
+    let edited = false;
+    const fill = () => { if (!edited) pr.value = aimPrompt(); };
+    fill(); if (aimPr0) { pr.value = aimPr0; edited = true; aimPr0 = ''; }
+    pr.oninput = () => { edited = true; };
+    const chipsBind = (id, set) => qa('#' + id + ' button', b).forEach(x => x.onclick = () => {
+      set(x.getAttribute('data-v')); edited = false; fill();
+      qa('#' + id + ' button', b).forEach(o => o.classList.toggle('on', o === x));
+    });
+    chipsBind('aimSt', v => { aimSt = v; }); chipsBind('aimMd', v => { aimMd = v; }); chipsBind('aimLn', v => { aimLn = v; });
+    const scn = q1('#aimScene', b); scn.oninput = () => { aimNote = scn.value; edited = false; fill(); };
+    q1('#aimCopy', b).onclick = async () => { await copyText(pr); aimSave(pr.value); msg.textContent = TS('已複製，到下面任一工具貼上就能生成', 'Copied — paste it into a tool below'); };
+    qa('a[data-aimtool]', b).forEach(a => a.addEventListener('click', () => { aimSave(pr.value); copyQuiet(pr.value); }));
+    const back = q1('#aimBack', b);
+    back.onchange = () => {
+      const f = back.files && back.files[0]; if (!f) return;
+      closeSub();
+      if (f.size > 25 * 1024 * 1024) { say(T('檔案太大（上限 25MB）', 'File too large (max 25 MB)')); return; }
+      bgmBlob = f; bgmName = f.name; bgmCredit = '';
+      say(T('已選好配樂：', 'Music selected: ') + f.name); paint();
+    };
+  }
+
+  /* ── 卡片字體與文字顏色；楷體、圓體 App 自帶（霞鶩文楷、粉圓，開源，只含經文用字，第一次選用才下載，與互動聖經共用同一份） ── */
+  const CARD_FONTS = [['auto', ['自動', 'Auto']], ['mingti', ['明體', 'Serif']], ['hei', ['黑體', 'Sans']], ['kai', ['楷體', 'Script']], ['yuan', ['圓體', 'Rounded']]];
+  const CARD_INKS = [['', ['自動', 'Auto']], ['#FFFFFF', ['白', 'White']], ['#1F1B16', ['黑', 'Black']], ['#D4A65B', ['金', 'Gold']], ['#123F92', ['深藍', 'Navy']], ['#6B4423', ['咖啡', 'Brown']], ['#8A2D2D', ['酒紅', 'Wine']], ['#255943', ['深綠', 'Green']], ['#E8A0B4', ['粉紅', 'Pink']]];
+  const cardFontKey = () => CARD_FONTS.some(x => x[0] === st().cardFont) ? st().cardFont : 'auto';
+  const inkVal = () => /^#[0-9a-fA-F]{6}$/.test(st().cardInk || '') ? st().cardInk : '';
+  const inkT = Tp => { const c = inkVal(); return c ? Object.assign({}, Tp, { ink: c, accent: c, sub: c }) : Tp; };
+  const IBF = {};
+  function fontStatText() {
+    const k = cardFontKey();
+    if (EN || (k !== 'kai' && k !== 'yuan')) return '';
+    const s = IBF[k === 'kai' ? 'IBKai' : 'IBYuan'];
+    if (!s) return TS('字體準備中…', 'Preparing font…');
+    if (s === 'loading') return TS('⏳ 字體下載中（約 1–2 MB），請稍候…', '⏳ Downloading font (1–2 MB)…');
+    if (s === 'ok') return TS('✓ 字體已載入', '✓ Font loaded');
+    return TS('✗ 字體載入失敗（', '✗ Font failed to load (') + s + TS('）。請確認網路後，再按一次字體按鈕重試。', '). Check the network and tap the font button again.');
+  }
+  function fontStatShow() { const el = q1('#gxFontSt'); if (el) el.textContent = fontStatText(); }
+  function ensureIBFont(name, url) {
+    if (IBF[name]) return;
+    if (!window.FontFace) { IBF[name] = 'no FontFace'; return; }
+    IBF[name] = 'loading';
+    try {
+      const ff = new FontFace(name, 'url(' + url + ')');
+      ff.load().then(f => {
+        document.fonts.add(f); IBF[name] = 'ok';
+        if (EL && EL.classList.contains('on') && item && !recOn()) paint(); else fontStatShow();
+      }).catch(e => { IBF[name] = String((e && e.message) || e || 'error').slice(0, 60); fontStatShow(); });
+    } catch (e) { IBF[name] = String((e && e.message) || e).slice(0, 60); fontStatShow(); }
+  }
+  function cardFontStack() {
+    const k = cardFontKey();
+    if (!EN && k === 'kai') ensureIBFont('IBKai', SITE + 'fonts/kai2.woff');
+    if (!EN && k === 'yuan') ensureIBFont('IBYuan', SITE + 'fonts/yuan2.woff');
+    if (k === 'mingti') return SERIF0();
+    if (k === 'hei') return SANS0();
+    if (k === 'kai') return isSC() ? '"IBKai","Kaiti SC","STKaiti","KaiTi","楷体",serif'
+      : (EN ? '"Snell Roundhand","Apple Chancery","Brush Script MT",cursive' : '"IBKai","Kaiti TC","BiauKai","DFKai-SB","STKaiti","KaiTi",serif');
+    if (k === 'yuan') return isSC() ? '"IBYuan","Yuanti SC","PingFang SC","Noto Sans SC",sans-serif'
+      : (EN ? '"Avenir Next Rounded","Nunito","Trebuchet MS",sans-serif' : '"IBYuan","Yuanti TC","PingFang TC","Noto Sans TC",sans-serif');
+    return '';
+  }
+  const SERIF = () => cardFontStack() || SERIF0();
+  const SANS = () => cardFontStack() || SANS0();
+  function fontInkUI() {
+    const fk = cardFontKey(), ink = inkVal();
+    return `<p class="gxlab">${esc(TS('卡片字體', 'Card font'))}</p>${chips(CARD_FONTS.map(x => [x[0], sc(L2(x[1]))]), fk, 'cfont')}
+      <p class="xs muted" id="gxFontSt" style="margin:6px 0 0">${esc(fontStatText())}</p>
+      ${hint(TS('選了字體，稱呼、經文、內文與署名都用同一種字體。楷體、圓體第一次選用要下載約 1–2 MB。', 'The whole card uses the chosen font. Script and Rounded download 1–2 MB on first use (Chinese only).'))}
+      <p class="gxlab">${esc(TS('文字顏色', 'Text colour'))}</p>
+      <div class="gxchips">${CARD_INKS.map(x => `<button class="${ink.toLowerCase() === x[0].toLowerCase() ? 'on' : ''}" data-k="cink" data-v="${x[0]}">${x[0] ? `<i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${x[0]};border:1px solid rgba(128,128,128,.5);margin-right:5px;vertical-align:-1px"></i>` : ''}${E2(x[1])}</button>`).join('')}
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">🎨 ${esc(TS('自選', 'Custom'))}<input type="color" id="gxInkC" value="${ink || '#1F1B16'}" style="width:34px;height:26px;padding:0;border:0;background:none"></label></div>
+      ${hint(TS('「自動」會依版型或相片明暗自己選黑或白；金色裝飾線與邊框不變。', '“Auto” picks black or white from the template or photo; gold rules and borders stay.'))}`;
+  }
+
+  /* ── 相機打不開：說清楚原因；內嵌視窗（團契 App）、內嵌瀏覽器（LINE 等）常擋相機，給兩條退路 ── */
+  function camFail(e) {
+    const n = (e && e.name) || '';
+    const noAPI = !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const framed = isFramed();
+    let why;
+    if (framed) why = TS('目前是在團契 App 內嵌的視窗裡開的，系統不給內嵌視窗用相機。請按下面「用瀏覽器開啟並允許相機」，會用 Safari 開這個 App，並自動回到這節經文的自拍。', 'This app is open inside an embedded view, where the system blocks the camera. Tap “Open in browser and allow the camera” below to continue in Safari.');
+    else if (noAPI || inAppBrowser()) why = TS('這個畫面是在 LINE／內嵌瀏覽器裡開的，相機被擋住了。請點右上角「用瀏覽器開啟」（Safari／Chrome），或把 App 加到主畫面再開。', 'This page is open inside an in-app browser (e.g. LINE) which blocks the camera. Tap “Open in browser” (Safari/Chrome) or add the app to your Home Screen.');
+    else if (n === 'NotAllowedError' || n === 'SecurityError') why = TS('相機權限被拒絕。iPhone：設定 › Safari › 相機 選「允許」，或網址列左邊 AA › 網站設定 › 相機 › 允許，再回來按自拍。', 'Camera permission was denied. On iPhone: Settings › Safari › Camera › Allow, then try Selfie again.');
+    else if (n === 'NotReadableError' || n === 'AbortError') why = TS('相機正被其他 App 使用（例如視訊通話），請先關掉再試。', 'The camera is in use by another app. Close it and try again.');
+    else if (n === 'NotFoundError' || n === 'OverconstrainedError') why = TS('找不到前鏡頭。', 'No front camera found.');
+    else why = TS('相機打不開（', 'Could not open the camera (') + (n || TS('未知原因', 'unknown')) + TS('）。', ').');
+    const b = sub(TS('📷 自拍相機打不開', '📷 Camera unavailable'), `
+      <p style="font-size:14px;line-height:1.7;margin:6px 0 10px">${esc(why)}</p>
+      <p class="xs muted" style="line-height:1.6;margin:0 0 8px">${esc(TS('不想改設定也可以：用手機內建相機直接錄一段自拍影片，錄完會存進「我的作品」。', 'No need to change settings: record a selfie video with the phone camera; it is saved to My works.'))}</p>
+      ${framed ? `<button class="btn pri" id="camTop" style="display:block;width:100%;margin-bottom:8px">${esc(TS('🔓 用瀏覽器開啟並允許相機', '🔓 Open in browser and allow the camera'))}</button>` : ''}
+      <label class="btn ${framed ? '' : 'pri'}" style="display:block;cursor:pointer;text-align:center">${esc(TS('📱 用手機內建相機錄自拍', '📱 Record with the phone camera'))}<input type="file" accept="video/*" capture="user" hidden id="camNative"></label>`);
+    const ct = q1('#camTop', b);
+    if (ct) ct.onclick = () => {
+      lsPut('cam', { ts: Date.now(), item: itemSnap(), note });
+      const u = location.origin + location.pathname;
+      let w = null; try { w = window.open(u, '_blank'); } catch (_) {}
+      if (!w) { try { window.top.location.href = u; } catch (_) { location.href = u; } }
+      closeSub();
+    };
+    q1('#camNative', b).onchange = async ev => {
+      const f = ev.target.files && ev.target.files[0]; if (!f) return;
+      closeSub();
+      await saveWork(f, f.type || 'video/mp4', 'video', 0);
+    };
+  }
+
+  /* ── 離開 App 再回來（或被系統重載）時接回原位：相機（10 分鐘內、且不在內嵌視窗）→ AI 配樂 → AI 生圖（12 小時內） ── */
+  function resumeBoot() {
+    let o = null, mode = '';
+    if (!isFramed()) { o = lsTake('cam'); if (o && o.item && Date.now() - o.ts <= 10 * 60 * 1000) mode = 'cam'; else o = null; }
+    if (!mode) { o = lsTake('mu'); if (o && o.item && Date.now() - o.ts <= 12 * 3600 * 1000) mode = 'mu'; else o = null; }
+    if (!mode) { o = lsTake('ai'); if (o && o.item && Date.now() - o.ts <= 12 * 3600 * 1000) mode = 'ai'; else o = null; }
+    if (!mode) return;
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      let ready = false;
+      try { ready = !!(D && D.txt && S); } catch (e) { ready = false; }
+      if (!ready) { if (tries > 40) clearInterval(iv); return; }
+      clearInterval(iv);
+      try {
+        const it = o.item;
+        if (!open({ text: it.t, ref: it.ref, note: it.n0, plain: it.plain })) return;
+        if (o.note != null) note = o.note;
+        if (mode === 'cam') { tab = 'rec'; paint(); setTimeout(() => setRecMode('s'), 1200); }
+        else if (mode === 'mu') {
+          aimSt = o.st || aimSt; aimMd = o.md || aimMd; aimLn = o.ln || aimLn; aimNote = o.sc || ''; aimPr0 = o.pr || '';
+          tab = 'rec'; paint(); setTimeout(openAiMusic, 700);
+        } else {
+          aigSt = o.st || aigSt; aigSh = o.sh || aigSh; aigNote = o.sc || ''; aigPr0 = o.pr || '';
+          tab = 'photo'; paint(); setTimeout(openAiGen, 700);
+        }
+      } catch (e) {}
+    }, 400);
+  }
+  window.addEventListener('load', () => setTimeout(resumeBoot, 600));
+
   async function openHymns() {
     const b = sub(T('詩歌庫', 'Hymn library'), `<p class="sm muted">${esc(T('載入中…', 'Loading…'))}</p>`);
     try { await hymnList(); } catch (e) { b.innerHTML = `<p class="sm muted">${esc(T('詩歌庫連不上，請稍後再試', 'Could not reach the hymn library'))}</p>`; return; }
@@ -23620,7 +23919,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     recMode = m;
     if (m !== 's') { stopSelfie(); paint(); return; }
     try { selfieStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); }
-    catch (e) { recMode = 'c'; say(T('沒有取得相機權限', 'Camera permission was not granted')); }
+    catch (e) { recMode = 'c'; camFail(e); }
     paint();
     if (recMode === 's') setTimeout(attachSelfie, 60);
   }
@@ -23680,7 +23979,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     hymnStop(); stopTTS();
     if (recMode === 's' && (!selfieStream || !selfieStream.active)) {
       try { selfieStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); }
-      catch (e) { recMode = 'c'; say(T('沒有取得相機權限', 'Camera permission was not granted')); paint(); }
+      catch (e) { recMode = 'c'; camFail(e); paint(); }
       if (recMode === 's') { paint(); attachSelfie(); await new Promise(r => setTimeout(r, 500)); }
     }
     let mic;
@@ -23958,6 +24257,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     h += `<p class="gxlab">${esc(T('稱呼（寫給誰）', 'Greeting (to whom)'))}</p><input id="gxsTo" value="${esc(toVal())}" placeholder="${esc(T('例如：親愛的小明：平安！（留空就不印）', 'e.g. Dear Sam, peace be with you! (blank for none)'))}">`;
     if (!FULL) h += `<p class="gxlab">${esc(T('上方團體名', 'Group name (top)'))}</p><input id="gxsTop" value="${esc(g.top)}" placeholder="${esc(DEF_TOP())}">`;
     h += `<p class="gxlab">${esc(T('署名', 'Signature'))}</p><input id="gxsSign" value="${esc(g.sign)}" placeholder="${esc(DEF_SIGN())}">`;
+    h += fontInkUI();
     return h;
   }
   function tabLook() {
@@ -23998,9 +24298,11 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
         <button class="btn xs2" data-k="own">${esc(T('換一張（從相簿）', 'Change (from album)'))}</button>
         <button class="btn xs2" data-k="px">${esc(T('🖼 從免費圖庫選', '🖼 Free photo library'))}</button>
         <button class="btn xs2" data-k="plib">${esc(T('📚 我的相片庫', '📚 My photos'))}</button>
+        <button class="btn xs2" data-k="aig">${esc(T('✨ AI 生成美圖', '✨ Make with AI'))}</button>
         <button class="btn xs2 danger" data-k="nophoto">${esc(T('移除相片', 'Remove photo'))}</button></div>`;
     } else {
-      h += `<button class="btn" style="width:100%;margin-top:12px" data-k="px">${esc(T('🖼 從免費圖庫選', '🖼 Free photo library'))}</button>
+      h += `<button class="btn pri" style="width:100%;margin-top:12px" data-k="aig">${esc(T('✨ 用 AI 生成美圖（描述畫面，免費）', '✨ Make a picture with AI (free)'))}</button>
+        <button class="btn" style="width:100%;margin-top:8px" data-k="px">${esc(T('🖼 從免費圖庫選', '🖼 Free photo library'))}</button>
         <button class="btn" style="width:100%;margin-top:8px" data-k="plib">${esc(T('📚 我的相片庫（用過的相片都在這裡）', '📚 My photos (everything you used before)'))}</button>
         <button class="btn" style="width:100%;margin-top:8px" data-k="own">${esc(T('📷 從相簿選一張', '📷 Pick from your album'))}</button>
         ${isStk && photoImg ? `<button class="btn" style="width:100%;margin-top:8px" data-k="useBg">${esc(T('把背景那張改成貼紙', 'Use the background photo as a sticker'))}</button>` : ''}
@@ -24037,6 +24339,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     const g = st(), on = recOn();
     return `<p class="gxlab">🎵 ${esc(T('背景音樂', 'Background music'))}</p>
       ${bgmBlob ? `<p class="sm" style="margin:0 0 2px"><b>♪ ${esc(sc(bgmName))}</b></p>${bgmCredit ? hint(sc(bgmCredit)) : ''}` : hint(T('從詩歌庫或手機選一首，錄影時會混進去。', 'Pick a song from the hymn library or your phone; it is mixed into recordings.'))}
+      <button class="btn pri" style="width:100%;margin-top:8px" data-k="aim">${esc(T('🎼 用 AI 生成配樂（免費工具）', '🎼 Make music with AI (free tools)'))}</button>
       <div class="row" style="margin-top:8px"><button class="btn" data-k="hymn">${esc(T('🎵 從詩歌庫選', '🎵 Hymn library'))}</button>
         <button class="btn" data-k="bgmfile">${esc(bgmBlob ? T('換一首（從手機）', 'Change (from phone)') : T('從手機選音樂', 'Pick from phone'))}</button>
         ${bgmBlob ? `<button class="btn xs2 danger" data-k="nobgm">${esc(T('不要配樂', 'No music'))}</button>` : ''}</div>
@@ -24081,6 +24384,8 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     on('#gxsTop', v => { st().top = v; keep(); }, 1);
     on('#gxsSign', v => { st().sign = v; keep(); }, 1);
     const own = q1('#gxsOwn', EL); if (own) own.oninput = () => { blessOwn = own.value; };
+    const ci = q1('#gxInkC', EL);
+    if (ci) { ci.oninput = () => { st().cardInk = ci.value; renderFast(); }; ci.onchange = () => { st().cardInk = ci.value; keep(); paint(); }; }
     const fs = q1('#fSz', EL);
     if (fs) {
       fs.oninput = () => { fullScale = fs.value / 100; const lb = q1('#fSzV', EL); if (lb) lb.textContent = fs.value + '%'; renderFast(); };
@@ -24170,6 +24475,10 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     if (k === 'useBg') { stkImg = photoImg; stkBy = photoBy; photoImg = null; photoBy = ''; return paint(); }
     if (k === 'bgcat') { g.bgCat = v; keep(); return fillBuiltins(); }
     if (k === 'bgpick') { const it = bgList && bgList.list[+v]; if (it) setPhotoURL(SITE + it.f, ''); return; }
+    if (k === 'aig') return openAiGen();
+    if (k === 'aim') return openAiMusic();
+    if (k === 'cfont') { g.cardFont = v; ['IBKai', 'IBYuan'].forEach(n => { if (IBF[n] && IBF[n] !== 'loading' && IBF[n] !== 'ok') delete IBF[n]; }); keep(); return paint(); }
+    if (k === 'cink') { g.cardInk = v; keep(); return paint(); }
     if (k === 'gal') return openGallery();
     if (k === 'px') return openPexels();
     if (k === 'plib') return openPhotoLib();
