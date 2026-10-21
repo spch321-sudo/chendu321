@@ -20250,19 +20250,42 @@ renderChat();
       var LAT = !/[\u3400-\u9fff]/.test(Gs.slice(0, 400));
       var score = function (sb, sc, j) { var h = 0, o = eb[j]; for (var k in sb) if (o[k]) h++; var m = LAT ? Math.max(sc, ec[j]) : Math.min(sc, ec[j]); return m ? h / m : 0; };
       window.__gxMapDbg = function () { return sents.filter(function (x) { return x.el; }).map(function (x) { return x.r.slice(0, 30) + ' => ' + x.el.textContent.slice(0, 30); }); };
-      var tab = state.tab || 'read', p = 0;
+      /* 句子 ↔ 畫面上的句子：整體對齊（順序不變、可跳過、多句可對到同一個畫面句），取總分最高的一組。
+         不用「一路往前找、找到就前進」——朗讀稿開頭（前言、本課核心）念過的句子，
+         常常在正文後面一字不差地再出現；貪心法會一下跳到後面，之後整課都對不上（第二課就是這樣）。 */
+      var tab = state.tab || 'read', TH = 0.45;
+      var cand = [];   /* 參與對齊的句子：[句子, {元素序號: 分數}] */
       sents.forEach(function (s) {
         if (s.n.length < 4 || (SECT && secAt(s.a) !== tab)) return;
-        var sb = bg(s.n, s.r), sc = Object.keys(sb).length, best = -1, bs = 0;
+        var sb = bg(s.n, s.r), sc = Object.keys(sb).length;
         if (sc < 2) return;
-        for (var j = p; j < Math.min(en.length, p + 60); j++) {
-          if (ec[j] < 2) continue;
-          var v = score(sb, sc, j);
-          if (v >= 0.6) { best = j; bs = v; break; }
-          if (v > bs) { bs = v; best = j; }
-        }
-        if (best >= 0 && bs >= 0.45) { s.el = els[best]; p = best; }
+        var row = {}, any = false;
+        for (var j = 0; j < en.length; j++) { if (ec[j] < 2) continue; var v = score(sb, sc, j); if (v >= TH) { row[j] = v; any = true; } }
+        if (any) cand.push([s, row]);
       });
+      var N = cand.length, M = en.length;
+      if (N && M) {
+        /* f[i][j]：前 i 句、最後用到的畫面句 ≤ j 的最高總分 */
+        var f = [], bk = [];
+        for (var i0 = 0; i0 <= N; i0++) { f.push(new Float64Array(M + 1)); bk.push(new Int8Array(M + 1)); }
+        for (var i = 1; i <= N; i++) {
+          var row2 = cand[i - 1][1];
+          for (var j2 = 1; j2 <= M; j2++) {
+            var best2 = f[i - 1][j2], how = 1;                         /* 這一句不標 */
+            if (f[i][j2 - 1] > best2) { best2 = f[i][j2 - 1]; how = 2; }
+            var v2 = row2[j2 - 1];
+            if (v2 != null && f[i - 1][j2] + v2 > best2) { best2 = f[i - 1][j2] + v2; how = 3; }   /* 標到第 j 個（前一句可同一個） */
+            f[i][j2] = best2; bk[i][j2] = how;
+          }
+        }
+        var ii = N, jj = M;
+        while (ii > 0 && jj > 0) {
+          var h = bk[ii][jj];
+          if (h === 3) { cand[ii - 1][0].el = els[jj - 1]; ii--; }
+          else if (h === 2) jj--;
+          else ii--;
+        }
+      }
       /* 「我們再想得更深一點」這種引導語：直接標到下一句（想更深的題目） */
       for (var z = sents.length - 2; z >= 0; z--) if (!sents[z].el && /想得更深|想得更深|go deeper|dig deeper/i.test(sents[z].r) && sents[z + 1].el) sents[z].el = sents[z + 1].el;
       var cum = [], c = 0; q.forEach(function (x) { cum.push(c); c += x.length; });
