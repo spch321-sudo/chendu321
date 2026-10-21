@@ -16683,18 +16683,18 @@ function chSession(d){let n=0;for(let x=COHORT.start;x<=d;x++)if(chIsClass(x))n+
 function chDayOf(k){let n=0;for(let x=COHORT.start;;x++)if(chIsClass(x)&&++n===k)return x;}
 function chLabel(d){const t=new Date(d*86400000);return (t.getUTCMonth()+1)+"/"+t.getUTCDate()+"（週"+"日一二三四五六"[chDow(d)]+"）";}
 function cohortHTML(){
-  const ls=LESSONS.slice().sort((a,b)=>a.n-b.n), total=ls.length, today=chDay(), k=chSession(today);
+  const PARTS={3:["建立屬神體系","耶穌是我的榜樣"],6:["讓耶穌作王","讓耶穌得著一切的榮耀"]}; const ls=[]; LESSONS.slice().sort((a,b)=>a.n-b.n).forEach(l=>{ if(PARTS[l.n]){ls.push({n:l.n,title:PARTS[l.n][0],part:1});ls.push({n:l.n,title:PARTS[l.n][1],part:2});} else ls.push({n:l.n,title:l.title,part:0}); }); const lab=x=>"第 "+x.n+" 課"+(x.part?(x.part===1?"上":"下"):""); const total=ls.length, today=chDay(), k=chSession(today);
   const tt=l=>esc(l.title).split("\n").join(" ");
   let h=`<div class="cohort"><div class="ch-head">👥 晨讀進度</div><div class="ch-sub">照著國度321空中團契${COHORT.name}的進度：10月19日開始，每週一、三、五各學一課。</div>`;
-  if(k===0){h+=`<div class="ch-pill">${COHORT.name} · ${chLabel(COHORT.start)} 開始</div><div class="ch-now">第一堂：第 1 課 · ${tt(ls[0])}</div>`;}
+  if(k===0){h+=`<div class="ch-pill">${COHORT.name} · ${chLabel(COHORT.start)} 開始</div><div class="ch-now">第一堂：${lab(ls[0])} · ${tt(ls[0])}</div>`;}
   else if(k>total){h+=`<div class="ch-pill">${COHORT.name}已全部學完 🎉</div>`;}
   else{
     const l=ls[k-1], done=!!(state.read&&state.read[l.n]), cls=chIsClass(today);
-    h+=`<div class="ch-pill">${COHORT.name} · 第 ${k} 堂 / ${total}</div><div class="ch-now">${cls?"今天":"最近一堂"}：第 ${l.n} 課 · ${tt(l)}${done?" ✓":""}</div>`;
+    h+=`<div class="ch-pill">${COHORT.name} · 第 ${k} 堂 / ${total}</div><div class="ch-now">${cls?"今天":"最近一堂"}：${lab(l)} · ${tt(l)}${done?" ✓":""}</div>`;
     h+=`<button class="ch-go${done?" done":""}" onclick="openLesson(${l.n})">${done?"再讀一次":"開始這一課"}</button><div class="ch-week">`;
     const mon=today-((chDow(today)+6)%7);
     COHORT.days.forEach(wd=>{const d=mon+(wd-1); if(d<COHORT.start)return; const kk=chSession(d); if(kk<1||kk>total)return; const x=ls[kk-1];
-      h+=`<div class="ch-wk${d===today?" now":""}" onclick="openLesson(${x.n})"><span class="d">${chLabel(d)}</span><span class="t">第 ${x.n} 課 · ${tt(x)}</span><span class="c">${state.read&&state.read[x.n]?"✓":""}</span></div>`;});
+      h+=`<div class="ch-wk${d===today?" now":""}" onclick="openLesson(${x.n})"><span class="d">${chLabel(d)}</span><span class="t">${lab(x)} · ${tt(x)}</span><span class="c">${state.read&&state.read[x.n]?"✓":""}</span></div>`;});
     h+=`</div>`;
     if(!cls&&k<total) h+=`<div class="ch-next">下一堂：${chLabel(chDayOf(k+1))}</div>`;
   }
