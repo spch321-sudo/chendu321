@@ -1,0 +1,43 @@
+{
+  "name": "晨读321 · 国度321空中团契",
+  "short_name": "晨读321",
+  "lang": "zh-Hans",
+  "dir": "ltr",
+  "description": "国度321空中团契 · 晨读321：每天在线学习圣经真理与晨读321，活出基督的生命。",
+  "start_url": "./sc.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBFCFB",
+  "theme_color": "#7FB9A6",
+  "icons": [
+    {
+      "src": "favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

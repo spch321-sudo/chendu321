@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<script>/* 三語同一個 App：上次選簡體或英文，就直接開那一版（網址加 ?tc 可強制繁體） */try{var l=localStorage.getItem("cd321_lang");var M={"sc": "sc.html", "en": "en.html"};if(M[l]&&!/[?&]tc\b/.test(location.search))location.replace(M[l]+location.hash);}catch(e){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.webmanifest">
@@ -25480,5 +25481,6 @@ if ("serviceWorker" in navigator) {
   window.VPICK321 = { pick: pick, card: card, lang: lang, detect: detect, refs: function (t) { return toc().then(function () { return refs(t); }); } };
 })();
 </script>
+<script id="cd3lang">/* 繁／简／EN 一鍵切換（三版同一個 App；進度紀錄各版照舊） */(function(){if(window.__cd3l)return;window.__cd3l=1;var CUR="tc",F={tc:"index.html?tc",sc:"sc.html",en:"en.html"};function go(k){if(k===CUR)return;try{localStorage.setItem("cd321_lang",k);}catch(e){}location.href=F[k]+location.hash;}var st=document.createElement("style");st.textContent=".cd3l{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;display:inline-flex;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}.cd3l button{border:0;background:transparent;color:#fff;font:700 13px/28px system-ui,-apple-system,\"PingFang TC\",sans-serif;padding:0 9px;min-width:30px;cursor:pointer}.cd3l button.on{background:rgba(255,255,255,.92);color:#2f6b5a}";document.head.appendChild(st);function mount(){var host=document.querySelector(".home-head");var old=document.querySelector(".cd3l");if(!host){if(old)old.remove();return;}if(old&&host.contains(old))return;if(old)old.remove();if(getComputedStyle(host).position==="static")host.style.position="relative";var b=document.createElement("div");b.className="cd3l";b.setAttribute("role","group");b.title="切換語言";[["tc","繁"],["sc","简"],["en","EN"]].forEach(function(x){var t=document.createElement("button");t.type="button";t.textContent=x[1];if(x[0]===CUR)t.className="on";t.onclick=function(){go(x[0]);};b.appendChild(t);});host.appendChild(b);}new MutationObserver(function(){mount();}).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();})();</script>
 </body>
 </html>
