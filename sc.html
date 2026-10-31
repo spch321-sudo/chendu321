@@ -20902,7 +20902,7 @@ renderChat();
   (function () {
     if (!('serviceWorker' in navigator) || location.protocol.indexOf('http') !== 0) return;
     var pending = false;
-    var busy = function () { try { return (spk && spk.active && !spk.paused) || !!document.querySelector('#gxaroot #gxs.on') || (window.MX && MX.busy && MX.busy()); } catch (e) { return false; } };
+    var busy = function () { try { return (spk && spk.active && !spk.paused) || !!document.querySelector('#gxaroot #gxs.on') || (window.MX && MX.busy && MX.busy()) || !!(window.CR && CR.role); } catch (e) { return false; } };
     function tryReload() { if (!pending) return; if (busy()) { setTimeout(tryReload, 15000); return; } location.reload(); }
     function check() { try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update().catch(function () {}); }); } catch (e) {} }
     try { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {}); } catch (e) {}
@@ -25904,6 +25904,348 @@ if ("serviceWorker" in navigator) {
     pick(md).then(function (r) { if (r) open({ t: r.t, ref: r.ref, n: '' }); else open(fallback); }, function () { open(fallback); });
   }
   window.VPICK321 = { pick: pick, card: card, lang: lang, detect: detect, refs: function (t) { return toc().then(function () { return refs(t); }); } };
+})();
+</script>
+<script id="cr321">/* ── 一起共讀：帶領者的畫面（哪一課／哪一頁籤／捲動位置／點的那一句／朗讀到哪一句）同步到大家的手機（PeerJS／WebRTC 點對點，不經伺服器） ── */
+(function () {
+  if (window.__cr321) return; window.__cr321 = 1;
+  var TX = {"zh":{"crTitle":"一起共讀","crHostB":"我來帶領共讀","crHostD":"大家的手機會跟著我翻課、捲動、看我點的那一句、聽我朗讀到哪裡","crJoinB":"加入共讀","crJoinD":"輸入帶領者給你的6碼代碼（或直接點他傳來的連結、掃 QR）","crCodePh":"6碼代碼","crJoinGo":"加入","crNamePh":"你的稱呼（讓帶領者知道你來了）","crBadCode":"請輸入6碼共讀代碼","crStarting":"正在建立共讀…","crJoining":"正在加入共讀…","crCode":"共讀代碼","crScan":"請家人用手機相機掃描 QR，或在 App 點 📡 輸入代碼","crShareLink":"傳送邀請連結","crInviteMsg":"邀請你和我一起用《晨讀321》共讀，點下面的連結就能加入（共讀代碼 {0}）：","crMembers":"已加入 {0} 人","crNone":"還沒有人加入，把連結或 QR 給大家吧","crEnd":"結束共讀","crLeaveB":"離開","crInv":"邀請","crHostBar":"帶領共讀 {0}","crGuestBar":"跟著 {0} 共讀","crWait":"正在連線共讀…","crOff":"此頁不同步","crFollow":"跟著帶領者走","crFree":"自己瀏覽一下","crFollowB":"跟隨中","crFreeB":"回到帶領者","crJoined":"{0} 加入了共讀","crLeft":"{0} 離開了共讀","crEnded":"帶領者已結束共讀，願主祝福你！","crNoRoom":"找不到這個共讀，請確認代碼，或請帶領者重新開始","crLostT":"共讀連線中斷了，可以重新加入","crLibErr":"共讀元件載入失敗，請檢查網路後再試","crSent":"已送給帶領者","crAway":"帶領者在其他頁面","crGuest":"朋友","crLeader":"帶領者","crGuestTip":"你可以隨時「自己瀏覽一下」，再按「回到帶領者」就會跳回帶領者所在的地方。你的畫線與領受只存在自己的手機。","crTip":"大家進入共讀後，帶領者翻到哪一課、捲到哪一段、點哪一句、朗讀到哪裡，所有人的手機都會一起跟著走；每個人看到的是自己設定的語言與字級。想投影到電視，可用手機的螢幕鏡像（AirPlay／Chromecast）。","close":"關閉","copy":"複製連結","crCopied":"已複製連結","crNm":"你的稱呼"},"zs":{"crTitle":"一起共读","crHostB":"我来带领共读","crHostD":"大家的手机会跟着我翻课、滚动、看我点的那一句、听我朗读到哪里","crJoinB":"加入共读","crJoinD":"输入带领者给你的6位代码（或直接点他传来的链接、扫 QR）","crCodePh":"6位代码","crJoinGo":"加入","crNamePh":"你的称呼（让带领者知道你来了）","crBadCode":"请输入6位共读代码","crStarting":"正在建立共读…","crJoining":"正在加入共读…","crCode":"共读代码","crScan":"请家人用手机相机扫描 QR，或在 App 点 📡 输入代码","crShareLink":"发送邀请链接","crInviteMsg":"邀请你和我一起用《晨读321》共读，点下面的链接就能加入（共读代码 {0}）：","crMembers":"已加入 {0} 人","crNone":"还没有人加入，把链接或 QR 给大家吧","crEnd":"结束共读","crLeaveB":"离开","crInv":"邀请","crHostBar":"带领共读 {0}","crGuestBar":"跟着 {0} 共读","crWait":"正在连接共读…","crOff":"此页不同步","crFollow":"跟着带领者走","crFree":"自己浏览一下","crFollowB":"跟随中","crFreeB":"回到带领者","crJoined":"{0} 加入了共读","crLeft":"{0} 离开了共读","crEnded":"带领者已结束共读，愿主祝福你！","crNoRoom":"找不到这个共读，请确认代码，或请带领者重新开始","crLostT":"共读连接中断了，可以重新加入","crLibErr":"共读组件载入失败，请检查网络后再试","crSent":"已送给带领者","crAway":"带领者在其他页面","crGuest":"朋友","crLeader":"带领者","crGuestTip":"你可以随时「自己浏览一下」，再按「回到带领者」就会跳回带领者所在的地方。你的画线与领受只存在自己的手机。","crTip":"大家进入共读后，带领者翻到哪一课、滚到哪一段、点哪一句、朗读到哪里，所有人的手机都会一起跟着走；每个人看到的是自己设定的语言与字级。想投影到电视，可用手机的屏幕镜像（AirPlay／Chromecast）。","close":"关闭","copy":"复制链接","crCopied":"已复制链接","crNm":"你的称呼"},"en":{"crTitle":"Read Together","crHostB":"I’ll lead","crHostD":"Everyone’s phone follows my lesson, scrolling, the sentence I tap and where read-aloud is","crJoinB":"Join","crJoinD":"Enter the leader’s 6-character code (or tap their link / scan the QR)","crCodePh":"6-character code","crJoinGo":"Join","crNamePh":"Your name (so the leader knows you’re here)","crBadCode":"Please enter the 6-character code","crStarting":"Starting Read Together…","crJoining":"Joining…","crCode":"Code","crScan":"Ask your family to scan the QR with their phone camera, or tap 📡 in the app and enter the code","crShareLink":"Send invite link","crInviteMsg":"I invite you to read together with me in 321 Morning Devotion. Tap the link below to join (code {0}):","crMembers":"{0} joined","crNone":"No one yet—share the link or QR","crEnd":"End","crLeaveB":"Leave","crInv":"Invite","crHostBar":"Leading {0}","crGuestBar":"Following {0}","crWait":"Connecting…","crOff":"not synced here","crFollow":"Follow the leader","crFree":"Browse on my own","crFollowB":"Following","crFreeB":"Back to leader","crJoined":"{0} joined","crLeft":"{0} left","crEnded":"The leader ended Read Together. God bless you!","crNoRoom":"Couldn’t find this session. Check the code, or ask the leader to start again","crLostT":"Connection lost—you can join again","crLibErr":"Couldn’t load the Read Together component—check your connection","crSent":"Sent to the leader","crAway":"leader is on another page","crGuest":"Friend","crLeader":"Leader","crGuestTip":"You can “Browse on my own” anytime, then tap “Back to leader” to jump to where the leader is. Your highlights and notes stay on your own phone.","crTip":"Once everyone joins, wherever the leader goes—which lesson, scroll position, tapped sentence, read-aloud—every phone follows, in each person’s own language and text size. To show it on a TV, use your phone’s screen mirroring (AirPlay / Chromecast).","close":"Close","copy":"Copy link","crCopied":"Link copied"}};
+  var HL = document.documentElement.lang || '';
+  var LG = /^en/i.test(HL) ? 'en' : (/hans|cn/i.test(HL) ? 'zs' : 'zh');
+  function T(k) { var s = (TX[LG] || TX.zh)[k] || TX.zh[k] || k; for (var i = 1; i < arguments.length; i++) s = s.replace('{' + (i - 1) + '}', arguments[i]); return s; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(m) { try { if (window.uiToast) window.uiToast(m); } catch (e) { } }
+  function qa(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function now() { return Date.now(); }
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+
+  var CR = window.CR = { role: '', code: '', peer: null, conns: [], conn: null, host: '', n: 0, follow: true, last: {}, tries: 0, away: false, hostPage: null, sentKey: '' };
+  var CH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', PFX = 'cd321-';
+  var scrollT = 0, stT = 0, manualAt = 0;
+
+  /* ── 載入元件（本機檔案，隨 App 一起快取） ── */
+  function load(src, test, cb) {
+    if (test()) return cb();
+    var s = document.createElement('script'); s.src = src;
+    s.onload = function () { if (test()) cb(); else toast(T('crLibErr')); };
+    s.onerror = function () { toast(T('crLibErr')); };
+    document.body.appendChild(s);
+  }
+  function opt() { return window.CR_PEER_OPT || { debug: 0, config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] } }; }
+  function gen() { var c = ''; for (var i = 0; i < 6; i++) c += CH.charAt(Math.floor(Math.random() * CH.length)); return c; }
+  function appUrl() { return location.origin + location.pathname; }
+  function inviteUrl() { return appUrl() + '?join=' + CR.code; }
+  function me() { return (lsGet('cd321_crnm') || '').trim() || T(CR.role === 'host' ? 'crLeader' : 'crGuest'); }
+
+  /* ── 頁面／句子的定位 ── */
+  function pgNow() {
+    var v = state.view;
+    if (v === 'home') return { v: 'home' };
+    if (v === 'reader' && state.lesson) return { v: 'reader', n: state.lesson.n, tab: state.tab || 'read' };
+    if (v === 'book') return { v: 'book' };
+    if (v === 'bookunit') return { v: 'bookunit', u: state.bookUnit };
+    return null;
+  }
+  function pgKey(p) { return p ? [p.v, p.n == null ? '' : p.n, p.tab || '', p.u == null ? '' : p.u].join('|') : ''; }
+  function sentInfo(el) {
+    var oc = el && el.getAttribute && el.getAttribute('onclick') || '';
+    var m = /^(mkTap|bookMkTap)\((\d+),'([^']*)'/.exec(oc); if (!m) return null;
+    var h = m[3].lastIndexOf('#');
+    return { b: (m[1] === 'mkTap' ? 'm' : 'b') + m[2] + '|' + (h < 0 ? m[3] : m[3].slice(0, h)), s: h < 0 ? 0 : parseInt(m[3].slice(h + 1), 10) || 0 };
+  }
+  function openDeep(el) {
+    try {
+      var body = el.closest && el.closest('.deep-body');
+      if (body && !body.classList.contains('open') && typeof toggleDeep === 'function') { var kk = (body.id || '').replace('dbody-', ''); if (kk) toggleDeep(kk); }
+    } catch (e) { }
+  }
+  function findSent(b, s) {
+    var all = qa('#app .mk-s'), hit = [];
+    for (var i = 0; i < all.length; i++) { var si = sentInfo(all[i]); if (si && si.b === b) hit.push(all[i]); }
+    if (!hit.length) return null;
+    var el = hit[Math.min(+s || 0, hit.length - 1)]; openDeep(el); return el;
+  }
+  function headBottom() { var h = document.querySelector('#app .rd-head, #app .bk-rtop'); return h ? h.getBoundingClientRect().bottom + 4 : 60; }
+
+  /* ── 按鈕與選單 ── */
+  function sheet(html) {
+    closeSheet();
+    var m = document.createElement('div'); m.id = 'crmask'; m.className = 'crmask';
+    m.innerHTML = '<div class="crsheet' + (CR.role ? ' c' : '') + '" role="dialog" aria-modal="true">' + html + '</div>';
+    m.addEventListener('click', function (e) { if (e.target === m) closeSheet(); });
+    document.body.appendChild(m);
+  }
+  function closeSheet() { var m = document.getElementById('crmask'); if (m && m.parentNode) m.parentNode.removeChild(m); }
+  function menu() {
+    if (CR.role) return panel();
+    sheet('<p class="h2" style="margin:0 0 4px">📡 ' + esc(T('crTitle')) + '</p><p class="sm muted" style="margin:0 0 12px">' + esc(T('crTip')) + '</p>' +
+      '<button class="opt" data-cra="host"><b>' + esc(T('crHostB')) + '</b><span class="sm muted">' + esc(T('crHostD')) + '</span></button>' +
+      '<div class="opt" style="cursor:default"><b>' + esc(T('crJoinB')) + '</b><span class="sm muted">' + esc(T('crJoinD')) + '</span><div class="row" style="gap:8px;margin-top:8px"><input type="text" id="crc" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="' + esc(T('crCodePh')) + '" style="flex:1 1 0;width:0;min-width:0;text-transform:uppercase;letter-spacing:.2em"><button class="btn pri" style="flex:0 0 auto" data-cra="join">' + esc(T('crJoinGo')) + '</button></div><input type="text" id="crn" maxlength="20" placeholder="' + esc(T('crNamePh')) + '" value="' + esc(lsGet('cd321_crnm')) + '" style="margin-top:8px"></div>' +
+      '<button class="btn full" data-cra="close">' + esc(T('close')) + '</button>');
+  }
+  function joinUi() {
+    var n = ((document.getElementById('crn') || {}).value || '').trim(); if (n) lsSet('cd321_crnm', n.slice(0, 20));
+    var c = (document.getElementById('crc') || {}).value || ''; closeSheet(); join(c);
+  }
+  function panel() {
+    if (!CR.role) return menu();
+    if (CR.role === 'guest') {
+      sheet('<p class="h2">📡 ' + esc(T('crTitle')) + '</p><p>' + esc(CR.host ? T('crGuestBar', CR.host) : T('crWait')) + '</p><p class="sm muted">' + esc(T('crGuestTip')) + '</p><button class="btn pri full" data-cra="toggle">' + esc(CR.follow ? T('crFree') : T('crFollow')) + '</button><button class="btn full" style="margin-top:8px;color:#B5503A" data-cra="leave">' + esc(T('crLeaveB')) + '</button>');
+      return;
+    }
+    load('qrcode.js', function () { return !!window.qrcode; }, function () {
+      if (CR.role !== 'host') return;
+      var q = window.qrcode(0, 'M'); q.addData(inviteUrl()); q.make();
+      var ms = ''; for (var i = 0; i < CR.conns.length; i++) ms += '<span class="pill">' + esc(CR.conns[i]._nm || T('crGuest')) + '</span> ';
+      sheet('<p class="h2" style="margin:0">📡 ' + esc(T('crTitle')) + '</p><p class="xs muted" style="margin:2px 0 8px">' + esc(T('crScan')) + '</p><div class="crqr">' + q.createSvgTag(5, 8) + '</div><p class="eyebrow" style="margin:8px 0 0">' + esc(T('crCode')) + '</p><div class="crcode">' + esc(CR.code) + '</div>' +
+        '<div class="row" style="gap:8px;margin:10px 0"><button class="btn pri grow" data-cra="share">' + esc(T('crShareLink')) + '</button><button class="btn grow" data-cra="copy">' + esc(T('copy')) + '</button></div>' +
+        '<p class="eyebrow" style="text-align:left">' + esc(T('crMembers', CR.conns.length)) + '</p><div style="text-align:left;min-height:24px">' + (ms || '<span class="xs muted">' + esc(T('crNone')) + '</span>') + '</div><p class="xs muted" style="text-align:left">' + esc(T('crTip')) + '</p>' +
+        '<div class="row" style="gap:8px"><button class="btn grow" data-cra="close">' + esc(T('close')) + '</button><button class="btn grow" style="color:#B5503A" data-cra="end">' + esc(T('crEnd')) + '</button></div>');
+    });
+  }
+  function copyText(t) {
+    function done() { toast(T('crCopied')); }
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(done, fb); return; } } catch (e) { }
+    fb();
+    function fb() { try { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0;left:0;top:0'; document.body.appendChild(a); a.focus(); a.select(); document.execCommand('copy'); document.body.removeChild(a); done(); } catch (e) { } }
+  }
+  function shareInvite() {
+    var txt = T('crInviteMsg', CR.code), u = inviteUrl();
+    try { if (navigator.share) { navigator.share({ text: txt, url: u }).catch(function () { }); return; } } catch (e) { }
+    copyText(txt + '\n' + u);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-cra]') : null; if (!b) return;
+    var a = b.getAttribute('data-cra');
+    if (a === 'menu') menu();
+    else if (a === 'panel') panel();
+    else if (a === 'host') { closeSheet(); host(); }
+    else if (a === 'join') joinUi();
+    else if (a === 'close') closeSheet();
+    else if (a === 'toggle') { closeSheet(); toggle(); }
+    else if (a === 'leave') leave();
+    else if (a === 'end') { if (confirm(T('crEnd') + '？')) leave(); }
+    else if (a === 'share') shareInvite();
+    else if (a === 'copy') copyText(inviteUrl());
+    else if (a === 're') react(b.getAttribute('data-e'));
+  });
+
+  /* 頂端 📡 按鈕：首頁、課文頁、書本頁（其他畫面有連線時用上方狀態列） */
+  function mount() {
+    var i, fs = qa('#app .rd-font:not(.crbtn)');
+    for (i = 0; i < fs.length; i++) {
+      var pv = fs[i].previousElementSibling;
+      if (pv && pv.classList.contains('crbtn')) { pv.className = 'rd-font crbtn' + (CR.role ? ' crlive' : ''); continue; }
+      var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'rd-font crbtn' + (CR.role ? ' crlive' : ''); bt.setAttribute('data-cra', 'menu'); bt.setAttribute('aria-label', 'co-read'); bt.textContent = '📡';
+      fs[i].parentNode.insertBefore(bt, fs[i]);
+    }
+    var hh = document.querySelector('#app .home-head');
+    if (hh && !hh.querySelector('.crhome')) {
+      var hb = document.createElement('button'); hb.type = 'button'; hb.className = 'crhome' + (CR.role ? ' crlive' : ''); hb.setAttribute('data-cra', 'menu'); hb.setAttribute('aria-label', 'co-read'); hb.textContent = '📡';
+      hh.appendChild(hb);
+    } else if (hh) { hh.querySelector('.crhome').className = 'crhome' + (CR.role ? ' crlive' : ''); }
+  }
+
+  /* ── 帶領者（房間主機） ── */
+  function host(code) {
+    load('peerjs.min.js', function () { return !!window.Peer; }, function () {
+      kill(); CR.role = 'host'; CR.code = code || gen(); CR.conns = []; CR.sentKey = pgKey(pgNow()); toast(T('crStarting'));
+      var p = new window.Peer(PFX + CR.code, opt()); CR.peer = p;
+      p.on('open', function () { CR.tries = 0; bar(); panel(); mount(); });
+      p.on('connection', function (c) {
+        c.on('open', function () { CR.conns.push(c); bar(); });
+        c.on('data', function (d) { hostData(c, d); });
+        c.on('close', function () { drop(c); }); c.on('error', function () { drop(c); });
+      });
+      p.on('disconnected', function () { if (CR.role === 'host' && CR.peer === p) { try { p.reconnect(); } catch (e) { } } });
+      p.on('error', function (e) {
+        if (e && e.type === 'unavailable-id' && !code) { host(); return; }
+        if (e && e.type === 'unavailable-id') { if (CR.tries++ < 5) setTimeout(function () { if (CR.role === 'host') host(CR.code); }, 3000); return; }
+        toast(T('crLostT')); leave();
+      });
+    });
+  }
+  function hostData(c, d) {
+    if (!d || !d.t) return;
+    if (d.t === 'hi') { c._nm = String(d.name || T('crGuest')).slice(0, 20); toast(T('crJoined', c._nm)); send(c, state_()); bar(); if (document.getElementById('crmask')) panel(); }
+    else if (d.t === 're') toast((c._nm || '') + ' ' + String(d.e || '').slice(0, 4));
+  }
+  function drop(c) { var a = []; for (var i = 0; i < CR.conns.length; i++) if (CR.conns[i] !== c) a.push(CR.conns[i]); if (a.length !== CR.conns.length && c._nm) toast(T('crLeft', c._nm)); CR.conns = a; bar(); }
+  function send(c, m) { try { if (c && c.open) c.send(m); } catch (e) { } }
+  function cast(m) { if (CR.role !== 'host') return; for (var i = 0; i < CR.conns.length; i++) send(CR.conns[i], m); }
+  function state_() {
+    var k = pgKey(pgNow()), same = CR.last.k === k;
+    return { t: 'st', page: pgNow(), name: me(), n: CR.conns.length + 1, pos: same ? CR.last.pos || null : null, mk: same ? CR.last.mk || null : null };
+  }
+
+  /* ── 加入者 ── */
+  function join(code) {
+    code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    if (code.length < 6) return toast(T('crBadCode'));
+    load('peerjs.min.js', function () { return !!window.Peer; }, function () { kill(); CR.role = 'guest'; CR.code = code; CR.follow = true; CR.tries = 0; toast(T('crJoining')); connect(); bar(); mount(); });
+  }
+  function connect() {
+    if (CR.peer) { try { CR.peer.destroy(); } catch (e) { } }
+    var p = new window.Peer(opt()); CR.peer = p; CR.host = '';
+    p.on('open', function () {
+      var c = p.connect(PFX + CR.code, { reliable: true }); CR.conn = c;
+      var to = setTimeout(function () { if (CR.role === 'guest' && !CR.host) lost(); }, 15000);
+      c.on('open', function () { send(c, { t: 'hi', name: me() }); });
+      c.on('data', function (d) { clearTimeout(to); CR.tries = 0; guestData(d); });
+      c.on('close', function () { if (CR.role === 'guest' && CR.peer === p) lost(); });
+      c.on('error', function () { if (CR.role === 'guest' && CR.peer === p) lost(); });
+    });
+    p.on('error', function (e) {
+      if (CR.peer !== p) return;
+      if (e && e.type === 'peer-unavailable') { if (CR.tries === 0 && !CR.host) { toast(T('crNoRoom')); leave(); } else lost(); return; }
+      lost();
+    });
+  }
+  function lost() { CR.host = ''; bar(); if (CR.role !== 'guest') return; if (CR.tries++ < 6) setTimeout(function () { if (CR.role === 'guest') connect(); }, 1500 * CR.tries); else { toast(T('crLostT')); leave(); } }
+  function guestData(d) {
+    if (!d || !d.t) return;
+    if (d.t === 'end') { toast(T('crEnded')); leave(); return; }
+    if (d.t === 'st') {
+      CR.host = String(d.name || T('crLeader')).slice(0, 20); CR.n = d.n || 0; CR.away = !d.page;
+      CR.last.pos = d.pos || null; CR.last.mk = d.mk || null;
+      if (d.page) CR.hostPage = d.page;
+      bar(); if (CR.follow && d.page) go_(d.page); else apply(); return;
+    }
+    if (d.t === 'pos') { CR.last.pos = d; if (CR.follow) doScroll(d); return; }
+    if (d.t === 'mk') { CR.last.mk = d; if (CR.follow) doMark(d, 1); return; }
+  }
+  function go_(pg) {
+    if (pgKey(pg) === pgKey(pgNow())) { apply(); return; }
+    try {
+      if (pg.v === 'home') go('home');
+      else if (pg.v === 'reader') {
+        var l = null; for (var i = 0; i < LESSONS.length; i++) if (LESSONS[i].n === pg.n) { l = LESSONS[i]; break; }
+        if (!l) return;
+        go('reader', l);
+        if (pg.tab && pg.tab !== 'read') { state.tab = pg.tab; render(); window.scrollTo(0, 0); }
+      }
+      else if (pg.v === 'book') openBook();
+      else if (pg.v === 'bookunit') openBookUnit(pg.u);
+    } catch (e) { }
+    setTimeout(apply, 60);
+  }
+  function doScroll(d) {
+    if (now() - manualAt < 4000) return;
+    if (d.top0) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (d.f != null) { var h = document.documentElement.scrollHeight - window.innerHeight; window.scrollTo({ top: Math.max(0, h * d.f), behavior: 'smooth' }); return; }
+    var el = findSent(d.b, d.s); if (!el) return;
+    var dy = el.getBoundingClientRect().top - (d.y || 100); if (Math.abs(dy) > 4) window.scrollBy({ top: dy, behavior: 'smooth' });
+  }
+  function clearMk() { qa('.cr-pt').forEach(function (e) { e.classList.remove('cr-pt'); }); }
+  function doMark(d, move) {
+    clearMk();
+    var el = findSent(d.b, d.s); if (!el) return; el.classList.add('cr-pt');
+    if (move && now() - manualAt > 4000) { try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { } }
+  }
+  function apply() { if (CR.role !== 'guest' || !CR.follow) return; setTimeout(function () { if (CR.last.mk) doMark(CR.last.mk, 0); if (CR.last.pos) doScroll(CR.last.pos); }, 120); }
+  function react(e) { if (CR.conn) send(CR.conn, { t: 're', e: e }); toast(T('crSent')); }
+  function toggle() { CR.follow = !CR.follow; toast(T(CR.follow ? 'crFollow' : 'crFree')); bar(); if (CR.follow && CR.hostPage) go_(CR.hostPage); else if (!CR.follow) clearMk(); else apply(); }
+  function kill() { if (CR.peer) { try { CR.peer.destroy(); } catch (e) { } } CR.peer = null; CR.conn = null; CR.conns = []; CR.host = ''; CR.last = {}; }
+  function leave() {
+    if (CR.role === 'host') cast({ t: 'end' });
+    var r = CR.role; setTimeout(kill, r === 'host' ? 300 : 0);
+    CR.role = ''; CR.code = ''; clearMk(); bar(); closeSheet(); mount();
+  }
+
+  /* ── 帶領者端：捲動、點句、朗讀位置 ── */
+  function curPos() {
+    if (window.scrollY < 12) return { t: 'pos', top0: 1 };
+    var th = headBottom(), ss = qa('#app .mk-s');
+    for (var i = 0; i < ss.length; i++) {
+      var r = ss[i].getBoundingClientRect();
+      if (r.height > 0 && r.bottom > th) { var si = sentInfo(ss[i]); if (si) return { t: 'pos', b: si.b, s: si.s, y: Math.round(r.top) }; break; }
+    }
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    return { t: 'pos', f: h > 0 ? Math.round(window.scrollY / h * 10000) / 10000 : 0 };
+  }
+  window.addEventListener('scroll', function () {
+    if (CR.role !== 'host' || !CR.conns.length) return;
+    clearTimeout(scrollT); scrollT = setTimeout(function () { var m = curPos(); CR.last.k = pgKey(pgNow()); CR.last.pos = m; cast(m); }, 220);
+  }, { passive: true });
+  ['touchmove', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { manualAt = now(); }, { passive: true }); });
+  function markMsg(el, k) { var si = sentInfo(el); return si ? { t: 'mk', k: k, b: si.b, s: si.s } : null; }
+  function hostMark(el, k) {
+    if (CR.role !== 'host' || !CR.conns.length) return;
+    var m = markMsg(el, k); if (m) { CR.last.k = pgKey(pgNow()); CR.last.mk = m; cast(m); }
+  }
+  ['mkTap', 'bookMkTap'].forEach(function (nm) {
+    var o = window[nm]; if (typeof o !== 'function') return;
+    window[nm] = function (n, key, el) { try { hostMark(el, 'pt'); } catch (e) { } return o.apply(this, arguments); };
+  });
+
+  /* ── 畫面重繪／朗讀標示的偵測 ── */
+  function onRender() {
+    mount();
+    if (CR.role === 'host') {
+      var k = pgKey(pgNow());
+      if (k !== CR.sentKey) { CR.sentKey = k; CR.last = {}; clearTimeout(stT); stT = setTimeout(function () { cast(state_()); }, 150); }
+      bar();
+    } else if (CR.role === 'guest') apply();
+  }
+  var renderT = 0;
+  function boot() {
+    var app = document.getElementById('app'); if (!app) return setTimeout(boot, 200);
+    new MutationObserver(function () { clearTimeout(renderT); renderT = setTimeout(onRender, 40); }).observe(app, { childList: true });
+    new MutationObserver(function (ms) {
+      if (CR.role !== 'host' || !CR.conns.length) return;
+      for (var i = 0; i < ms.length; i++) {
+        var t = ms[i].target;
+        if (t.classList && t.classList.contains('rd-now') && t.classList.contains('mk-s') && t._crTts !== 1) { t._crTts = 1; hostMark(t, 'tts'); }
+        else if (t.classList && !t.classList.contains('rd-now')) t._crTts = 0;
+      }
+    }).observe(app, { attributes: true, attributeFilter: ['class'], subtree: true });
+    mount();
+  }
+
+  /* ── 上方狀態列 ── */
+  function bar() {
+    var el = document.getElementById('crbar'), de = document.documentElement;
+    de.classList[CR.role ? 'add' : 'remove']('crOn');
+    if (!CR.role) { if (el && el.parentNode) el.parentNode.removeChild(el); mount(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'crbar'; el.className = 'crbar'; document.body.appendChild(el); }
+    if (CR.role === 'host') el.innerHTML = '<span class="crt" data-cra="panel">📡 ' + esc(T('crHostBar', CR.code)) + ' · 👥' + (CR.conns.length + 1) + (pgNow() ? '' : ' · ' + esc(T('crOff'))) + '</span><button data-cra="panel">' + esc(T('crInv')) + '</button><button data-cra="end">' + esc(T('crEnd')) + '</button>';
+    else el.innerHTML = '<span class="crt" data-cra="panel">📡 ' + esc(CR.host ? T('crGuestBar', CR.host) + ' · 👥' + CR.n + (CR.away ? ' · ' + T('crAway') : '') : T('crWait')) + '</span><button data-cra="toggle">' + esc(CR.follow ? T('crFollowB') : T('crFreeB')) + '</button><button data-cra="re" data-e="🙏">🙏</button><button data-cra="re" data-e="🙋">🙋</button><button data-cra="leave">' + esc(T('crLeaveB')) + '</button>';
+    mount();
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if (CR.role === 'guest' && (!CR.conn || !CR.conn.open)) { CR.tries = 0; connect(); }
+    if (CR.role === 'host' && CR.peer && CR.peer.disconnected) { try { CR.peer.reconnect(); } catch (e) { } }
+  });
+
+  /* ── 樣式 ── */
+  var st = document.createElement('style');
+  st.textContent = '.crbar{position:fixed;left:0;right:0;top:0;z-index:600;display:flex;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;background:linear-gradient(90deg,#3E7766,#1E5C4A);color:#fff;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.2)}' +
+    '.crbar .crt{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;cursor:pointer}' +
+    '.crbar button{flex:0 0 auto;border:0;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;padding:5px 9px;font:inherit;font-weight:600;cursor:pointer}' +
+    'html.crOn body{padding-top:calc(40px + env(safe-area-inset-top))}html.crOn #app .rd-head,html.crOn #app .bk-rtop{top:calc(40px + env(safe-area-inset-top))}' +
+    '.crbtn.crlive,.crhome.crlive{background:#6C4BA3!important;color:#fff!important}' +
+    '#app .home-head .home-eyebrow{padding-right:150px}.crhome{position:absolute;right:122px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;height:30px;min-width:34px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.18);color:#fff;font-size:14px;cursor:pointer}' +
+    '.cr-pt{background:rgba(108,75,163,.22)!important;outline:2px solid rgba(108,75,163,.55);border-radius:4px;animation:crp 1.6s ease-out 1}@keyframes crp{0%{outline-color:rgba(108,75,163,1);outline-width:5px}100%{outline-color:rgba(108,75,163,.55);outline-width:2px}}' +
+    '.crmask{position:fixed;left:0;right:0;top:0;bottom:0;z-index:5000;background:rgba(20,30,26,.5);display:flex;align-items:flex-end;justify-content:center}' +
+    '.crsheet{background:var(--paper,#fff);color:var(--ink,#222);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;font-size:15px;line-height:1.5}' +
+    '.crsheet.c{text-align:center}.crsheet .h2{font-size:18px;font-weight:800;color:var(--mintDark,#3E7766);margin:0 0 6px}.crsheet .sm{font-size:13.5px}.crsheet .xs{font-size:12.5px}.crsheet .muted{color:var(--inkSoft,#666)}' +
+    '.crsheet p{margin:6px 0}.crsheet .opt{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;border:1px solid var(--line,#ddd);background:var(--card,#fff);border-radius:14px;padding:14px;margin-bottom:10px;color:var(--ink,#222);font:inherit;box-sizing:border-box;cursor:pointer}' +
+    '.crsheet .btn{border:1px solid var(--line,#ddd);background:var(--card,#fff);color:var(--ink,#222);border-radius:12px;padding:11px 14px;font:inherit;font-weight:700;cursor:pointer}.crsheet .btn.pri{background:var(--mintDark,#3E7766);border-color:var(--mintDark,#3E7766);color:#fff}.crsheet .full{width:100%}' +
+    '.crsheet .row{display:flex;align-items:center}.crsheet .grow{flex:1 1 0}.crsheet .eyebrow{font-size:12px;color:var(--inkFaint,#888);letter-spacing:.5px;margin:6px 0}' +
+    '.crsheet .pill{display:inline-block;background:var(--mintWash,#EAF3EF);border-radius:999px;padding:3px 10px;margin:2px;font-size:13px}' +
+    '.crsheet input[type=text]{border:1px solid var(--line,#ddd);background:var(--mintSoft,#f4f9f6);border-radius:12px;padding:11px 12px;font:inherit;color:var(--ink,#222);width:100%;box-sizing:border-box}' +
+    '.crqr{display:flex;justify-content:center}.crqr svg{width:200px;height:200px;background:#fff;border-radius:12px}.crcode{font-size:32px;font-weight:800;letter-spacing:.25em;color:var(--mintDark,#3E7766);font-family:ui-monospace,Menlo,monospace}';
+  document.head.appendChild(st);
+
+  /* ── 從邀請連結 ?join=XXXXXX 進來：自動加入 ── */
+  var JC = (location.search.match(/[?&]join=([A-Za-z0-9]{6})/) || [])[1] || '';
+  if (JC) {
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { }
+    window.addEventListener('load', function () { setTimeout(function () { join(JC); }, 600); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
 <script id="cd3lang">/* 繁／简／EN 一鍵切換（三版同一個 App；進度紀錄各版照舊） */(function(){if(window.__cd3l)return;window.__cd3l=1;var CUR="sc",F={tc:"index.html?tc",sc:"sc.html",en:"en.html"};function go(k){if(k===CUR)return;try{localStorage.setItem("cd321_lang",k);}catch(e){}location.href=F[k]+location.hash;}var st=document.createElement("style");st.textContent=".cd3l{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;display:inline-flex;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}.cd3l button{border:0;background:transparent;color:#fff;font:700 13px/28px system-ui,-apple-system,\"PingFang TC\",sans-serif;padding:0 9px;min-width:30px;cursor:pointer}.cd3l button.on{background:rgba(255,255,255,.92);color:#2f6b5a}";document.head.appendChild(st);function mount(){var host=document.querySelector(".home-head");var old=document.querySelector(".cd3l");if(!host){if(old)old.remove();return;}if(old&&host.contains(old))return;if(old)old.remove();if(getComputedStyle(host).position==="static")host.style.position="relative";var b=document.createElement("div");b.className="cd3l";b.setAttribute("role","group");b.title="切换语言";[["tc","繁"],["sc","简"],["en","EN"]].forEach(function(x){var t=document.createElement("button");t.type="button";t.textContent=x[1];if(x[0]===CUR)t.className="on";t.onclick=function(){go(x[0]);};b.appendChild(t);});host.appendChild(b);}new MutationObserver(function(){mount();}).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();})();</script>
