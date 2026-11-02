@@ -25607,7 +25607,7 @@ const GXHL = (function () {
       <div class="gxbs-hint">${esc0(L('按 ＋ 往下多畫一句，畫線就不只一句，可以連成一整段。', 'Tap ＋ to take in the next sentence, so a highlight can cover a whole passage.'))}</div>
       <textarea class="gxbs-ta" placeholder="${esc0(L('寫下默想…', 'Write your reflection…'))}">${esc0(o.n || '')}</textarea>
       <div class="gxbs-acts"><button class="gxbs-btn primary" data-a="save">${esc0(L('儲存', 'Save'))}</button><button class="gxbs-btn" data-a="ask">${esc0(L('問小智', 'Ask Xiaozhi'))}</button><button class="gxbs-btn" data-a="read">${esc0(L('🔊 從這裡開始朗讀', '🔊 Read from here'))}</button></div>
-      <div class="gxbs-acts2"><button class="gxbs-btn gold" data-a="card">🖼 ${esc0(L('做成美圖', 'Make a card'))}</button><button class="gxbs-btn danger" data-a="del">${esc0(L('刪除畫線', 'Remove highlight'))}</button><button class="gxbs-btn" data-a="close">${esc0(L('關閉', 'Close'))}</button></div></div>`;
+      <div class="gxbs-acts2"><button class="gxbs-btn gold" data-a="card">🖼 ${esc0(L('做成美圖', 'Make a card'))}</button><button class="gxbs-btn" data-a="copy">⧉ ${esc0(L('複製', 'Copy'))}</button><button class="gxbs-btn" data-a="share">↗ ${esc0(L('分享', 'Share'))}</button><button class="gxbs-btn danger" data-a="del">${esc0(L('刪除畫線', 'Remove highlight'))}</button><button class="gxbs-btn" data-a="close">${esc0(L('關閉', 'Close'))}</button></div></div>`;
     GXA_root().appendChild(m);
     m.addEventListener('click', e => { if (e.target === m) close(); });
     const ta = m.querySelector('.gxbs-ta'), q = m.querySelector('.gxbs-quote'), num = m.querySelector('.gxbs-num');
@@ -25621,6 +25621,20 @@ const GXHL = (function () {
     });
     m.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
       const a = b.getAttribute('data-a'), n = ta.value.trim();
+      /* 複製／分享：面板不關，帶出「經文＋默想＋團契與網址」 */
+      if (a === 'copy' || a === 'share') {
+        const q0 = (m.querySelector('.gxbs-quote') || {}).textContent || '';
+        let tx = (EN() ? '\u201c' + q0 + '\u201d' : '\u300c' + q0 + '\u300d') + (n ? '\n\n' + n : '');
+        try { tx += '\n\n\u2014\u2014 ' + GX.FELLOW + '\n' + GX.home(); } catch (e2) {}
+        tx = toSC(tx);
+        const cp = () => {
+          const done = () => toast(L('已複製，可以貼到群組裡', 'Copied \u2014 paste it anywhere'), 2200);
+          try { navigator.clipboard.writeText(tx).then(done, () => { const ta2 = document.createElement('textarea'); ta2.value = tx; ta2.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta2); ta2.select(); try { document.execCommand('copy'); done(); } catch (e3) {} ta2.remove(); }); }
+          catch (e4) { try { const ta2 = document.createElement('textarea'); ta2.value = tx; ta2.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta2); ta2.select(); document.execCommand('copy'); ta2.remove(); done(); } catch (e5) {} }
+        };
+        if (a === 'share' && navigator.share) { navigator.share({ text: tx })['catch'](function (e6) { if (!e6 || e6.name !== 'AbortError') cp(); }); } else cp();
+        return;
+      }
       close();
       try {
         if (a === 'save') o.onSave(n);
@@ -26234,5 +26248,48 @@ if ("serviceWorker" in navigator) {
 })();
 </script>
 <script id="cd3lang">/* 繁／简／EN 一鍵切換（三版同一個 App；進度紀錄各版照舊） */(function(){if(window.__cd3l)return;window.__cd3l=1;var CUR="tc",F={tc:"index.html?tc",sc:"sc.html",en:"en.html"};function go(k){if(k===CUR)return;try{localStorage.setItem("cd321_lang",k);}catch(e){}location.href=F[k]+location.hash;}var st=document.createElement("style");st.textContent=".cd3l{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;display:inline-flex;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}.cd3l button{border:0;background:transparent;color:#fff;font:700 13px/28px system-ui,-apple-system,\"PingFang TC\",sans-serif;padding:0 9px;min-width:30px;cursor:pointer}.cd3l button.on{background:rgba(255,255,255,.92);color:#2f6b5a}";document.head.appendChild(st);function mount(){var host=document.querySelector(".home-head");var old=document.querySelector(".cd3l");if(!host){if(old)old.remove();return;}if(old&&host.contains(old))return;if(old)old.remove();if(getComputedStyle(host).position==="static")host.style.position="relative";var b=document.createElement("div");b.className="cd3l";b.setAttribute("role","group");b.title="切換語言";[["tc","繁"],["sc","简"],["en","EN"]].forEach(function(x){var t=document.createElement("button");t.type="button";t.textContent=x[1];if(x[0]===CUR)t.className="on";t.onclick=function(){go(x[0]);};b.appendChild(t);});host.appendChild(b);}new MutationObserver(function(){mount();}).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();})();</script>
+<script id="GXFS">
+/* ═══ 小智全螢幕＋字級（2026-11-03，給 GXA 系 App）═══
+   ① 小智面板佔滿整個畫面（原本是下方抽屜，上面還露出一截頁首）
+   ② 小智回答字級＝內文字級（--fs），面板頂端多一顆「A」可調整小智字級（四段，記在這台裝置） */
+(function () {
+  if (window.__gxfs) return; window.__gxfs = 1;
+  var K = 'gxfs_k', KS = [1, 1.12, 1.25, 1.4], idx = 0;
+  try { idx = Math.max(0, Math.min(KS.length - 1, parseInt(localStorage.getItem(K), 10) || 0)); } catch (e) {}
+  var st = document.createElement('style');
+  st.textContent =
+    '#gxaxz .xzcard{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;' +
+    'width:100%!important;max-width:none!important;height:100%!important;height:100dvh!important;max-height:none!important;' +
+    'margin:0!important;border-radius:0!important;padding-top:env(safe-area-inset-top);transform:none!important}' +
+    '#gxaxz .xzm,#gxaxz .xzhi,#gxaxz .xzsv{font-size:calc(var(--fs,17px)*var(--xzk,1))!important}' +
+    '#gxaxz .xzm .xzt{font-size:1em!important}' +
+    '#gxaxz .xzq button{font-size:calc(var(--fs,17px)*var(--xzk,1)*.9)!important}' +
+    '#gxaxz .xzfs{font-family:serif;font-weight:700;min-width:40px}' +
+    '#gxaxz .xzb{padding:12px 10px!important}' +
+    '#gxaxz .xzm.assistant{max-width:100%!important;width:100%;box-sizing:border-box}' +
+    '#gxaxz .xzm.user{max-width:92%!important}';
+  document.head.appendChild(st);
+  function apply() { var x = document.getElementById('gxaxz'); if (x && x.style.getPropertyValue('--xzk') !== String(KS[idx])) x.style.setProperty('--xzk', String(KS[idx])); }
+  function addBtn() {
+    apply();
+    var h = document.querySelector('#gxaxz .xzh');
+    if (!h || h.querySelector('.xzfs')) return;
+    var b = document.createElement('button');
+    b.className = 'ico xzfs'; b.type = 'button'; b.textContent = 'A';
+    var lang = document.documentElement.lang || '';
+    b.setAttribute('aria-label', /^en/i.test(lang) ? 'Text size' : (/Hans|zh-CN/i.test(lang) ? '字级' : '字級'));
+    b.onclick = function (e) {
+      e.stopPropagation(); idx = (idx + 1) % KS.length;
+      try { localStorage.setItem(K, String(idx)); } catch (e2) {}
+      apply();
+      try { if (window.GXA && GXA.toast) GXA.toast((/^en/i.test(lang) ? 'Xiaozhi text size ' : (/Hans|zh-CN/i.test(lang) ? '小智字级 ' : '小智字級 ')) + (idx + 1) + ' / ' + KS.length, 1400); } catch (e3) {}
+    };
+    var first = h.querySelector('button');
+    if (first) h.insertBefore(b, first); else h.appendChild(b);
+  }
+  try { new MutationObserver(addBtn).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+  addBtn();
+})();
+</script>
 </body>
 </html>
