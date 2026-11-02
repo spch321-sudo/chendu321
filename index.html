@@ -25919,10 +25919,11 @@ if ("serviceWorker" in navigator) {
   function pgNow() {
     var v = state.view;
     if (v === 'home') return { v: 'home' };
-    if (v === 'reader' && state.lesson) return { v: 'reader', n: state.lesson.n, tab: state.tab || 'read' };
+    if (v === 'reader' && state.lesson) return state.tab === 'note' ? null : { v: 'reader', n: state.lesson.n, tab: state.tab || 'read' };
     if (v === 'book') return { v: 'book' };
     if (v === 'bookunit') return { v: 'bookunit', u: state.bookUnit };
-    return null;
+    if (v === 'strategy' && state.strategyId) return { v: 'strategy', u: state.strategyId };
+    return null;   /* 我的畫線回顧（review）與筆記頁是個人頁面，不同步 */
   }
   function pgKey(p) { return p ? [p.v, p.n == null ? '' : p.n, p.tab || '', p.u == null ? '' : p.u].join('|') : ''; }
   function sentInfo(el) {
@@ -26008,7 +26009,7 @@ if ("serviceWorker" in navigator) {
     else if (a === 're') react(b.getAttribute('data-e'));
   });
 
-  /* 頂端 📡 按鈕：首頁、課文頁、書本頁（其他畫面有連線時用上方狀態列） */
+  /* 頂端 📡 按鈕：首頁、課文頁、書本頁、回顧頁、四方略頁（每頁都有） */
   function mount() {
     var i, fs = qa('#app .rd-font:not(.crbtn)');
     for (i = 0; i < fs.length; i++) {
@@ -26017,7 +26018,13 @@ if ("serviceWorker" in navigator) {
       var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'rd-font crbtn' + (CR.role ? ' crlive' : ''); bt.setAttribute('data-cra', 'menu'); bt.setAttribute('aria-label', 'co-read'); bt.textContent = '📡';
       fs[i].parentNode.insertBefore(bt, fs[i]);
     }
-    var hh = document.querySelector('#app .home-head');
+    var rvs = qa('#app .rv-head');
+    for (i = 0; i < rvs.length; i++) {
+      var rb = rvs[i].querySelector('.crbtn');
+      if (!rb) { rb = document.createElement('button'); rb.type = 'button'; rb.setAttribute('data-cra', 'menu'); rb.setAttribute('aria-label', 'co-read'); rb.textContent = '📡'; rvs[i].appendChild(rb); }
+      rb.className = 'rd-font crbtn' + (CR.role ? ' crlive' : '');
+    }
+    var hh = document.querySelector('#app .home-head, #app .bk-head, #app .bk-hero');
     if (hh && !hh.querySelector('.crhome')) {
       var hb = document.createElement('button'); hb.type = 'button'; hb.className = 'crhome' + (CR.role ? ' crlive' : ''); hb.setAttribute('data-cra', 'menu'); hb.setAttribute('aria-label', 'co-read'); hb.textContent = '📡';
       hh.appendChild(hb);
@@ -26104,6 +26111,7 @@ if ("serviceWorker" in navigator) {
       }
       else if (pg.v === 'book') openBook();
       else if (pg.v === 'bookunit') openBookUnit(pg.u);
+      else if (pg.v === 'strategy') openStrategy(pg.u);
     } catch (e) { }
     setTimeout(apply, 60);
   }
@@ -26142,13 +26150,13 @@ if ("serviceWorker" in navigator) {
     return { t: 'pos', f: h > 0 ? Math.round(window.scrollY / h * 10000) / 10000 : 0 };
   }
   window.addEventListener('scroll', function () {
-    if (CR.role !== 'host' || !CR.conns.length) return;
+    if (CR.role !== 'host' || !CR.conns.length || !pgNow()) return;
     clearTimeout(scrollT); scrollT = setTimeout(function () { var m = curPos(); CR.last.k = pgKey(pgNow()); CR.last.pos = m; cast(m); }, 220);
   }, { passive: true });
   ['touchmove', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { manualAt = now(); }, { passive: true }); });
   function markMsg(el, k) { var si = sentInfo(el); return si ? { t: 'mk', k: k, b: si.b, s: si.s } : null; }
   function hostMark(el, k) {
-    if (CR.role !== 'host' || !CR.conns.length) return;
+    if (CR.role !== 'host' || !CR.conns.length || !pgNow()) return;
     var m = markMsg(el, k); if (m) { CR.last.k = pgKey(pgNow()); CR.last.mk = m; cast(m); }
   }
   ['mkTap', 'bookMkTap'].forEach(function (nm) {
@@ -26202,7 +26210,7 @@ if ("serviceWorker" in navigator) {
     '.crbar .crt{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;cursor:pointer}' +
     '.crbar button{flex:0 0 auto;border:0;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;padding:5px 9px;font:inherit;font-weight:600;cursor:pointer}' +
     'html.crOn body{padding-top:calc(40px + env(safe-area-inset-top))}html.crOn #app .rd-head,html.crOn #app .bk-rtop{top:calc(40px + env(safe-area-inset-top))}' +
-    '.crbtn.crlive,.crhome.crlive{background:#6C4BA3!important;color:#fff!important}' +
+    '.crbtn.crlive,.crhome.crlive{background:#6C4BA3!important;color:#fff!important}#app .bk-head .crhome,#app .bk-hero .crhome{right:14px;top:14px}#app .rv-head .crbtn{margin-left:auto}' +
     '#app .home-head .home-eyebrow{padding-right:150px}.crhome{position:absolute;right:122px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;height:30px;min-width:34px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.18);color:#fff;font-size:14px;cursor:pointer}' +
     '.cr-pt{background:rgba(108,75,163,.22)!important;outline:2px solid rgba(108,75,163,.55);border-radius:4px;animation:crp 1.6s ease-out 1}@keyframes crp{0%{outline-color:rgba(108,75,163,1);outline-width:5px}100%{outline-color:rgba(108,75,163,.55);outline-width:2px}}' +
     '.crmask{position:fixed;left:0;right:0;top:0;bottom:0;z-index:5000;background:rgba(20,30,26,.5);display:flex;align-items:flex-end;justify-content:center}' +
