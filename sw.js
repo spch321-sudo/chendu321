@@ -9,7 +9,7 @@
    　　只清「自己前綴」（chendu321-zht-）的快取，絕不誤刪另一個 App 的離線內容。
    ============================================================ */
 var PREFIX  = "chendu321-zht-";
-var VERSION = "v66-coread-10311200";
+var VERSION = "v67-ws";
 var CACHE   = PREFIX + VERSION;
 
 var SHELL = [
