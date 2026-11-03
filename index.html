@@ -824,6 +824,30 @@ body.fs-lg .bfn-tx{font-size:18px}body.fs-xl .bfn-tx{font-size:21px}
 <div id="mark-sheet" style="display:none"></div>
 <div id="spk-sheet" style="display:none"></div>
 
+<script src="xz2.js?v=xz1103"></script>
+<script id="XZ2I">
+/* XZ2 · 小智最新功能共用套件（-xz1103）：回答長度五段、讀者資料、慕道友信仰背景、設定頁區塊、滿版小智頁摘要列 */
+XZ2.init({
+  app: 'gxa', pfx: 'xz321-' + ((location.pathname.split('/').filter(Boolean)[0]) || 'app') + '-', ownAud: true,
+  aud: { get: function () { try { return GXA.S.set.aud || 'adult'; } catch (e) { return 'adult'; } }, set: function (k) { try { GXA.S.set.aud = k; GXA.save(); } catch (e) {} } },
+  legacyLen: function () { try { return GXA.S.set.alen; } catch (e) { return ''; } },
+  ctxWord: '課文脈絡', ctxWordZs: '课文脉络', ctxWordEn: 'the lesson context',
+  qsLabel: ['對象範例題', '对象范例题', 'Examples for me'],
+  reAnswer: function (m) { try { if (SAGE321.reask()) { GXA.toast(m); return true; } } catch (e) {} return false; },
+  onAsk: function (q) { try { SAGE321.pick(q); } catch (e) {} },
+  toast: function (m) { try { GXA.toast(m); } catch (e) {} },
+  readCtx: function () { try { var c = window.GXA_CFG || {}, l = (c.lessons && c.lessons()) || [], n = (c.current && c.current()) || 0, x = l[n - 1], en = /^en/i.test(document.documentElement.lang || ''); return x ? [(en ? 'Currently reading: ' : '目前讀到：') + (x.label || '')] : []; } catch (e) { return []; } }
+});
+XZ2.watchScroll('#gxxzb');
+setTimeout(function () { try { XZ2.refresh(); } catch (e) {} }, 1500);
+</script>
+<style id="xz2full">
+/* 滿版小智頁（-xz1103）：整頁、頂部貼齊、輸入欄固定在畫面最底、回答全寬（版面本體由 GXFS 提供） */
+#gxaxz .xzmask{display:none}
+#gxaxz .xzctl{padding:8px 14px 10px;max-height:52vh;overflow:auto;-webkit-overflow-scrolling:touch;--xz2-fs:calc(var(--fs,17px)*.8)}
+.gxroot .xz2s,.gxroot .xz2c{--xz2-fs:calc(var(--fs,17px)*.82);--xz2-acc:var(--pine,var(--acc,var(--brand)))}
+.xz2s,#xz2pf{--xz2-fs:calc(var(--fs,17px)*.82);--xz2-acc:var(--acc,var(--brand))}
+</style>
 <script type="application/json" id="lessons-json">
 [
  {
@@ -17164,6 +17188,7 @@ function homeHTML(){
       ${reviewCard}
       ${progHTML}
       ${fontHTML}
+      <div class="xz2card">${XZ2.settingsHtml()}</div>
       <div class="backup-card">
         <div class="bk-head"><span class="bk-ic">🗂️</span><div class="bk-tx"><div class="bk-t">備份與還原</div><div class="bk-d">把畫線與領受存成檔案；換手機、清快取都不怕不見</div></div></div>
         <div class="bk-btns"><button class="bk-btn bk-exp" onclick="exportBackup()">⬆ 匯出備份</button><button class="bk-btn" onclick="importBackup()">⬇ 匯入還原</button></div>
@@ -21744,6 +21769,7 @@ var SAGE321 = (function () {
     t = String(t).replace(/^\s+|\s+$/g, '');
     if (!t || XZ.busy) return;
     XZ.open = true;
+    if (C.onSend) { try { C.onSend(); } catch (e) {} }
     push('user', t);
     draw(); call();
   }
@@ -21756,6 +21782,7 @@ var SAGE321 = (function () {
              '請幫我更明白這句話，並幫助我活出來。';
     })(String(quote || '').slice(0, 300), note || '');
     if (XZ.busy) { draw(); return; }
+    if (C.onSend) { try { C.onSend(); } catch (e) {} }
     push('user', q);
     draw(); call();
   }
@@ -21806,7 +21833,7 @@ var SAGE321 = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: ctrl ? ctrl.signal : undefined,
-      body: JSON.stringify(C.sendModel ? { model: C.model, max_tokens: C.maxTokens, system: sys, messages: msgs } : { system: sys, messages: msgs })
+      body: JSON.stringify({ model: C.model, max_tokens: (typeof C.maxTokens === 'function' ? C.maxTokens() : C.maxTokens), system: sys, messages: msgs })
     }).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
@@ -22146,12 +22173,7 @@ var GX = (function () {
   function sysExtra() {
     let s = '\n\n【回答對象】' + A().sys;
     if (EN) s = '\n\n[Audience]' + A().sys;
-    const k = alen();
-    if (k !== 'mid') {
-      s += (EN ? '\n\n[Length]' : '\n\n【回答長度】') + GXD.len[k] +
-        T('（這一條長度要求優先於上面「回應精簡」的原則；仍然照上面的「回答格式」排版。）',
-          ' (This length request overrides the earlier instruction to keep answers short; still follow the answer-format rules above.)');
-    }
+    s += '\n\n' + XZ2.sysTail();   /* 信仰背景＋讀者資料＋回答長度（五段）改由 XZ2 提供，只送一次 */
     if (isSC()) s += '\n\n【語言】這位讀者使用简体中文，請一律用简体中文回答。';
     return s;
   }
@@ -22166,40 +22188,23 @@ var GX = (function () {
     const nm = GXD.names;
     return AUD_KEYS.map(k => `<button class="gxa${aud() === k ? ' on' : ''}" onclick="GX.setAud('${k}','${where}')">${GXD.icon[k]} ${esc(nm[k])}</button>`).join('');
   }
-  function ctl() {
-    const k = aud(), L = alen(), ln = GXD.lenNames;
-    return `<div class="gxrow">
-      <button class="gxsm" onclick="GX.togAud()">${GXD.icon[k]} ${esc(T('對象：', 'For: ') + GXD.names[k])} ${audOpen ? '▴' : '▾'}</button>
-      <span class="gxlen"><span class="xs muted">${esc(T('長度', 'Length'))}</span>${['brief', 'mid', 'full'].map(x =>
-        `<button class="${L === x ? 'on' : ''}" onclick="GX.setLen('${x}')">${esc(ln[x])}</button>`).join('')}</span></div>
-      ${audOpen ? `<div class="gxaud">${audBtns('xz')}</div><p class="xs muted gxhint">${esc(GXD.hints[k])}</p>` : ''}`;
-  }
-  function togAud() { audOpen = !audOpen; SAGE321.draw(true); }
+  function ctl() { return XZ2.controlsHtml({ qs: true }); }
+  function togAud() { XZ2.act('audtog'); }
   function setAud(k, where) {
     if (AUD_KEYS.indexOf(k) < 0) return;
     S.set.aud = k; keep();
     say(T('回答對象：', 'Answering for: ') + GXD.names[k]);
+    try { XZ2.refresh(); } catch (e) {}
     if (where === 'xz') SAGE321.draw(true);
     else if (where === 'pl') plPaint();
     else render();
   }
-  function setLen(k) {
-    if (alen() === k) return;
-    S.set.alen = k; keep();
-    const nm = GXD.lenNames[k];
-    if (SAGE321.reask()) say(T('用「' + nm + '」重新回答…', 'Answering again: ' + nm + '…'));
-    else { say(T('回答長度：', 'Answer length: ') + nm); SAGE321.draw(true); }
-  }
+  function setLen(k) { XZ2.act('len', k); }
   function settingsCard() {
-    const k = aud(), L = alen(), ln = GXD.lenNames;
-    return `<div class="card" id="gxset"><p class="eyebrow">${esc(T('小智回答對象', 'Who Xiaozhi answers for'))}</p>
-      <div class="gxaud">${audBtns('me')}</div>
-      <p class="xs muted gxhint">${esc(GXD.hints[k])}</p>
-      <p class="eyebrow" style="margin-top:12px">${esc(T('回答長度', 'Answer length'))}</p>
-      <div class="row">${['brief', 'mid', 'full'].map(x => `<button class="pill ${L === x ? 'on' : ''}" onclick="GX.setLenMe('${x}')">${esc(ln[x])}</button>`).join('')}</div>
+    return `<div class="card" id="gxset"><p class="eyebrow">${esc(T('小智設定', 'Xiaozhi settings'))}</p>${XZ2.settingsHtml()}
       <p class="xs muted" style="margin:8px 0 0">${esc(T('讀經樂出題、小智寫祝福也會跟著回答對象調整口氣。', 'Bible Fun questions and Xiaozhi’s blessings follow this setting too.'))}</p></div>`;
   }
-  function setLenMe(k) { S.set.alen = k; keep(); say(T('回答長度：', 'Answer length: ') + GXD.lenNames[k]); render(); }
+  function setLenMe(k) { XZ2.act('sLen', k); }
 
   /* ── 共用：一次性呼叫小智（重試、逾時） ───────────────────────── */
   async function aiRaw(sys, ask, ms, maxT) {
@@ -25738,6 +25743,7 @@ body:has(#gxaroot .gxz.on) .xz-fab,body:has(#gxaroot .gxz.on) #fab,body:has(#gxa
         worker: SVC.xz, model: SVC.model, sendModel: !!SVC.sendModel, maxTokens: SVC.maxTokens || 1000,
         name: T('小智', 'Xiaozhi'), tagline: T('陪讀 · 解經 · 禱告', 'Read · Reflect · Pray'),
         sysExtra: () => GX.sysExtra(), followups: () => GX.followups(), controls: () => GX.ctl(),
+        maxTokens: () => XZ2.maxTokens(), onSend: () => XZ2.collapse(),
         onCard: (t, q) => GXS.fromAnswer(t, q),
         onShare: (t, q) => GX.shareText(GX.sc((q ? q + '\n\n' : '') + SAGE321.plainOf(t) + '\n\n—— ' + GX.FELLOW + '\n' + GX.home())),
         toast: (m) => toast(m),
