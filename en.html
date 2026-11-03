@@ -20843,14 +20843,18 @@ renderChat();
   (function () {
     if (!('serviceWorker' in navigator) || location.protocol.indexOf('http') !== 0) return;
     var pending = false;
-    var busy = function () { try { return (spk && spk.active && !spk.paused) || !!document.querySelector('#gxaroot #gxs.on') || (window.MX && MX.busy && MX.busy()) || !!(window.CR && CR.role); } catch (e) { return false; } };
-    function tryReload() { if (!pending) return; if (busy()) { setTimeout(tryReload, 15000); return; } location.reload(); }
+    var inputBusy = function () { var a = document.activeElement; return !!(a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && /^(text|search|url|email|tel|number|)$/i.test(a.type || '')) || a.isContentEditable) && (a.value || (a.isContentEditable && a.textContent))); };
+    var busy = function () { try { return (spk && spk.active && !spk.paused) || !!document.querySelector('#gxaroot #gxs.on') || (window.MX && MX.busy && MX.busy()) || !!(window.CR && CR.role) || inputBusy(); } catch (e) { return false; } };
+    function tryReload() { if (!pending) return; if (busy()) { setTimeout(tryReload, 15000); return; }
+      /* 防無限重整：60 秒內只自動重整一次 */
+      try { var t0 = +sessionStorage.getItem('cdRl') || 0; if (Date.now() - t0 < 60000) { pending = false; return; } sessionStorage.setItem('cdRl', String(Date.now())); } catch (e) {}
+      location.reload(); }
     function check() { try { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update().catch(function () {}); }); } catch (e) {} }
     try { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {}); } catch (e) {}
     navigator.serviceWorker.addEventListener('message', function (ev) { if (ev && ev.data && ev.data.type === 'update-available') { pending = true; setTimeout(tryReload, 1500); } });
     var had = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', function () { if (!had) { had = true; return; } pending = true; setTimeout(tryReload, 1500); });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); else if (pending && !busy()) location.reload(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); else if (pending && !busy()) tryReload(); });
     setTimeout(check, 4000); setInterval(check, 30 * 60 * 1000);
   })();
 
