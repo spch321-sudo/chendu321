@@ -99,6 +99,14 @@
   .hope-p{font-size:20px;color:var(--ink);line-height:1.95;margin-bottom:14px;}
   .still-card{background:var(--mintWash);border-radius:16px;padding:26px 24px;font-size:22px;font-weight:600;color:var(--ink);line-height:1.95;text-align:center;white-space:pre-line;margin-bottom:16px;}
   .still-hint{padding:14px 16px;background:var(--paper);border-radius:10px;font-size:18px;color:var(--inkSoft);line-height:1.85;text-align:center;white-space:pre-line;border:1px dashed var(--line);}
+  .lead-box{background:var(--goldWash);border:1px solid var(--goldSoft);border-radius:14px;padding:14px 14px 12px;margin:16px 0}
+  .lead-box .lh{font-size:18px;font-weight:700;color:var(--mintDark)}
+  .lead-box .ls{font-size:12px;color:#7a6a3a;margin:2px 0 8px}
+  .lead-box .li{margin:9px 0;line-height:1.6}
+  .lead-box .li b{display:block;color:var(--mintDark)}
+  .lead-box .lq{font-size:.92em;color:#5b5b50;word-break:break-word}
+  .lead-box .lt{font-size:.88em;color:#6b6240;margin-top:8px}
+  .lead-box button{margin-top:8px;border:0;border-radius:999px;background:var(--mintDark);color:#fff;padding:9px 16px;font-size:14px;max-width:100%}
   .pane-h{font-size:19px;font-weight:700;color:var(--mintDark);margin-bottom:16px;}
   .step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;}
   .step-num{min-width:30px;height:30px;border-radius:50%;border:2px solid var(--mint);background:#fff;color:var(--mint);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .15s;}
@@ -17837,6 +17845,19 @@ window.spkPreloadBook = function(){
   pump();
 };
 
+function leadHTML(l){
+  var f=function(a,b){return '<div class="li"><b>'+a+'</b><div class="lq">'+b+'</div></div>'};
+  var act=(l.steps&&l.steps[0]&&l.steps[0].act)||'';
+  var s='<div class="lead-box"><div class="lh">👥 带领小家</div><div class="ls">约 40 分钟．带领者照这五步走</div>';
+  s+=f('① 迎接与定锚（5 分）','请一位组员朗读本课经文：'+esc((l.verse_ref||'')+' '+(l.verse||'')));
+  s+=f('② 重点回顾（5 分）','请两三位用自己的话说：这课最重要的一句话是什么？'+(l.bigidea?'<br>'+esc('本课重点：'+String(l.bigidea).replace(/^[^：:]*[：:]/,'')):''));
+  s+=f('③ 分享领受（15 分）','每人分享一句：这课哪一句话最触动我？为什么？（问题见下方）');
+  s+=f('④ 回应与操练（10 分）','本周一起试做第一步：'+esc(act));
+  s+=f('⑤ 彼此代祷（5 分）','两人一组，把刚才的领受化成一句祷告；最后带领者以宣告收尾。'+(l.declare?'<br>'+esc(String(l.declare).slice(0,160)):''));
+  s+='<div class="lt">💡 带领小提醒：先自己分享，再邀请别人；不纠正、不说教；沉默时多等几秒。</div>';
+  s+='<button onclick="xzOpen();setTimeout(function(){xzQuick(1)},300)">✨ 请小智教我怎么带</button></div>';
+  return s;
+}
 function paneHTML(l){
   if(state.tab==="read"){
     let s="";
@@ -17862,6 +17883,7 @@ function paneHTML(l){
       }
       s+=`</div>`;
     });
+    s+=leadHTML(l);
     return s;
   }
   if(state.tab==="focus"){
@@ -17904,7 +17926,7 @@ function paneHTML(l){
       <div class="rec-wrap" id="rec-slot" data-n="${l.n}">${recSkeleton('declare',l.n)}</div></div>`;
   }
   if(state.tab==="share"&&l.share){
-    let s=`<div style="padding-top:16px"><div class="pane-h">小家分享问题</div>`;
+    let s=`<div style="padding-top:16px">${leadHTML(l)}<div class="pane-h">小家分享问题</div>`;
     const colors=[C.mintWash,C.claySoft,C.goldWash];
     l.share.forEach((sh,i)=>{
       const rr=mkInline(l,"R"+i,sh.q||"");
