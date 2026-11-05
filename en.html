@@ -17761,6 +17761,11 @@ window.openVideo=function(vid,label){
 window.closeVideo=function(){ var o=document.querySelector(".vid-overlay"); if(o)o.remove();
   if(!document.querySelector(".vlist-overlay")){ try{ document.documentElement.style.overflow=""; }catch(_e){} } };
 
+function leadAsk(q){
+  try{window.xzOpen();}catch(e){}
+  setTimeout(function(){try{if(window.SAGE321&&SAGE321.pick){SAGE321.pick(q);return;}}catch(e){}
+    try{xzQuick(1);}catch(e){}},80);
+}
 function leadHTML(l){
   var f=function(a,b){return '<div class="li"><b>'+a+'</b><div class="lq">'+b+'</div></div>'};
   var act=(l.steps&&l.steps[0]&&l.steps[0].act)||'';
@@ -17771,7 +17776,7 @@ function leadHTML(l){
   s+=f('④ Respond and practice (10 min)','This week, try the first step together: '+esc(act));
   s+=f('⑤ Pray for one another (5 min)','In pairs, turn what you received into one sentence of prayer. The leader closes with the declaration.'+(l.declare?'<br>'+esc(String(l.declare).slice(0,160)):''));
   s+='<div class="lt">💡 Leader tip: share first, then invite others; do not correct or preach; wait a few seconds in silence.</div>';
-  s+='<button onclick="xzOpen();setTimeout(function(){xzQuick(1)},300)">✨ Ask Xiaozhi how to lead</button></div>';
+  s+='<button data-q="'+esc(xzQuicks()[1]||'')+'" onclick="leadAsk(this.getAttribute(\'data-q\'))">✨ Ask Xiaozhi how to lead</button></div>';
   return s;
 }
 function paneHTML(l){

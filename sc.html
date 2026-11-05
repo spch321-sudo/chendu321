@@ -17845,6 +17845,11 @@ window.spkPreloadBook = function(){
   pump();
 };
 
+function leadAsk(q){
+  try{window.xzOpen();}catch(e){}
+  setTimeout(function(){try{if(window.SAGE321&&SAGE321.pick){SAGE321.pick(q);return;}}catch(e){}
+    try{xzQuick(1);}catch(e){}},80);
+}
 function leadHTML(l){
   var f=function(a,b){return '<div class="li"><b>'+a+'</b><div class="lq">'+b+'</div></div>'};
   var act=(l.steps&&l.steps[0]&&l.steps[0].act)||'';
@@ -17855,7 +17860,7 @@ function leadHTML(l){
   s+=f('④ 回应与操练（10 分）','本周一起试做第一步：'+esc(act));
   s+=f('⑤ 彼此代祷（5 分）','两人一组，把刚才的领受化成一句祷告；最后带领者以宣告收尾。'+(l.declare?'<br>'+esc(String(l.declare).slice(0,160)):''));
   s+='<div class="lt">💡 带领小提醒：先自己分享，再邀请别人；不纠正、不说教；沉默时多等几秒。</div>';
-  s+='<button onclick="xzOpen();setTimeout(function(){xzQuick(1)},300)">✨ 请小智教我怎么带</button></div>';
+  s+='<button data-q="'+esc(xzQuicks()[1]||'')+'" onclick="leadAsk(this.getAttribute(\'data-q\'))">✨ 请小智教我怎么带</button></div>';
   return s;
 }
 function paneHTML(l){

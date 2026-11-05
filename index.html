@@ -17624,6 +17624,11 @@ window.spkPreloadBook = function(){
   pump();
 };
 
+function leadAsk(q){
+  try{window.xzOpen();}catch(e){}
+  setTimeout(function(){try{if(window.SAGE321&&SAGE321.pick){SAGE321.pick(q);return;}}catch(e){}
+    try{xzQuick(1);}catch(e){}},80);
+}
 function leadHTML(l){
   var f=function(a,b){return '<div class="li"><b>'+a+'</b><div class="lq">'+b+'</div></div>'};
   var act=(l.steps&&l.steps[0]&&l.steps[0].act)||'';
@@ -17634,7 +17639,7 @@ function leadHTML(l){
   s+=f('④ 回應與操練（10 分）','本週一起試做第一步：'+esc(act));
   s+=f('⑤ 彼此代禱（5 分）','兩人一組，把剛才的領受化成一句禱告；最後帶領者以宣告收尾。'+(l.declare?'<br>'+esc(String(l.declare).slice(0,160)):''));
   s+='<div class="lt">💡 帶領小提醒：先自己分享，再邀請別人；不糾正、不說教；沉默時多等幾秒。</div>';
-  s+='<button onclick="xzOpen();setTimeout(function(){xzQuick(1)},300)">✨ 請小智教我怎麼帶</button></div>';
+  s+='<button data-q="'+esc(xzQuicks()[1]||'')+'" onclick="leadAsk(this.getAttribute(\'data-q\'))">✨ 請小智教我怎麼帶</button></div>';
   return s;
 }
 function paneHTML(l){
