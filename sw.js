@@ -9,7 +9,7 @@
    　　只清「自己前綴」（chendu321-zht-）的快取，絕不誤刪另一個 App 的離線內容。
    ============================================================ */
 var PREFIX  = "chendu321-zht-";
-var VERSION = "v71-xz1103-au1103-xzm1103-qs1105-lead1105b";
+var VERSION = "v71-xz1103-au1103-xzm1103-qs1105-lead1105b-rf1105";
 var CACHE   = PREFIX + VERSION;
 
 var SHELL = [
@@ -67,6 +67,29 @@ self.addEventListener("activate", function (e) {
 });
 
 /* 攔截：僅處理同源 GET；POST（語音／AI 代理）與跨域請求一律放行不快取 */
+/* rf1105（互動聖經 v2.58.3）：網路優先，但慢網路（超過 SHELL_WAIT 毫秒沒回）先用完全相同的快取開；網路那份繼續下載並更新快取。
+   只有導覽請求才可以退回 index.html（程式檔退回 HTML 會造成 Unexpected token '<'）。 */
+var SHELL_WAIT = 1000;
+function shellFetch(e, req, key, url, nav) {
+  var net = fetch(url, { cache: 'no-cache', credentials: 'same-origin' }).then(function (resp) {
+    if (resp && resp.ok) { var cp = resp.clone(); caches.open(CACHE).then(function (c) { c.put(key, cp); }); }
+    return resp;
+  });
+  e.waitUntil(net.then(function () { }, function () { }));
+  function fallback() {
+    return caches.match(key).then(function (h) { return h || caches.match(req, { ignoreSearch: true }); })
+      .then(function (h) { return h || (nav ? caches.match('./index.html') : undefined); });
+  }
+  return new Promise(function (resolve) {
+    var done = false;
+    var t = setTimeout(function () { fallback().then(function (h) { if (h && !done) { done = true; resolve(h); } }); }, SHELL_WAIT);
+    net.then(function (resp) { if (!done) { done = true; clearTimeout(t); resolve(resp); } }, function () {
+      clearTimeout(t);
+      if (done) return;
+      fallback().then(function (h) { if (!done) { done = true; resolve(h || Response.error()); } });
+    });
+  });
+}
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
@@ -77,17 +100,7 @@ self.addEventListener("fetch", function (e) {
   /* 導覽（HTML）：網路優先 → 取得最新內容；離線時回退快取 */
   var accept = req.headers.get("accept") || "";
   if (req.mode === "navigate" || accept.indexOf("text/html") >= 0) {
-    e.respondWith(
-      fetch(req).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); });
-        return res;
-      }).catch(function () {
-        return caches.match(req).then(function (m) {
-          return m || caches.match("./index.html");
-        });
-      })
-    );
+    e.respondWith(shellFetch(e, req, req, req.url, true));
     return;
   }
 
