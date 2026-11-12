@@ -17527,6 +17527,8 @@ function mediaCards(n){
   });
   return cards;
 }
+/* -vd1113：影片依「課號」對應（3上→第3課影片、3下與6下無影片、之後文字課號＝影片課號） */
+function mediaKey(l){ var no=String(l&&l.no!=null?l.no:""); if(/(下|B)$/.test(no)) return 0; var k=parseInt(no,10); return k>0?k:0; }
 function mediaBtnHTML(n){
   var m=(typeof MEDIA!=="undefined")?MEDIA[n]:null; if(!m)return "";
   var cnt=0; MEDIA_CATS.forEach(function(c){ if(m[c.k])cnt++; });
@@ -17650,7 +17652,7 @@ function paneHTML(l){
     s+=`<div class="greet">${esc(l.greet)}</div>`;
     var _vr=mkInline(l,"V",l.verse||"");
     s+=`<div class="verse-card"><div class="verse-txt">「${_vr.body}」</div><div class="verse-ref">— ${esc(l.verse_ref)}</div></div>`+mkNotesBlock(_vr);
-    s+=mediaBtnHTML(l.n);
+    s+=mediaBtnHTML(mediaKey(l));
     if(l.bigidea){ var _br=mkInline(l,"B",l.bigidea); s+=`<div class="bigidea mk-p">${_br.body}</div>`+mkNotesBlock(_br); }
     if(!(state.marks&&state.marks[l.n]&&Object.keys(state.marks[l.n]).length))
       s+=`<div class="mk-hint">💡 讀到聖靈光照、有感動的句子，<b>點一下</b>就能畫線；畫線後<b>再點一下</b>可以寫下你的領受。</div>`;
